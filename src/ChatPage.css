@@ -101,6 +101,14 @@
   line-height: 1.2;
 }
 
+.thinking-indicator {
+  font-size: 18px;
+  font-weight: 500;
+  color: #8a8a9a;
+  margin: 10px 0 0 0;
+  font-style: italic;
+}
+
 .chat-input-section {
   width: 100%;
   display: flex;
