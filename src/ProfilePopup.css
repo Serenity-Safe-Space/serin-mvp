@@ -208,6 +208,47 @@
   color: #4a4a5e;
 }
 
+.signed-out-content {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.signed-out-message {
+  margin-bottom: 32px;
+}
+
+.signed-out-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #4a4a5e;
+  margin: 0 0 12px 0;
+}
+
+.signed-out-subtitle {
+  font-size: 16px;
+  color: #666;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.sign-in-btn {
+  width: 100%;
+  padding: 16px;
+  background: #9c88ff;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sign-in-btn:hover {
+  background: #8b75ff;
+  transform: translateY(-1px);
+}
+
 @media (max-width: 480px) {
   .profile-popup {
     padding: 20px;
@@ -230,5 +271,21 @@
   .profile-footer {
     flex-direction: column;
     gap: 8px;
+  }
+  
+  .signed-out-content {
+    padding: 16px 0;
+  }
+  
+  .signed-out-message {
+    margin-bottom: 28px;
+  }
+  
+  .signed-out-title {
+    font-size: 18px;
+  }
+  
+  .signed-out-subtitle {
+    font-size: 15px;
   }
 }

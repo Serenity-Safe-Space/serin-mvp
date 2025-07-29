@@ -1,0 +1,135 @@
+.signin-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1001;
+  padding: 20px;
+}
+
+.signin-modal {
+  background: white;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 400px;
+  padding: 40px 32px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.signin-modal-content {
+  text-align: center;
+}
+
+.signin-modal-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #6b46c1;
+  margin: 0 0 40px 0;
+  line-height: 1.2;
+}
+
+.signin-options {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.signin-option {
+  width: 100%;
+  padding: 16px 20px;
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 50px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 16px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.signin-option:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.signin-option:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.signin-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.google-icon {
+  color: #4285f4;
+}
+
+.apple-icon {
+  color: #000;
+}
+
+.email-icon {
+  color: #6b7280;
+}
+
+.signin-option span {
+  flex: 1;
+  text-align: center;
+  margin-right: 24px; /* Balance the icon space */
+}
+
+@media (max-width: 480px) {
+  .signin-modal {
+    padding: 32px 24px;
+    margin: 10px;
+  }
+  
+  .signin-modal-title {
+    font-size: 28px;
+    margin-bottom: 32px;
+  }
+  
+  .signin-option {
+    padding: 14px 18px;
+    font-size: 15px;
+  }
+  
+  .signin-icon {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .signin-option span {
+    margin-right: 20px;
+  }
+}

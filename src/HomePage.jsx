@@ -1,10 +1,13 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import ProfilePopup from './ProfilePopup'
+import SignInModal from './SignInModal'
 import './App.css'
 
 function HomePage() {
   const [isProfilePopupVisible, setIsProfilePopupVisible] = useState(false)
+  const [isSignInModalVisible, setIsSignInModalVisible] = useState(false)
+  const [isSignedIn, setIsSignedIn] = useState(false) // For demo purposes, defaulting to false
   
   const titles = [
     "Hey, I'm Serin 👋",
@@ -19,6 +22,15 @@ function HomePage() {
 
   const handleClosePopup = () => {
     setIsProfilePopupVisible(false)
+  }
+
+  const handleSignInClick = () => {
+    setIsProfilePopupVisible(false)
+    setIsSignInModalVisible(true)
+  }
+
+  const handleCloseSignInModal = () => {
+    setIsSignInModalVisible(false)
   }
   
   return (
@@ -50,7 +62,14 @@ function HomePage() {
 
       <ProfilePopup 
         isVisible={isProfilePopupVisible} 
-        onClose={handleClosePopup} 
+        onClose={handleClosePopup}
+        isSignedIn={isSignedIn}
+        onSignInClick={handleSignInClick}
+      />
+
+      <SignInModal 
+        isVisible={isSignInModalVisible}
+        onClose={handleCloseSignInModal}
       />
     </div>
   )
