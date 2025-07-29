@@ -97,17 +97,32 @@ export const AuthProvider = ({ children }) => {
       })
 
       if (signInError) {
-        // If sign in fails with "Invalid login credentials", try sign up
+        // Handle different types of sign-in errors
         if (signInError.message === 'Invalid login credentials') {
+          // This could be either wrong password OR user doesn't exist
+          // Try to sign up to determine which case it is
           const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
             email,
             password,
           })
 
-          if (signUpError) throw signUpError
+          if (signUpError) {
+            // If signup fails, it means user exists but password was wrong
+            if (signUpError.message?.includes('already registered') || 
+                signUpError.message?.includes('already exists') ||
+                signUpError.message?.includes('User already registered')) {
+              return { 
+                data: null, 
+                error: { message: 'Incorrect password. Please try again.' }, 
+                isNewUser: false,
+                needsConfirmation: false
+              }
+            }
+            // Other signup errors
+            throw signUpError
+          }
 
-          // For new users, return success without attempting to sign in
-          // They need to confirm their email first
+          // Signup succeeded, so this was a new user
           return { 
             data: signUpData, 
             error: null, 
