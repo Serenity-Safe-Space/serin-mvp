@@ -1,11 +1,14 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import { useAuth } from './contexts/AuthContext'
+import { recordDailyActivity } from './lib/activityService'
 import './ChatPage.css'
 
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY)
 
 function ChatPage() {
+  const { user } = useAuth()
   const [currentMessage, setCurrentMessage] = useState("Gotchu. Let's talk.")
   const [inputValue, setInputValue] = useState('')
   const [chatHistory, setChatHistory] = useState([])
@@ -103,6 +106,13 @@ ${currentMessage}`
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return
+
+    // Record daily activity for chat interaction
+    if (user) {
+      recordDailyActivity(user.id).catch(error => 
+        console.warn('Failed to record daily activity:', error)
+      )
+    }
 
     const userMessage = inputValue.trim()
     setInputValue('')

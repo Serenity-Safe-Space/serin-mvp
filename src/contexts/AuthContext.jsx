@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { recordDailyActivity } from '../lib/activityService'
 
 const AuthContext = createContext({})
 
@@ -49,6 +50,14 @@ export const AuthProvider = ({ children }) => {
       })
       
       if (error) throw error
+      
+      // Record daily activity for successful sign-up with immediate session
+      if (data.user && data.session) {
+        recordDailyActivity(data.user.id).catch(error => 
+          console.warn('Failed to record daily activity:', error)
+        )
+      }
+      
       return { data, error: null }
     } catch (error) {
       return { data: null, error }
@@ -66,6 +75,14 @@ export const AuthProvider = ({ children }) => {
       })
       
       if (error) throw error
+      
+      // Record daily activity for successful sign-in (async, don't block response)
+      if (data.user) {
+        recordDailyActivity(data.user.id).catch(error => 
+          console.warn('Failed to record daily activity:', error)
+        )
+      }
+      
       return { data, error: null }
     } catch (error) {
       return { data: null, error }

@@ -1,8 +1,36 @@
+import { useState, useEffect } from 'react'
 import { useAuth } from './contexts/AuthContext'
+import { getDaysActive } from './lib/activityService'
 import './ProfilePopup.css'
 
 function ProfilePopup({ isVisible, onClose, onSignInClick }) {
   const { user, signOut } = useAuth()
+  const [daysActive, setDaysActive] = useState(0)
+  const [loadingActivity, setLoadingActivity] = useState(false)
+
+  // Load user activity data when popup opens and user is signed in
+  useEffect(() => {
+    if (isVisible && user) {
+      loadUserActivity()
+    }
+  }, [isVisible, user])
+
+  const loadUserActivity = async () => {
+    if (!user) return
+    
+    setLoadingActivity(true)
+    try {
+      const { count } = await getDaysActive(user.id)
+      // Ensure minimum of 1 if user is signed in (they're active today)
+      setDaysActive(Math.max(count, 1))
+    } catch (error) {
+      console.warn('Failed to load user activity:', error)
+      setDaysActive(1) // Fallback to 1 for signed-in users
+    } finally {
+      setLoadingActivity(false)
+    }
+  }
+
   if (!isVisible) return null
 
   return (
@@ -39,7 +67,9 @@ function ProfilePopup({ isVisible, onClose, onSignInClick }) {
                       <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="2"/>
                     </svg>
                   </div>
-                  <div className="stat-number">4</div>
+                  <div className="stat-number">
+                    {loadingActivity ? '...' : daysActive}
+                  </div>
                   <div className="stat-label">Days Active</div>
                 </div>
 
