@@ -87,77 +87,6 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  const signInOrUp = async (email, password) => {
-    setLoading(true)
-    try {
-      // First try to sign in
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
-      if (signInError) {
-        // Handle different types of sign-in errors
-        if (signInError.message === 'Invalid login credentials' || signInError.code === 'invalid_credentials') {
-          // This could be either wrong password OR user doesn't exist
-          // Try to sign up to determine which case it is
-          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-            email,
-            password,
-          })
-
-          if (signUpError) {
-            // If signup fails, it means user exists but password was wrong
-            // Check for various Supabase error messages for existing users
-            if (signUpError.message?.includes('already registered') || 
-                signUpError.message?.includes('already exists') ||
-                signUpError.message?.includes('User already registered') ||
-                signUpError.message?.includes('already been registered') ||
-                signUpError.message?.includes('email address is already registered') ||
-                signUpError.message?.includes('Email already exists') ||
-                signUpError.message?.includes('duplicate') ||
-                signUpError.code === 'email_address_already_exists' ||
-                signUpError.code === 'duplicate_email' ||
-                signUpError.code === 'user_already_exists' ||
-                signUpError.code === 'invalid_credentials') {
-              return { 
-                data: null, 
-                error: { message: 'Incorrect password. Please try again.' }, 
-                isNewUser: false,
-                needsConfirmation: false
-              }
-            }
-            // Other signup errors
-            throw signUpError
-          }
-
-          // Signup succeeded, so this was a new user
-          return { 
-            data: signUpData, 
-            error: null, 
-            isNewUser: true,
-            needsConfirmation: !signUpData.session // No session means they need to confirm email
-          }
-        } else if (signInError.message === 'Email not confirmed') {
-          // Handle case where user exists but hasn't confirmed email
-          return { 
-            data: null, 
-            error: { message: 'Please check your email and click the confirmation link before signing in.' }, 
-            isNewUser: false,
-            needsConfirmation: true
-          }
-        } else {
-          throw signInError
-        }
-      }
-
-      return { data: signInData, error: null, isNewUser: false, needsConfirmation: false }
-    } catch (error) {
-      return { data: null, error, isNewUser: false, needsConfirmation: false }
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const value = {
     user,
@@ -165,7 +94,6 @@ export const AuthProvider = ({ children }) => {
     signUp,
     signIn,
     signOut,
-    signInOrUp,
   }
 
   return (
