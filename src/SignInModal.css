@@ -37,12 +37,33 @@
   text-align: center;
 }
 
+.signin-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+}
+
 .signin-modal-title {
   font-size: 32px;
   font-weight: 700;
   color: #6b46c1;
-  margin: 0 0 40px 0;
+  margin: 0;
   line-height: 1.2;
+  flex: 1;
+}
+
+.signin-modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.signin-modal-close:hover {
+  background: #f3f4f6;
 }
 
 .signin-options {
@@ -132,4 +153,100 @@
   .signin-option span {
     margin-right: 20px;
   }
+}
+
+/* Form styles */
+.signin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  text-align: left;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.form-group input {
+  padding: 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 16px;
+  transition: border-color 0.2s ease;
+  background: white;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #6b46c1;
+}
+
+.form-group input:disabled {
+  background: #f9fafb;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.error-message {
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  border: 1px solid #fecaca;
+}
+
+.success-message {
+  background: #f0fdf4;
+  color: #16a34a;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  border: 1px solid #bbf7d0;
+}
+
+.signin-submit {
+  width: 100%;
+  padding: 16px 20px;
+  background: #6b46c1;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.signin-submit:hover:not(:disabled) {
+  background: #553c9a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(107, 70, 193, 0.3);
+}
+
+.signin-submit:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.signin-submit:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.signin-info {
+  font-size: 14px;
+  color: #6b7280;
+  margin-top: 16px;
+  margin-bottom: 0;
+  line-height: 1.5;
 }

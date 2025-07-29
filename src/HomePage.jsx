@@ -7,7 +7,6 @@ import './App.css'
 function HomePage() {
   const [isProfilePopupVisible, setIsProfilePopupVisible] = useState(false)
   const [isSignInModalVisible, setIsSignInModalVisible] = useState(false)
-  const [isSignedIn, setIsSignedIn] = useState(false) // For demo purposes, defaulting to false
   
   const titles = [
     "Hey, I'm Serin 👋",
@@ -63,7 +62,6 @@ function HomePage() {
       <ProfilePopup 
         isVisible={isProfilePopupVisible} 
         onClose={handleClosePopup}
-        isSignedIn={isSignedIn}
         onSignInClick={handleSignInClick}
       />
 
