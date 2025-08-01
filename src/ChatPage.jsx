@@ -183,7 +183,7 @@ ${currentMessage}`
     <div className="chat-page">
       <div className="profile-icon" onClick={handleProfileClick}>
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="#E67E22"/>
+          <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="white"/>
         </svg>
       </div>
       
@@ -194,31 +194,6 @@ ${currentMessage}`
           </div>
         </div>
 
-        <div className="quick-actions">
-          <div className="action-item">
-            <div className="action-circle purple">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" fill="white"/>
-              </svg>
-            </div>
-            <div className="action-text">
-              <div>Too tired to type?</div>
-              <div>Just say it out loud</div>
-            </div>
-          </div>
-
-          <div className="action-item">
-            <div className="action-circle teal">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.5 1.5 0 0 0 18.54 8H16c-.83 0-1.5.67-1.5 1.5S15.17 11 16 11h1.5l1.25 3.75L16 16.5V22h4zM12.5 11.5c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5S11 9.17 11 10s.67 1.5 1.5 1.5zM5.5 6c1.11 0 2-.89 2-2s-.89-2-2-2-2 .89-2 2 .89 2 2 2zm2 16v-7H9.5l-1.32-3.96A1.5 1.5 0 0 0 6.76 10H5.5c-.83 0-1.5.67-1.5 1.5S4.67 13 5.5 13H7l.75 2.25L6 17v5h1.5z" fill="white"/>
-              </svg>
-            </div>
-            <div className="action-text">
-              <div>Wanna talk</div>
-              <div>to someone like you</div>
-            </div>
-          </div>
-        </div>
 
         <div className="chat-title-section">
           <h1 className="chat-main-title">
@@ -237,20 +212,32 @@ ${currentMessage}`
             <input 
               ref={inputRef}
               type="text" 
-              placeholder="Say anything... I'm listening" 
+              placeholder="Write something" 
               className="chat-input"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
               disabled={isLoading}
             />
+            <div className="input-icons">
+              <button className="input-icon voice-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z" fill="#FFEB5B"/>
+                </svg>
+              </button>
+              <button className="input-icon connection-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z" fill="#6B1FAD"/>
+                </svg>
+              </button>
+            </div>
             <button 
               className="send-button"
               onClick={handleSendMessage}
               disabled={isLoading || !inputValue.trim()}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="white"/>
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="#6B1FAD"/>
               </svg>
             </button>
           </div>

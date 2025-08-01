@@ -35,6 +35,24 @@ This is a React application for Serin, a mental health support platform. The hom
 3. Homepage displays Serin character, title, and three action buttons
 4. Ready for future integration with Supabase backend
 
+## UI Element Style Guide
+
+- **Buttons**:
+  - Rounded corners
+  - Primary = Yellow background (#FFEB5B), Purple text (#6B1FAD)
+  - Secondary = White background, Purple border/text
+- **Input Fields**:
+  - White fill (#FFFFFF)
+  - Purple border (#6B1FAD)
+  - Placeholder text in soft purple/gray
+- **Icons**:
+  - Use yellow or purple depending on contrast
+  - Rounded or playful to match Gen Z aesthetic
+- **Typography**:
+  - Always use Hangyaboly for consistent tone
+  - Titles: Larger, bold, purple
+  - Body: Medium size, clean spacing
+
 ## Current Configuration
 
 - Claude Code permissions are configured in `.claude/settings.local.json`
