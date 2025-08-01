@@ -130,14 +130,13 @@
 .input-container {
   width: 100%;
   max-width: 500px;
-  position: relative;
   display: flex;
   align-items: center;
 }
 
 .chat-input {
-  width: 100%;
-  padding: 18px 140px 18px 24px;
+  flex: 1;
+  padding: 18px 60px 18px 24px;
   border: 2px solid #6B1FAD;
   border-radius: 50px;
   font-size: 16px;
@@ -146,6 +145,7 @@
   background: #FFFFFF;
   outline: none;
   transition: border-color 0.2s ease;
+  position: relative;
 }
 
 .chat-input:focus {
@@ -158,11 +158,10 @@
 }
 
 .input-icons {
-  position: absolute;
-  right: 110px;
   display: flex;
   gap: 8px;
   align-items: center;
+  margin-right: 12px;
 }
 
 .input-icon {
@@ -232,11 +231,11 @@
   }
   
   .chat-input {
-    padding: 16px 120px 16px 20px;
+    padding: 16px 50px 16px 20px;
   }
   
   .input-icons {
-    right: 90px;
+    margin-right: 8px;
     gap: 4px;
   }
   

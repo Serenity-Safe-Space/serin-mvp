@@ -209,16 +209,6 @@ ${currentMessage}`
 
         <div className="chat-input-section">
           <div className="input-container">
-            <input 
-              ref={inputRef}
-              type="text" 
-              placeholder="Write something" 
-              className="chat-input"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-              disabled={isLoading}
-            />
             <div className="input-icons">
               <button className="input-icon voice-icon">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -231,6 +221,16 @@ ${currentMessage}`
                 </svg>
               </button>
             </div>
+            <input 
+              ref={inputRef}
+              type="text" 
+              placeholder="Write something" 
+              className="chat-input"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={isLoading}
+            />
             <button 
               className="send-button"
               onClick={handleSendMessage}
