@@ -7,6 +7,20 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
 
+.profile-icon {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+
+.profile-icon:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
 .chat-header {
   margin-bottom: 40px;
 }
@@ -78,6 +92,27 @@
   font-size: 14px;
   font-weight: 500;
   line-height: 1.3;
+}
+
+.character-container {
+  margin-bottom: 40px;
+}
+
+.character-circle {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  border: 8px solid #9c88ff;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(156, 136, 255, 0.3);
+  position: relative;
+}
+
+.llama-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
 }
 
 .chat-title-section {
@@ -195,6 +230,11 @@
   .action-circle {
     width: 60px;
     height: 60px;
+  }
+  
+  .character-circle {
+    width: 160px;
+    height: 160px;
   }
   
   .chat-main-title {

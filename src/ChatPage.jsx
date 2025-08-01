@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
-import { Link } from 'react-router-dom'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { useAuth } from './contexts/AuthContext'
 import { recordDailyActivity } from './lib/activityService'
+import ProfilePopup from './ProfilePopup'
+import SignInModal from './SignInModal'
 import './ChatPage.css'
 
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY)
@@ -15,6 +16,8 @@ function ChatPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isFirstMessage, setIsFirstMessage] = useState(true)
   const [hasStartedChat, setHasStartedChat] = useState(false)
+  const [isProfilePopupVisible, setIsProfilePopupVisible] = useState(false)
+  const [isSignInModalVisible, setIsSignInModalVisible] = useState(false)
   const inputRef = useRef(null)
 
   useEffect(() => {
@@ -159,15 +162,38 @@ ${currentMessage}`
     }
   }
 
+  const handleProfileClick = () => {
+    setIsProfilePopupVisible(true)
+  }
+
+  const handleClosePopup = () => {
+    setIsProfilePopupVisible(false)
+  }
+
+  const handleSignInClick = () => {
+    setIsProfilePopupVisible(false)
+    setIsSignInModalVisible(true)
+  }
+
+  const handleCloseSignInModal = () => {
+    setIsSignInModalVisible(false)
+  }
+
   return (
     <div className="chat-page">
-      <div className="chat-header">
-        <Link to="/" className="back-button">
-          ← Back
-        </Link>
+      <div className="profile-icon" onClick={handleProfileClick}>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="#E67E22"/>
+        </svg>
       </div>
-
+      
       <div className="chat-content">
+        <div className="character-container">
+          <div className="character-circle">
+            <img src="/llama.png" alt="Serin the llama" className="llama-image" />
+          </div>
+        </div>
+
         <div className="quick-actions">
           <div className="action-item">
             <div className="action-circle purple">
@@ -234,6 +260,17 @@ ${currentMessage}`
           </div>
         </div>
       </div>
+
+      <ProfilePopup 
+        isVisible={isProfilePopupVisible} 
+        onClose={handleClosePopup}
+        onSignInClick={handleSignInClick}
+      />
+
+      <SignInModal 
+        isVisible={isSignInModalVisible}
+        onClose={handleCloseSignInModal}
+      />
     </div>
   )
 }
