@@ -35,16 +35,17 @@
 
 .profile-popup-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   margin-bottom: 24px;
 }
 
 .profile-popup-title {
-  font-size: 24px;
-  font-weight: 700;
-  color: #4a4a5e;
+  font-size: 28px;
+  font-weight: 900;
+  color: #6B1FAD;
   margin: 0;
+  font-family: 'Hangyaboly', sans-serif;
 }
 
 .profile-popup-close {
@@ -68,27 +69,35 @@
 }
 
 .profile-avatar {
-  width: 80px;
-  height: 80px;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
-  background: #9c88ff;
+  background: #8B7FD9;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 16px auto;
+  margin: 0 auto 20px auto;
+}
+
+.avatar-character {
+  font-size: 60px;
+  line-height: 1;
 }
 
 .profile-name {
-  font-size: 20px;
-  font-weight: 600;
-  color: #4a4a5e;
-  margin: 0 0 8px 0;
+  font-size: 28px;
+  font-weight: 900;
+  color: #6B1FAD;
+  margin: 0 0 32px 0;
+  font-family: 'Hangyaboly', sans-serif;
+  text-align: center;
 }
 
 .profile-subtitle {
   font-size: 16px;
   color: #666;
   margin: 0 0 32px 0;
+  font-family: 'Hangyaboly', sans-serif;
 }
 
 .profile-stats {
@@ -114,71 +123,91 @@
   justify-content: center;
 }
 
-.stat-icon.blue {
-  background: #e3f2fd;
-  color: #1976d2;
-}
-
-.stat-icon.green {
-  background: #e8f5e8;
-  color: #388e3c;
-}
-
-.stat-icon.yellow {
-  background: #fff8e1;
-  color: #f57c00;
+.stat-icon.fire, .stat-icon.arrow {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  background: transparent;
 }
 
 .stat-number {
-  font-size: 20px;
-  font-weight: 700;
-  color: #4a4a5e;
+  font-size: 24px;
+  font-weight: 900;
+  color: #6B1FAD;
+  font-family: 'Hangyaboly', sans-serif;
 }
 
 .stat-label {
-  font-size: 12px;
+  font-size: 14px;
   color: #666;
-  font-weight: 500;
+  font-weight: 700;
+  font-family: 'Hangyaboly', sans-serif;
 }
 
 .chat-history-btn {
   width: 100%;
-  padding: 16px;
-  background: #9c88ff;
-  color: white;
+  padding: 18px;
+  background: #FFEB5B;
+  color: #6B1FAD;
   border: none;
   border-radius: 25px;
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 900;
   cursor: pointer;
   margin-bottom: 16px;
   transition: all 0.2s ease;
+  font-family: 'Hangyaboly', sans-serif;
 }
 
 .chat-history-btn:hover {
-  background: #8b75ff;
+  background: #f5df4a;
+  transform: translateY(-1px);
+}
+
+.settings-btn {
+  width: 100%;
+  padding: 18px;
+  background: #2D3A87;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+  margin-bottom: 16px;
+  transition: all 0.2s ease;
+  font-family: 'Hangyaboly', sans-serif;
+}
+
+.settings-btn:hover {
+  background: #252f73;
   transform: translateY(-1px);
 }
 
 .instagram-btn {
   width: 100%;
-  padding: 16px;
+  padding: 18px;
   background: white;
-  color: #4a4a5e;
-  border: 2px solid #e0e0e5;
+  color: #6B1FAD;
+  border: 2px solid #6B1FAD;
   border-radius: 25px;
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 900;
   cursor: pointer;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   transition: all 0.2s ease;
+  font-family: 'Hangyaboly', sans-serif;
 }
 
 .instagram-btn:hover {
   background: #f8f8fb;
-  border-color: #d0d0d5;
   transform: translateY(-1px);
 }
+
 
 .profile-footer {
   display: flex;
@@ -201,6 +230,7 @@
   justify-content: center;
   gap: 8px;
   transition: all 0.2s ease;
+  font-family: 'Hangyaboly', sans-serif;
 }
 
 .footer-btn:hover {
@@ -220,8 +250,9 @@
 .signed-out-title {
   font-size: 20px;
   font-weight: 600;
-  color: #4a4a5e;
+  color: #6B1FAD;
   margin: 0 0 12px 0;
+  font-family: 'Hangyaboly', sans-serif;
 }
 
 .signed-out-subtitle {
@@ -229,23 +260,25 @@
   color: #666;
   margin: 0;
   line-height: 1.4;
+  font-family: 'Hangyaboly', sans-serif;
 }
 
 .sign-in-btn {
   width: 100%;
   padding: 16px;
-  background: #9c88ff;
-  color: white;
+  background: #FFEB5B;
+  color: #6B1FAD;
   border: none;
   border-radius: 25px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-family: 'Hangyaboly', sans-serif;
 }
 
 .sign-in-btn:hover {
-  background: #8b75ff;
+  background: #f5df4a;
   transform: translateY(-1px);
 }
 
