@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { useAuth } from './contexts/AuthContext'
 import { recordDailyActivity } from './lib/activityService'
@@ -7,6 +7,7 @@ import { createChatSession, saveMessage, getChatSession } from './lib/chatHistor
 import ProfilePopup from './ProfilePopup'
 import ChatHistoryPopup from './ChatHistoryPopup'
 import SignInModal from './SignInModal'
+import SettingsPopup from './SettingsPopup'
 import './ChatPage.css'
 
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY)
@@ -26,6 +27,7 @@ function ChatPage() {
   const [isProfilePopupVisible, setIsProfilePopupVisible] = useState(false)
   const [isChatHistoryPopupVisible, setIsChatHistoryPopupVisible] = useState(false)
   const [isSignInModalVisible, setIsSignInModalVisible] = useState(false)
+  const [isSettingsPopupVisible, setIsSettingsPopupVisible] = useState(false)
   const inputRef = useRef(null)
 
   useEffect(() => {
@@ -290,6 +292,15 @@ ${currentMessage}`
     navigate(`/chat/${selectedSessionId}`)
   }
 
+  const handleSettingsClick = () => {
+    setIsProfilePopupVisible(false)
+    setIsSettingsPopupVisible(true)
+  }
+
+  const handleCloseSettings = () => {
+    setIsSettingsPopupVisible(false)
+  }
+
   return (
     <div className="chat-page">
       <div className="profile-icon" onClick={handleProfileClick}>
@@ -360,7 +371,7 @@ ${currentMessage}`
           </div>
           
           <div className="privacy-notice">
-            Private. Just you & Serin. <a href="#" className="privacy-link">Learn how we use your data</a>
+            Private. Just you & Serin. <Link to="/privacy" className="privacy-link">Learn how we use your data</Link>
           </div>
         </div>
       </div>
@@ -370,6 +381,7 @@ ${currentMessage}`
         onClose={handleClosePopup}
         onSignInClick={handleSignInClick}
         onChatHistoryClick={handleChatHistoryClick}
+        onSettingsClick={handleSettingsClick}
       />
 
       <ChatHistoryPopup 
@@ -382,6 +394,11 @@ ${currentMessage}`
       <SignInModal 
         isVisible={isSignInModalVisible}
         onClose={handleCloseSignInModal}
+      />
+
+      <SettingsPopup 
+        isVisible={isSettingsPopupVisible}
+        onClose={handleCloseSettings}
       />
     </div>
   )
