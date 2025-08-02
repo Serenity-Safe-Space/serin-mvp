@@ -1,8 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { useAuth } from './contexts/AuthContext'
 import { recordDailyActivity } from './lib/activityService'
+import { createChatSession, saveMessage, getChatSession } from './lib/chatHistoryService'
 import ProfilePopup from './ProfilePopup'
+import ChatHistoryPopup from './ChatHistoryPopup'
 import SignInModal from './SignInModal'
 import './ChatPage.css'
 
@@ -10,13 +13,18 @@ const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY)
 
 function ChatPage() {
   const { user } = useAuth()
+  const { sessionId } = useParams()
+  const navigate = useNavigate()
   const [currentMessage, setCurrentMessage] = useState("Gotchu. Let's talk.")
   const [inputValue, setInputValue] = useState('')
   const [chatHistory, setChatHistory] = useState([])
+  const [currentSessionId, setCurrentSessionId] = useState(sessionId || null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingSession, setIsLoadingSession] = useState(false)
   const [isFirstMessage, setIsFirstMessage] = useState(true)
   const [hasStartedChat, setHasStartedChat] = useState(false)
   const [isProfilePopupVisible, setIsProfilePopupVisible] = useState(false)
+  const [isChatHistoryPopupVisible, setIsChatHistoryPopupVisible] = useState(false)
   const [isSignInModalVisible, setIsSignInModalVisible] = useState(false)
   const inputRef = useRef(null)
 
@@ -26,6 +34,59 @@ function ChatPage() {
       inputRef.current.focus()
     }
   }, [])
+
+  // Load existing session if sessionId is provided
+  useEffect(() => {
+    const loadSession = async () => {
+      if (sessionId && user) {
+        setIsLoadingSession(true)
+        try {
+          const { session, messages, error } = await getChatSession(sessionId, user.id)
+          
+          if (error || !session) {
+            console.error('Error loading session:', error)
+            // Redirect to home if session not found
+            navigate('/', { replace: true })
+            return
+          }
+
+          // Restore chat history
+          const formattedHistory = messages.map(msg => ({
+            role: msg.role,
+            content: msg.content
+          }))
+          
+          setChatHistory(formattedHistory)
+          setCurrentSessionId(session.id)
+          setHasStartedChat(formattedHistory.length > 0)
+          setIsFirstMessage(formattedHistory.length === 0)
+          
+          // Set current message to last assistant message or default
+          const lastAssistantMessage = formattedHistory
+            .filter(msg => msg.role === 'assistant')
+            .pop()
+          
+          if (lastAssistantMessage) {
+            setCurrentMessage(lastAssistantMessage.content)
+          }
+        } catch (error) {
+          console.error('Error loading session:', error)
+          navigate('/', { replace: true })
+        } finally {
+          setIsLoadingSession(false)
+        }
+      } else if (!sessionId) {
+        // Reset state for new chat
+        setChatHistory([])
+        setCurrentSessionId(null)
+        setHasStartedChat(false)
+        setIsFirstMessage(true)
+        setCurrentMessage("Gotchu. Let's talk.")
+      }
+    }
+
+    loadSession()
+  }, [sessionId, user, navigate])
 
   const getSerinPrompt = (history, currentMessage) => {
     const historyText = history.length > 0 
@@ -124,6 +185,21 @@ ${currentMessage}`
     setIsLoading(true)
 
     try {
+      let sessionIdToUse = currentSessionId
+      
+      // Create new session if this is the first message and user is logged in
+      if (!sessionIdToUse && user && isFirstMessage) {
+        const { session, error } = await createChatSession(user.id, userMessage)
+        if (error) {
+          console.error('Error creating session:', error)
+        } else if (session) {
+          sessionIdToUse = session.id
+          setCurrentSessionId(session.id)
+          // Update URL to include session ID
+          navigate(`/chat/${session.id}`, { replace: true })
+        }
+      }
+
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" })
       
       const prompt = getSerinPrompt(chatHistory, userMessage)
@@ -142,6 +218,19 @@ ${currentMessage}`
       
       setChatHistory(newHistory)
       setCurrentMessage(response)
+
+      // Save messages to database if user is logged in and we have a session
+      if (user && sessionIdToUse) {
+        // Save user message
+        saveMessage(sessionIdToUse, 'user', userMessage).catch(error => 
+          console.warn('Failed to save user message:', error)
+        )
+        
+        // Save assistant message
+        saveMessage(sessionIdToUse, 'assistant', response).catch(error => 
+          console.warn('Failed to save assistant message:', error)
+        )
+      }
     } catch (error) {
       console.error('Error calling Gemini API:', error)
       setCurrentMessage("Sorry, I'm having trouble connecting right now. Try again in a moment.")
@@ -179,6 +268,28 @@ ${currentMessage}`
     setIsSignInModalVisible(false)
   }
 
+  const handleChatHistoryClick = () => {
+    setIsProfilePopupVisible(false)
+    setIsChatHistoryPopupVisible(true)
+  }
+
+  const handleCloseChatHistory = () => {
+    setIsChatHistoryPopupVisible(false)
+  }
+
+  const handleBackToProfile = () => {
+    setIsChatHistoryPopupVisible(false)
+    setIsProfilePopupVisible(true)
+  }
+
+  const handleSelectChatHistory = (selectedSessionId) => {
+    setIsChatHistoryPopupVisible(false)
+    setIsProfilePopupVisible(false)
+    
+    // Navigate to the selected session
+    navigate(`/chat/${selectedSessionId}`)
+  }
+
   return (
     <div className="chat-page">
       <div className="profile-icon" onClick={handleProfileClick}>
@@ -196,14 +307,20 @@ ${currentMessage}`
 
 
         <div className="chat-title-section">
-          <h1 className="chat-main-title">
-            {currentMessage}
-          </h1>
-          {isLoading && hasStartedChat && (
-            <p className="thinking-indicator">Serin is thinking...</p>
-          )}
-          {!hasStartedChat && (
-            <h2 className="chat-subtitle">Mood's all yours – spill it</h2>
+          {isLoadingSession ? (
+            <p className="thinking-indicator">Loading chat...</p>
+          ) : (
+            <>
+              <h1 className="chat-main-title">
+                {currentMessage}
+              </h1>
+              {isLoading && hasStartedChat && (
+                <p className="thinking-indicator">Serin is thinking...</p>
+              )}
+              {!hasStartedChat && (
+                <h2 className="chat-subtitle">Mood's all yours – spill it</h2>
+              )}
+            </>
           )}
         </div>
 
@@ -252,6 +369,14 @@ ${currentMessage}`
         isVisible={isProfilePopupVisible} 
         onClose={handleClosePopup}
         onSignInClick={handleSignInClick}
+        onChatHistoryClick={handleChatHistoryClick}
+      />
+
+      <ChatHistoryPopup 
+        isVisible={isChatHistoryPopupVisible}
+        onClose={handleCloseChatHistory}
+        onBackToProfile={handleBackToProfile}
+        onSelectChat={handleSelectChatHistory}
       />
 
       <SignInModal 

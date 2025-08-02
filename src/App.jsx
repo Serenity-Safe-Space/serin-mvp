@@ -8,6 +8,7 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<ChatPage />} />
+          <Route path="/chat/:sessionId" element={<ChatPage />} />
         </Routes>
       </Router>
     </AuthProvider>

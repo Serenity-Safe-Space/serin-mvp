@@ -3,7 +3,7 @@ import { useAuth } from './contexts/AuthContext'
 import { getDaysActive } from './lib/activityService'
 import './ProfilePopup.css'
 
-function ProfilePopup({ isVisible, onClose, onSignInClick }) {
+function ProfilePopup({ isVisible, onClose, onSignInClick, onChatHistoryClick }) {
   const { user, signOut } = useAuth()
   const [daysActive, setDaysActive] = useState(0)
   const [loadingActivity, setLoadingActivity] = useState(false)
@@ -73,7 +73,7 @@ function ProfilePopup({ isVisible, onClose, onSignInClick }) {
                 </div>
               </div>
 
-              <button className="chat-history-btn">Chat History</button>
+              <button className="chat-history-btn" onClick={onChatHistoryClick}>Chat History</button>
               
               <button className="settings-btn">Settings</button>
             </>
