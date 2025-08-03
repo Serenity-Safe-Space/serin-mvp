@@ -113,6 +113,14 @@
   font-style: italic;
 }
 
+.error-message {
+  font-size: 16px;
+  font-weight: 500;
+  color: #d32f2f;
+  margin: 10px 0 0 0;
+  font-style: italic;
+}
+
 .chat-input-section {
   position: fixed;
   bottom: 0;
@@ -179,6 +187,28 @@
 
 .input-icon:hover {
   background: rgba(255, 255, 255, 0.1);
+}
+
+.input-icon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.voice-icon.recording {
+  animation: pulse 1.5s infinite;
+  background: rgba(255, 0, 0, 0.1);
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(255, 0, 0, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 0, 0, 0);
+  }
 }
 
 .send-button {

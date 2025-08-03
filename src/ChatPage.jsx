@@ -4,6 +4,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 import { useAuth } from './contexts/AuthContext'
 import { recordDailyActivity } from './lib/activityService'
 import { createChatSession, saveMessage, getChatSession } from './lib/chatHistoryService'
+import { useVoiceToGemini } from './useVoiceToGemini'
 import ProfilePopup from './ProfilePopup'
 import ChatHistoryPopup from './ChatHistoryPopup'
 import SignInModal from './SignInModal'
@@ -29,6 +30,7 @@ function ChatPage() {
   const [isSignInModalVisible, setIsSignInModalVisible] = useState(false)
   const [isSettingsPopupVisible, setIsSettingsPopupVisible] = useState(false)
   const inputRef = useRef(null)
+  const { isRecording, isPlaying, isLoading: isVoiceLoading, isError, startRecording, stopRecording } = useVoiceToGemini()
 
   useEffect(() => {
     // Focus input field when component mounts
@@ -301,6 +303,14 @@ ${currentMessage}`
     setIsSettingsPopupVisible(false)
   }
 
+  const handleVoiceButtonClick = () => {
+    if (isRecording) {
+      stopRecording()
+    } else {
+      startRecording()
+    }
+  }
+
   return (
     <div className="chat-page">
       <div className="profile-icon" onClick={handleProfileClick}>
@@ -325,11 +335,20 @@ ${currentMessage}`
               <h1 className="chat-main-title">
                 {currentMessage}
               </h1>
-              {isLoading && hasStartedChat && (
+              {(isLoading || isVoiceLoading) && hasStartedChat && (
                 <p className="thinking-indicator">Serin is thinking...</p>
               )}
               {!hasStartedChat && (
                 <h2 className="chat-subtitle">Mood's all yours – spill it</h2>
+              )}
+              {isRecording && (
+                <p className="thinking-indicator">Recording...</p>
+              )}
+              {isPlaying && (
+                <p className="thinking-indicator">Serin is speaking...</p>
+              )}
+              {isError && (
+                <p className="error-message">Voice connection error. Please try again.</p>
               )}
             </>
           )}
@@ -338,9 +357,13 @@ ${currentMessage}`
         <div className="chat-input-section">
           <div className="input-container">
             <div className="input-icons">
-              <button className="input-icon voice-icon">
+              <button 
+                className={`input-icon voice-icon ${isRecording ? 'recording' : ''}`} 
+                onClick={handleVoiceButtonClick}
+                disabled={isVoiceLoading}
+              >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z" fill="#FFEB5B"/>
+                  <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z" fill={isRecording ? "#FF0000" : "#FFEB5B"}/>
                 </svg>
               </button>
               <button className="input-icon connection-icon">
