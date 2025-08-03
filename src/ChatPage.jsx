@@ -371,7 +371,7 @@ ${currentMessage}`
           </div>
           
           <div className="privacy-notice">
-            Private. Just you & Serin. <Link to="/privacy" className="privacy-link">Learn how we use your data</Link>
+            <Link to="/privacy" className="privacy-link">Learn how we use your data</Link>
           </div>
         </div>
       </div>

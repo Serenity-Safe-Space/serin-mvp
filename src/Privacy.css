@@ -2,20 +2,39 @@
   min-height: 100vh;
   background: #ffffff;
   padding: 40px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   font-family: 'Hangyaboly', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
 
 .privacy-content {
-  max-width: 600px;
+  max-width: 800px;
   width: 100%;
-  text-align: center;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: 40px;
+}
+
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #6B1FAD;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 16px;
+  padding: 12px 0;
+  transition: all 0.2s ease;
+  font-family: 'Hangyaboly', sans-serif;
+  align-self: flex-start;
+}
+
+.back-button:hover {
+  color: #5a1890;
+  transform: translateX(-2px);
+}
+
+.back-button svg {
+  flex-shrink: 0;
 }
 
 .privacy-header {
@@ -23,10 +42,11 @@
   flex-direction: column;
   align-items: center;
   gap: 16px;
+  text-align: center;
 }
 
 .privacy-title {
-  font-size: 72px;
+  font-size: 48px;
   font-weight: 800;
   color: #6B1FAD;
   margin: 0;
@@ -42,41 +62,34 @@
 }
 
 .privacy-text {
-  max-width: 500px;
+  text-align: left;
 }
 
 .privacy-text p {
-  font-size: 36px;
+  font-size: 18px;
+  font-weight: 500;
+  color: #6B1FAD;
+  margin: 0 0 24px 0;
+  line-height: 1.6;
+  font-family: 'Hangyaboly', sans-serif;
+}
+
+.privacy-text p:last-child {
+  margin-bottom: 0;
+}
+
+.last-updated {
+  font-size: 16px;
   font-weight: 600;
   color: #6B1FAD;
-  margin: 0;
-  line-height: 1.3;
-  font-family: 'Hangyaboly', sans-serif;
+  opacity: 0.8;
+  margin-bottom: 32px !important;
 }
 
-.privacy-policy-button {
-  background: #FFEB5B;
-  color: #6B1FAD;
-  border: none;
-  border-radius: 50px;
-  padding: 20px 60px;
-  font-size: 28px;
-  font-weight: 700;
-  font-family: 'Hangyaboly', sans-serif;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 15px rgba(255, 235, 91, 0.3);
-}
-
-.privacy-policy-button:hover {
-  background: #f5df4a;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 235, 91, 0.4);
-}
 
 @media (max-width: 768px) {
   .privacy-title {
-    font-size: 56px;
+    font-size: 36px;
   }
   
   .privacy-title-underline {
@@ -85,12 +98,11 @@
   }
   
   .privacy-text p {
-    font-size: 28px;
+    font-size: 16px;
   }
   
-  .privacy-policy-button {
-    font-size: 24px;
-    padding: 18px 50px;
+  .back-button {
+    font-size: 14px;
   }
 }
 
@@ -100,11 +112,11 @@
   }
   
   .privacy-content {
-    gap: 30px;
+    gap: 24px;
   }
   
   .privacy-title {
-    font-size: 42px;
+    font-size: 28px;
   }
   
   .privacy-title-underline {
@@ -113,11 +125,16 @@
   }
   
   .privacy-text p {
-    font-size: 24px;
+    font-size: 14px;
   }
   
-  .privacy-policy-button {
-    font-size: 20px;
-    padding: 16px 40px;
+  .back-button {
+    font-size: 14px;
+    gap: 6px;
+  }
+  
+  .back-button svg {
+    width: 16px;
+    height: 16px;
   }
 }
