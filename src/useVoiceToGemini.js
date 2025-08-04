@@ -68,13 +68,13 @@ export const useVoiceToGemini = () => {
                 
                 const setupMessage = {
                     setup: {
-                        model: "models/gemini-2.0-flash-exp",
+                        model: "models/gemini-2.5-flash-preview-native-audio-dialog",
                         generation_config: {
                             response_modalities: ["AUDIO"],
                             speech_config: {
                                 voice_config: {
                                     prebuilt_voice_config: {
-                                        voice_name: "Aoede"
+                                        voice_name: "Orus"
                                     }
                                 }
                             }
