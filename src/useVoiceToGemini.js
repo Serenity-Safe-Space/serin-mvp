@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
+import { getSerinSystemInstruction } from './utils/serinPrompt';
 
 const VAD_MIN_SPEECH_DURATION_MS = 250;
 const VAD_MAX_SILENCE_DURATION_MS = 1000;
 const VAD_VOICE_PROBABILITY = 0.8;
 
-export const useVoiceToGemini = () => {
+export const useVoiceToGemini = (chatHistory = []) => {
     const [isRecording, setIsRecording] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -78,6 +79,13 @@ export const useVoiceToGemini = () => {
                                     }
                                 }
                             }
+                        },
+                        systemInstruction: {
+                            parts: [
+                                {
+                                    text: getSerinSystemInstruction(chatHistory)
+                                }
+                            ]
                         }
                     }
                 };
@@ -346,73 +354,6 @@ export const useVoiceToGemini = () => {
         }
     };
 
-    const playAudioResponse = async (base64AudioData, mimeType = 'audio/wav') => {
-        try {
-            setIsPlaying(true);
-            console.log("Attempting to play audio with mimeType:", mimeType);
-            
-            // Convert base64 to binary
-            const binaryString = atob(base64AudioData);
-            const audioData = new Uint8Array(binaryString.length);
-            for (let i = 0; i < binaryString.length; i++) {
-                audioData[i] = binaryString.charCodeAt(i);
-            }
-            
-            // Try HTML5 Audio element first (more compatible)
-            try {
-                const audioBlob = new Blob([audioData], { type: mimeType });
-                const audioUrl = URL.createObjectURL(audioBlob);
-                const audio = new Audio(audioUrl);
-                
-                audio.onended = () => {
-                    setIsPlaying(false);
-                    URL.revokeObjectURL(audioUrl);
-                };
-                
-                audio.onerror = () => {
-                    console.log("HTML5 Audio failed, trying Web Audio API...");
-                    URL.revokeObjectURL(audioUrl);
-                    throw new Error("HTML5 Audio playback failed");
-                };
-                
-                await audio.play();
-                console.log("Audio playing successfully with HTML5 Audio");
-                return;
-                
-            } catch (htmlAudioError) {
-                console.log("HTML5 Audio failed:", htmlAudioError);
-                
-                // Fallback to Web Audio API
-                if (!audioContextRef.current) {
-                    audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
-                }
-                
-                const audioContext = audioContextRef.current;
-                
-                if (audioContext.state === 'suspended') {
-                    await audioContext.resume();
-                }
-                
-                const audioBuffer = await audioContext.decodeAudioData(audioData.buffer);
-                const source = audioContext.createBufferSource();
-                source.buffer = audioBuffer;
-                source.connect(audioContext.destination);
-                
-                source.onended = () => {
-                    setIsPlaying(false);
-                };
-                
-                source.start(0);
-                console.log("Audio playing successfully with Web Audio API");
-            }
-            
-        } catch (error) {
-            console.error("Error playing audio response:", error);
-            console.log("Audio data length:", base64AudioData.length);
-            console.log("Detected mimeType:", mimeType);
-            setIsPlaying(false);
-        }
-    };
 
     const stopRecording = () => {
         console.log("Stopping recording...");
