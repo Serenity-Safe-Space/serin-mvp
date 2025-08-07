@@ -31,7 +31,7 @@ function ChatPage() {
   const [isSignInModalVisible, setIsSignInModalVisible] = useState(false)
   const [isSettingsPopupVisible, setIsSettingsPopupVisible] = useState(false)
   const inputRef = useRef(null)
-  const { isRecording, isPlaying, isLoading: isVoiceLoading, isError, startRecording, stopRecording } = useVoiceToGemini(chatHistory)
+  const { isRecording, isPlaying, isLoading: isVoiceLoading, isError, startRecording, stopRecording } = useVoiceToGemini()
 
   useEffect(() => {
     // Focus input field when component mounts

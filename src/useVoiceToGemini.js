@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
-import { getSerinSystemInstruction } from './utils/serinPrompt';
+import { getSerinVoiceInstruction } from './utils/serinPrompt';
 
 const VAD_MIN_SPEECH_DURATION_MS = 250;
 const VAD_MAX_SILENCE_DURATION_MS = 1000;
 const VAD_VOICE_PROBABILITY = 0.8;
 
-export const useVoiceToGemini = (chatHistory = []) => {
+export const useVoiceToGemini = () => {
     const [isRecording, setIsRecording] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -17,6 +17,8 @@ export const useVoiceToGemini = (chatHistory = []) => {
     const streamRef = useRef(null);
     const audioChunksRef = useRef([]);
     const audioPlaybackTimeoutRef = useRef(null);
+    const audioQueueRef = useRef([]);
+    const isProcessingAudioRef = useRef(false);
 
     useEffect(() => {
         return () => {
@@ -32,6 +34,8 @@ export const useVoiceToGemini = (chatHistory = []) => {
             if (audioPlaybackTimeoutRef.current) {
                 clearTimeout(audioPlaybackTimeoutRef.current);
             }
+            audioQueueRef.current = [];
+            isProcessingAudioRef.current = false;
         };
     }, []);
 
@@ -83,7 +87,7 @@ export const useVoiceToGemini = (chatHistory = []) => {
                         systemInstruction: {
                             parts: [
                                 {
-                                    text: getSerinSystemInstruction(chatHistory)
+                                    text: getSerinVoiceInstruction()
                                 }
                             ]
                         }
@@ -188,30 +192,39 @@ export const useVoiceToGemini = (chatHistory = []) => {
                         return;
                     }
                     
-                    // Handle different response formats
-                    if (response.serverContent?.modelTurn?.parts) {
-                        const audioPart = response.serverContent.modelTurn.parts.find(part => 
-                            part.inlineData?.mimeType?.includes('audio')
-                        );
-                        
-                        if (audioPart && audioPart.inlineData?.data) {
-                            console.log("Received audio chunk, mimeType:", audioPart.inlineData.mimeType, "data length:", audioPart.inlineData.data.length);
-                            setIsLoading(false);
-                            await handleAudioChunk(audioPart.inlineData.data, audioPart.inlineData.mimeType);
-                        }
-                    }
+                    // Handle audio responses - prioritize realtimeResponse over serverContent to avoid duplicates
+                    let audioProcessed = false;
                     
-                    // Handle realtime responses
+                    // Check realtime responses first (preferred format)
                     if (response.realtimeResponse?.parts) {
                         const audioPart = response.realtimeResponse.parts.find(part => 
                             part.inlineData?.mimeType?.includes('audio')
                         );
                         
                         if (audioPart && audioPart.inlineData?.data) {
-                            console.log("Received realtime audio chunk, mimeType:", audioPart.inlineData.mimeType, "data length:", audioPart.inlineData.data.length);
+                            console.log("Processing REALTIME audio chunk, mimeType:", audioPart.inlineData.mimeType, "data length:", audioPart.inlineData.data.length);
                             setIsLoading(false);
                             await handleAudioChunk(audioPart.inlineData.data, audioPart.inlineData.mimeType);
+                            audioProcessed = true;
                         }
+                    }
+                    
+                    // Only process serverContent if no realtime response was found
+                    if (!audioProcessed && response.serverContent?.modelTurn?.parts) {
+                        const audioPart = response.serverContent.modelTurn.parts.find(part => 
+                            part.inlineData?.mimeType?.includes('audio')
+                        );
+                        
+                        if (audioPart && audioPart.inlineData?.data) {
+                            console.log("Processing SERVER audio chunk, mimeType:", audioPart.inlineData.mimeType, "data length:", audioPart.inlineData.data.length);
+                            setIsLoading(false);
+                            await handleAudioChunk(audioPart.inlineData.data, audioPart.inlineData.mimeType);
+                            audioProcessed = true;
+                        }
+                    }
+                    
+                    if (audioProcessed) {
+                        console.log("Audio response processed successfully");
                     }
                 } catch (error) {
                     console.error("Error processing audio response:", error);
@@ -245,6 +258,15 @@ export const useVoiceToGemini = (chatHistory = []) => {
                 setIsLoading(false);
                 setIsRecording(false);
                 setIsPlaying(false);
+                
+                // Clear audio queue and processing state
+                audioQueueRef.current = [];
+                isProcessingAudioRef.current = false;
+                audioChunksRef.current = [];
+                if (audioPlaybackTimeoutRef.current) {
+                    clearTimeout(audioPlaybackTimeoutRef.current);
+                    audioPlaybackTimeoutRef.current = null;
+                }
             };
 
         } catch (error) {
@@ -263,46 +285,81 @@ export const useVoiceToGemini = (chatHistory = []) => {
                 audioData[i] = binaryString.charCodeAt(i);
             }
             
-            // Add chunk to buffer
+            // Add chunk to current buffer
             audioChunksRef.current.push(audioData);
+            console.log(`Added audio chunk. Buffer now has ${audioChunksRef.current.length} chunks`);
             
             // Clear any existing timeout
             if (audioPlaybackTimeoutRef.current) {
                 clearTimeout(audioPlaybackTimeoutRef.current);
             }
             
-            // Set a new timeout to play the audio after a brief pause (when chunks stop coming)
+            // Set a new timeout to process the audio after chunks stop coming
             audioPlaybackTimeoutRef.current = setTimeout(() => {
-                playBufferedAudio(mimeType);
-            }, 500); // Wait 500ms after last chunk to start playback
+                processAudioBuffer(mimeType);
+            }, 500); // Wait 500ms after last chunk
             
         } catch (error) {
             console.error("Error handling audio chunk:", error);
         }
     };
 
-    const playBufferedAudio = async (mimeType) => {
+    const processAudioBuffer = (mimeType) => {
+        if (audioChunksRef.current.length === 0) {
+            console.log("No audio chunks to process");
+            return;
+        }
+
+        // Move current buffer to queue and reset buffer for next response
+        const audioToQueue = [...audioChunksRef.current];
+        audioChunksRef.current = [];
+        
+        // Add to queue
+        audioQueueRef.current.push({ chunks: audioToQueue, mimeType });
+        console.log(`Added audio to queue. Queue length: ${audioQueueRef.current.length}`);
+        
+        // Process queue if not already processing
+        if (!isProcessingAudioRef.current) {
+            processAudioQueue();
+        }
+    };
+
+    const processAudioQueue = async () => {
+        if (isProcessingAudioRef.current || audioQueueRef.current.length === 0) {
+            return;
+        }
+
+        isProcessingAudioRef.current = true;
+        console.log(`Starting audio queue processing. ${audioQueueRef.current.length} items in queue`);
+
+        while (audioQueueRef.current.length > 0) {
+            const audioItem = audioQueueRef.current.shift();
+            await playBufferedAudio(audioItem.chunks, audioItem.mimeType);
+        }
+
+        isProcessingAudioRef.current = false;
+        console.log("Audio queue processing completed");
+    };
+
+    const playBufferedAudio = async (audioChunks, mimeType) => {
         try {
-            if (audioChunksRef.current.length === 0) {
+            if (!audioChunks || audioChunks.length === 0) {
                 console.log("No audio chunks to play");
                 return;
             }
             
-            console.log(`Playing ${audioChunksRef.current.length} audio chunks with mimeType: ${mimeType}`);
+            console.log(`Playing ${audioChunks.length} audio chunks with mimeType: ${mimeType}`);
             setIsPlaying(true);
             
             // Concatenate all audio chunks
-            const totalLength = audioChunksRef.current.reduce((sum, chunk) => sum + chunk.length, 0);
+            const totalLength = audioChunks.reduce((sum, chunk) => sum + chunk.length, 0);
             const combinedAudio = new Uint8Array(totalLength);
             let offset = 0;
             
-            for (const chunk of audioChunksRef.current) {
+            for (const chunk of audioChunks) {
                 combinedAudio.set(chunk, offset);
                 offset += chunk.length;
             }
-            
-            // Clear the chunks buffer
-            audioChunksRef.current = [];
             
             // Parse sample rate from mimeType (e.g., "audio/pcm;rate=24000")
             const sampleRateMatch = mimeType.match(/rate=(\d+)/);
@@ -339,18 +396,27 @@ export const useVoiceToGemini = (chatHistory = []) => {
             source.buffer = audioBuffer;
             source.connect(audioContext.destination);
             
-            source.onended = () => {
-                console.log("Audio playback completed");
-                setIsPlaying(false);
-            };
-            
-            source.start(0);
-            console.log(`Started playing audio: ${sampleCount} samples at ${sampleRate}Hz`);
+            return new Promise((resolve) => {
+                source.onended = () => {
+                    console.log("Audio playback completed");
+                    setIsPlaying(false);
+                    resolve();
+                };
+                
+                source.onerror = () => {
+                    console.error("Audio playback error");
+                    setIsPlaying(false);
+                    resolve();
+                };
+                
+                source.start(0);
+                console.log(`Started playing audio: ${sampleCount} samples at ${sampleRate}Hz`);
+            });
             
         } catch (error) {
             console.error("Error playing buffered audio:", error);
             setIsPlaying(false);
-            audioChunksRef.current = []; // Clear buffer on error
+            return Promise.resolve();
         }
     };
 
