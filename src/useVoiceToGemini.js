@@ -1,54 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { getSerinVoiceInstruction } from './utils/serinPrompt';
 
-// Optimized constants for low-latency streaming
-const AUDIO_BUFFER_SIZE = 1024; // Reduced from 4096 for lower latency (~64ms chunks at 16kHz)
-const AUDIO_CHUNK_TIMEOUT = 100; // Reduced from 500ms for faster processing
-const SAMPLE_RATE = 16000; // Consistent sample rate for recording and playback
-const VAD_MIN_SPEECH_DURATION_MS = 150; // Reduced for faster detection
-const VAD_MAX_SILENCE_DURATION_MS = 800; // Reduced for quicker responses
-const VAD_VOICE_PROBABILITY = 0.6; // Lower threshold for more responsive detection
-const PERFORMANCE_LOG_INTERVAL = 1000; // Log performance metrics every second
-
-// Voice Activity Detection utility
-const detectVoiceActivity = (audioData) => {
-    // Calculate RMS (Root Mean Square) energy
-    let sum = 0;
-    let maxAmplitude = 0;
-    
-    for (let i = 0; i < audioData.length; i++) {
-        const sample = audioData[i];
-        sum += sample * sample;
-        maxAmplitude = Math.max(maxAmplitude, Math.abs(sample));
-    }
-    
-    const rms = Math.sqrt(sum / audioData.length);
-    const audioLevel = maxAmplitude;
-    
-    // Dynamic threshold based on recent audio levels
-    const voiceThreshold = 0.01; // Lowered for better sensitivity
-    const hasVoice = rms > voiceThreshold && maxAmplitude > 0.005;
-    
-    return { hasVoice, audioLevel, rms };
-};
-
-// Enhanced performance monitoring utility
-const logPerformanceMetrics = (metrics) => {
-    if (metrics.audioChunksReceived > 0) {
-        const avgLatency = metrics.totalProcessingTime / metrics.audioChunksReceived;
-        const throughput = (metrics.audioChunksReceived * AUDIO_BUFFER_SIZE / SAMPLE_RATE).toFixed(2);
-        console.log(`[Performance Monitor] Chunks: ${metrics.audioChunksReceived}, Avg Latency: ${avgLatency.toFixed(2)}ms, Throughput: ${throughput}s audio, Buffer: ${AUDIO_BUFFER_SIZE} samples`);
-        console.log(`[Latency Breakdown] Last chunk: ${metrics.lastChunkTime.toFixed(2)}ms, Target: <${AUDIO_CHUNK_TIMEOUT}ms timeout`);
-    }
-};
-
-// Real-time latency monitoring
-const checkLatencyHealth = (processingTime) => {
-    const targetLatency = AUDIO_BUFFER_SIZE / SAMPLE_RATE * 1000; // Expected chunk duration
-    if (processingTime > targetLatency * 2) {
-        console.warn(`[Latency Warning] Processing time ${processingTime.toFixed(2)}ms exceeds optimal ${targetLatency.toFixed(2)}ms`);
-    }
-};
+const VAD_MIN_SPEECH_DURATION_MS = 250;
+const VAD_MAX_SILENCE_DURATION_MS = 1000;
+const VAD_VOICE_PROBABILITY = 0.8;
 
 export const useVoiceToGemini = () => {
     const [isRecording, setIsRecording] = useState(false);
@@ -64,28 +19,6 @@ export const useVoiceToGemini = () => {
     const audioPlaybackTimeoutRef = useRef(null);
     const audioQueueRef = useRef([]);
     const isProcessingAudioRef = useRef(false);
-    const streamingAudioRef = useRef(null); // For streaming audio playback
-    const performanceMetricsRef = useRef({
-        audioChunksReceived: 0,
-        totalProcessingTime: 0,
-        lastChunkTime: 0,
-        averageLatency: 0
-    });
-    const vadSilenceStartRef = useRef(0);
-    const vadIsSpeakingRef = useRef(false);
-
-    // Performance monitoring
-    const updatePerformanceMetrics = (processingTime) => {
-        const metrics = performanceMetricsRef.current;
-        metrics.audioChunksReceived++;
-        metrics.totalProcessingTime += processingTime;
-        metrics.lastChunkTime = processingTime;
-        
-        // Log metrics every second
-        if (metrics.audioChunksReceived % Math.floor(PERFORMANCE_LOG_INTERVAL / (AUDIO_BUFFER_SIZE / SAMPLE_RATE * 1000)) === 0) {
-            logPerformanceMetrics(metrics);
-        }
-    };
 
     useEffect(() => {
         return () => {
@@ -98,26 +31,11 @@ export const useVoiceToGemini = () => {
             if (audioContextRef.current) {
                 audioContextRef.current.close();
             }
-            if (streamingAudioRef.current) {
-                streamingAudioRef.current.stop();
-                streamingAudioRef.current = null;
-            }
             if (audioPlaybackTimeoutRef.current) {
                 clearTimeout(audioPlaybackTimeoutRef.current);
             }
             audioQueueRef.current = [];
             isProcessingAudioRef.current = false;
-            if (streamingAudioRef.current) {
-                streamingAudioRef.current.stop();
-                streamingAudioRef.current = null;
-            }
-            // Reset performance metrics
-            performanceMetricsRef.current = {
-                audioChunksReceived: 0,
-                totalProcessingTime: 0,
-                lastChunkTime: 0,
-                averageLatency: 0
-            };
         };
     }, []);
 
@@ -200,11 +118,10 @@ export const useVoiceToGemini = () => {
                     if (response.setupComplete) {
                         console.log("Setup complete, starting Web Audio API recording...");
                         
-                        // Use Web Audio API for low-latency PCM audio capture
+                        // Use Web Audio API for raw PCM audio capture
                         if (!audioContextRef.current) {
                             audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)({
-                                sampleRate: SAMPLE_RATE,
-                                latencyHint: 'interactive' // Optimize for low latency
+                                sampleRate: 16000
                             });
                         }
                         
@@ -214,58 +131,49 @@ export const useVoiceToGemini = () => {
                         }
                         
                         const source = audioContext.createMediaStreamSource(stream);
-                        const processor = audioContext.createScriptProcessor(AUDIO_BUFFER_SIZE, 1, 1);
+                        const processor = audioContext.createScriptProcessor(4096, 1, 1);
                         
                         let isProcessing = true;
                         
                         processor.onaudioprocess = (event) => {
-                            const processingStartTime = performance.now();
+                            console.log("Audio process event triggered, isProcessing:", isProcessing, "WebSocket state:", socketRef.current?.readyState);
                             
                             if (socketRef.current?.readyState === WebSocket.OPEN && isProcessing) {
                                 const inputBuffer = event.inputBuffer;
                                 const inputData = inputBuffer.getChannelData(0);
                                 
-                                // Enhanced Voice Activity Detection
-                                const { hasVoice } = detectVoiceActivity(inputData);
+                                // Check if there's actual audio data
+                                let hasAudio = false;
+                                for (let i = 0; i < inputData.length; i++) {
+                                    if (Math.abs(inputData[i]) > 0.01) {
+                                        hasAudio = true;
+                                        break;
+                                    }
+                                }
                                 
-                                if (hasVoice) {
-                                    vadIsSpeakingRef.current = true;
-                                    vadSilenceStartRef.current = 0;
-                                    
-                                    // Optimized PCM conversion - direct binary without base64
+                                if (hasAudio) {
+                                    // Convert Float32Array to Int16Array (PCM)
                                     const pcmData = new Int16Array(inputData.length);
                                     for (let i = 0; i < inputData.length; i++) {
                                         pcmData[i] = Math.max(-32768, Math.min(32767, inputData[i] * 32768));
                                     }
                                     
-                                    // More efficient base64 encoding
-                                    const uint8Array = new Uint8Array(pcmData.buffer);
-                                    const base64Audio = btoa(String.fromCharCode.apply(null, uint8Array));
+                                    // Convert to base64
+                                    const base64Audio = btoa(String.fromCharCode(...new Uint8Array(pcmData.buffer)));
                                     
                                     const audioMessage = {
                                         realtimeInput: {
                                             mediaChunks: [{
-                                                mimeType: `audio/pcm;rate=${SAMPLE_RATE}`,
+                                                mimeType: "audio/pcm;rate=16000",
                                                 data: base64Audio
                                             }]
                                         }
                                     };
                                     
+                                    console.log("Sending PCM audio chunk, size:", pcmData.length);
                                     socketRef.current.send(JSON.stringify(audioMessage));
-                                    
-                                    // Enhanced performance monitoring
-                                    const processingTime = performance.now() - processingStartTime;
-                                    updatePerformanceMetrics(processingTime);
-                                    checkLatencyHealth(processingTime);
                                 } else {
-                                    // Handle silence detection
-                                    if (vadIsSpeakingRef.current) {
-                                        if (vadSilenceStartRef.current === 0) {
-                                            vadSilenceStartRef.current = Date.now();
-                                        } else if (Date.now() - vadSilenceStartRef.current > VAD_MAX_SILENCE_DURATION_MS) {
-                                            vadIsSpeakingRef.current = false;
-                                        }
-                                    }
+                                    console.log("Silent audio chunk, skipping");
                                 }
                             }
                         };
@@ -359,22 +267,6 @@ export const useVoiceToGemini = () => {
                     clearTimeout(audioPlaybackTimeoutRef.current);
                     audioPlaybackTimeoutRef.current = null;
                 }
-                
-                // Stop any streaming audio
-                if (streamingAudioRef.current) {
-                    streamingAudioRef.current.stop();
-                    streamingAudioRef.current = null;
-                }
-                
-                // Reset performance metrics
-                performanceMetricsRef.current = {
-                    audioChunksReceived: 0,
-                    totalProcessingTime: 0,
-                    lastChunkTime: 0,
-                    averageLatency: 0
-                };
-                
-                console.log('[Optimized] WebSocket cleanup completed - all audio stopped');
             };
 
         } catch (error) {
@@ -386,8 +278,6 @@ export const useVoiceToGemini = () => {
 
     const handleAudioChunk = async (base64AudioData, mimeType) => {
         try {
-            const chunkStartTime = performance.now();
-            
             // Convert base64 to binary data
             const binaryString = atob(base64AudioData);
             const audioData = new Uint8Array(binaryString.length);
@@ -397,27 +287,17 @@ export const useVoiceToGemini = () => {
             
             // Add chunk to current buffer
             audioChunksRef.current.push(audioData);
-            console.log(`[Optimized] Added audio chunk ${audioChunksRef.current.length} (${audioData.length} bytes)`);
+            console.log(`Added audio chunk. Buffer now has ${audioChunksRef.current.length} chunks`);
             
             // Clear any existing timeout
             if (audioPlaybackTimeoutRef.current) {
                 clearTimeout(audioPlaybackTimeoutRef.current);
             }
             
-            // Aggressive early start: if this is the first chunk and we have reasonable data, start immediately
-            if (audioChunksRef.current.length === 1 && audioData.length > 1024) {
-                console.log('[Optimized] First substantial chunk - starting immediate playback');
-                processAudioBuffer(mimeType);
-                return;
-            }
-            
-            // Otherwise use reduced timeout for subsequent chunks
+            // Set a new timeout to process the audio after chunks stop coming
             audioPlaybackTimeoutRef.current = setTimeout(() => {
                 processAudioBuffer(mimeType);
-            }, AUDIO_CHUNK_TIMEOUT);
-            
-            const processingTime = performance.now() - chunkStartTime;
-            console.log(`[Performance] Chunk processed in ${processingTime.toFixed(2)}ms`);
+            }, 500); // Wait 500ms after last chunk
             
         } catch (error) {
             console.error("Error handling audio chunk:", error);
@@ -434,14 +314,13 @@ export const useVoiceToGemini = () => {
         const audioToQueue = [...audioChunksRef.current];
         audioChunksRef.current = [];
         
-        // Add to queue with priority for immediate processing
+        // Add to queue
         audioQueueRef.current.push({ chunks: audioToQueue, mimeType });
-        console.log(`[Optimized] Added ${audioToQueue.length} chunks to queue. Queue length: ${audioQueueRef.current.length}`);
+        console.log(`Added audio to queue. Queue length: ${audioQueueRef.current.length}`);
         
-        // Immediate processing for low latency - don't wait
+        // Process queue if not already processing
         if (!isProcessingAudioRef.current) {
-            // Start processing immediately without delay
-            setTimeout(() => processAudioQueue(), 0);
+            processAudioQueue();
         }
     };
 
@@ -451,25 +330,15 @@ export const useVoiceToGemini = () => {
         }
 
         isProcessingAudioRef.current = true;
-        console.log(`Starting streaming audio processing. ${audioQueueRef.current.length} items in queue`);
+        console.log(`Starting audio queue processing. ${audioQueueRef.current.length} items in queue`);
 
-        // Process all queued audio items concurrently for streaming effect
-        const audioPromises = [];
         while (audioQueueRef.current.length > 0) {
             const audioItem = audioQueueRef.current.shift();
-            // Don't await here - allow concurrent processing
-            audioPromises.push(playBufferedAudio(audioItem.chunks, audioItem.mimeType));
-        }
-
-        // Wait for all audio to complete
-        try {
-            await Promise.all(audioPromises);
-        } catch (error) {
-            console.error('Error in streaming audio processing:', error);
+            await playBufferedAudio(audioItem.chunks, audioItem.mimeType);
         }
 
         isProcessingAudioRef.current = false;
-        console.log("Streaming audio processing completed");
+        console.log("Audio queue processing completed");
     };
 
     const playBufferedAudio = async (audioChunks, mimeType) => {
@@ -492,16 +361,14 @@ export const useVoiceToGemini = () => {
                 offset += chunk.length;
             }
             
-            // Use consistent sample rate for all audio processing
-            // Parse from mimeType but fallback to optimized constant
+            // Parse sample rate from mimeType (e.g., "audio/pcm;rate=24000")
             const sampleRateMatch = mimeType.match(/rate=(\d+)/);
-            const audioSampleRate = sampleRateMatch ? parseInt(sampleRateMatch[1]) : SAMPLE_RATE;
+            const sampleRate = sampleRateMatch ? parseInt(sampleRateMatch[1]) : 24000;
             
-            // Optimize AudioBuffer creation with consistent sample rate
+            // Convert raw PCM data to AudioBuffer
             if (!audioContextRef.current) {
                 audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)({
-                    sampleRate: audioSampleRate,
-                    latencyHint: 'interactive'
+                    sampleRate: sampleRate
                 });
             }
             
@@ -510,10 +377,10 @@ export const useVoiceToGemini = () => {
                 await audioContext.resume();
             }
             
-            // Create optimized audio buffer for immediate playback
+            // Create audio buffer for the PCM data
             // PCM data is 16-bit signed integers, so divide length by 2 for sample count
             const sampleCount = combinedAudio.length / 2;
-            const audioBuffer = audioContext.createBuffer(1, sampleCount, audioSampleRate);
+            const audioBuffer = audioContext.createBuffer(1, sampleCount, sampleRate);
             const channelData = audioBuffer.getChannelData(0);
             
             // Convert 16-bit PCM to float values (-1.0 to 1.0)
@@ -531,10 +398,7 @@ export const useVoiceToGemini = () => {
             
             return new Promise((resolve) => {
                 source.onended = () => {
-                    console.log("[Optimized] Audio playback completed");
-                    if (streamingAudioRef.current === source) {
-                        streamingAudioRef.current = null;
-                    }
+                    console.log("Audio playback completed");
                     setIsPlaying(false);
                     resolve();
                 };
@@ -545,12 +409,8 @@ export const useVoiceToGemini = () => {
                     resolve();
                 };
                 
-                // Immediate audio start for reduced latency
                 source.start(0);
-                console.log(`[Optimized] Playing ${sampleCount} samples at ${audioSampleRate}Hz - Latency optimized`);
-                
-                // Store reference for potential interruption
-                streamingAudioRef.current = source;
+                console.log(`Started playing audio: ${sampleCount} samples at ${sampleRate}Hz`);
             });
             
         } catch (error) {
