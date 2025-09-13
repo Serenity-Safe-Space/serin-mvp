@@ -297,7 +297,7 @@ export const useVoiceToGemini = () => {
             // Set a new timeout to process the audio after chunks stop coming
             audioPlaybackTimeoutRef.current = setTimeout(() => {
                 processAudioBuffer(mimeType);
-            }, 100); // Wait 100ms after last chunk - optimized for lower latency
+            }, 500); // Wait 500ms after last chunk
             
         } catch (error) {
             console.error("Error handling audio chunk:", error);
