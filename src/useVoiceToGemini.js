@@ -3,8 +3,11 @@ import { getSerinVoiceInstruction } from './utils/serinPrompt';
 
 const VAD_MIN_SPEECH_DURATION_MS = 250;
 const VAD_MAX_SILENCE_DURATION_MS = 1000;
-const VAD_VOICE_PROBABILITY = 0.8;
-const PCM_SILENCE_THRESHOLD = 500;
+const VAD_RMS_START_THRESHOLD = 0.012;
+const VAD_RMS_CONTINUE_THRESHOLD = 0.006;
+const PLAYBACK_START_DELAY = 0.05;
+const CAPTURE_SAMPLE_RATE = 16000;
+const DEFAULT_PLAYBACK_SAMPLE_RATE = 24000;
 
 const convertInt16ToBase64 = (pcmData) => {
     if (!pcmData || pcmData.length === 0) {
@@ -23,6 +26,29 @@ const convertInt16ToBase64 = (pcmData) => {
     return btoa(binaryString);
 };
 
+const parseSampleRateFromMime = (mimeType) => {
+    if (!mimeType) {
+        return DEFAULT_PLAYBACK_SAMPLE_RATE;
+    }
+
+    const match = mimeType.match(/rate=(\d+)/i);
+    return match ? parseInt(match[1], 10) : DEFAULT_PLAYBACK_SAMPLE_RATE;
+};
+
+const computeRms = (pcmData) => {
+    if (!pcmData || pcmData.length === 0) {
+        return 0;
+    }
+
+    let sum = 0;
+    for (let i = 0; i < pcmData.length; i++) {
+        const normalized = pcmData[i] / 32768;
+        sum += normalized * normalized;
+    }
+
+    return Math.sqrt(sum / pcmData.length);
+};
+
 export const useVoiceToGemini = () => {
     const [isRecording, setIsRecording] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -31,12 +57,19 @@ export const useVoiceToGemini = () => {
 
     const mediaRecorderRef = useRef(null);
     const socketRef = useRef(null);
-    const audioContextRef = useRef(null);
+    const captureContextRef = useRef(null);
+    const playbackContextRef = useRef(null);
+    const playbackGainRef = useRef(null);
     const streamRef = useRef(null);
-    const audioChunksRef = useRef([]);
-    const audioPlaybackTimeoutRef = useRef(null);
-    const audioQueueRef = useRef([]);
-    const isProcessingAudioRef = useRef(false);
+    const decodeWorkerRef = useRef(null);
+    const decodeRequestIdRef = useRef(0);
+    const playbackStateRef = useRef({ nextStartTime: 0, activeSources: 0 });
+    const vadStateRef = useRef({
+        isSpeech: false,
+        speechStartTs: 0,
+        lastSpeechTs: 0,
+        pendingChunks: []
+    });
     const audioWorkletModuleLoadedRef = useRef(false);
 
     useEffect(() => {
@@ -47,26 +80,195 @@ export const useVoiceToGemini = () => {
             if (streamRef.current) {
                 streamRef.current.getTracks().forEach(track => track.stop());
             }
-            if (audioContextRef.current) {
-                audioContextRef.current.close();
-                audioContextRef.current = null;
+            if (captureContextRef.current) {
+                captureContextRef.current.close();
+                captureContextRef.current = null;
                 audioWorkletModuleLoadedRef.current = false;
             }
-            if (audioPlaybackTimeoutRef.current) {
-                clearTimeout(audioPlaybackTimeoutRef.current);
+            if (playbackContextRef.current) {
+                playbackContextRef.current.close();
+                playbackContextRef.current = null;
+                playbackGainRef.current = null;
             }
-            audioQueueRef.current = [];
-            isProcessingAudioRef.current = false;
+            if (decodeWorkerRef.current) {
+                decodeWorkerRef.current.terminate();
+                decodeWorkerRef.current = null;
+            }
+            playbackStateRef.current = { nextStartTime: 0, activeSources: 0 };
+            vadStateRef.current = {
+                isSpeech: false,
+                speechStartTs: 0,
+                lastSpeechTs: 0,
+                pendingChunks: []
+            };
         };
     }, []);
+
+    const resetVadState = () => {
+        vadStateRef.current = {
+            isSpeech: false,
+            speechStartTs: 0,
+            lastSpeechTs: 0,
+            pendingChunks: []
+        };
+    };
+
+    const ensurePlaybackContext = async (sampleRate) => {
+        if (!playbackContextRef.current) {
+            playbackContextRef.current = new (window.AudioContext || window.webkitAudioContext)({
+                sampleRate: sampleRate || DEFAULT_PLAYBACK_SAMPLE_RATE
+            });
+            playbackGainRef.current = playbackContextRef.current.createGain();
+            playbackGainRef.current.gain.value = 1;
+            playbackGainRef.current.connect(playbackContextRef.current.destination);
+            playbackStateRef.current.nextStartTime = playbackContextRef.current.currentTime;
+        }
+
+        const audioContext = playbackContextRef.current;
+        if (audioContext.state === 'suspended') {
+            await audioContext.resume();
+        }
+
+        return audioContext;
+    };
+
+    const queueDecodedAudio = async (channelBuffer, sampleRate) => {
+        try {
+            if (!channelBuffer) {
+                return;
+            }
+
+            const audioContext = await ensurePlaybackContext(sampleRate);
+            if (!audioContext) {
+                return;
+            }
+
+            const channelData = channelBuffer instanceof Float32Array
+                ? channelBuffer
+                : new Float32Array(channelBuffer);
+
+            const audioBuffer = audioContext.createBuffer(
+                1,
+                channelData.length,
+                sampleRate || audioContext.sampleRate
+            );
+            audioBuffer.copyToChannel(channelData, 0);
+
+            const startTime = Math.max(
+                playbackStateRef.current.nextStartTime,
+                audioContext.currentTime + PLAYBACK_START_DELAY
+            );
+
+            const source = audioContext.createBufferSource();
+            source.buffer = audioBuffer;
+            source.connect(playbackGainRef.current);
+
+            source.onended = () => {
+                playbackStateRef.current.activeSources = Math.max(
+                    playbackStateRef.current.activeSources - 1,
+                    0
+                );
+                if (playbackStateRef.current.activeSources === 0) {
+                    playbackStateRef.current.nextStartTime = audioContext.currentTime;
+                    setIsPlaying(false);
+                }
+            };
+
+            source.start(startTime);
+            playbackStateRef.current.activeSources += 1;
+            playbackStateRef.current.nextStartTime = startTime + audioBuffer.duration;
+            setIsPlaying(true);
+        } catch (error) {
+            console.error('Error scheduling decoded audio:', error);
+        }
+    };
+
+    const ensureDecodeWorker = () => {
+        if (typeof window === 'undefined' || !window.Worker) {
+            return null;
+        }
+
+        if (!decodeWorkerRef.current) {
+            try {
+                const worker = new Worker(new URL('./audio/decodeWorker.js', import.meta.url), {
+                    type: 'module'
+                });
+
+                worker.onmessage = ({ data }) => {
+                    if (!data) {
+                        return;
+                    }
+
+                    if (data.error) {
+                        console.error('Audio decode worker error:', data.error);
+                        return;
+                    }
+
+                    void queueDecodedAudio(data.audioBuffer, data.sampleRate);
+                };
+
+                worker.onerror = (event) => {
+                    console.error('Audio decode worker runtime error:', event.message);
+                };
+
+                decodeWorkerRef.current = worker;
+            } catch (error) {
+                console.error('Failed to initialize audio decode worker:', error);
+                decodeWorkerRef.current = null;
+            }
+        }
+
+        return decodeWorkerRef.current;
+    };
+
+    const decodeChunkOnMainThread = (base64AudioData, mimeType) => {
+        if (!base64AudioData) {
+            return;
+        }
+
+        const binaryString = atob(base64AudioData);
+        const audioData = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+            audioData[i] = binaryString.charCodeAt(i);
+        }
+
+        const sampleRate = parseSampleRateFromMime(mimeType);
+        const sampleCount = audioData.length / 2;
+        const floatChannelData = new Float32Array(sampleCount);
+
+        for (let i = 0; i < sampleCount; i++) {
+            const sample = (audioData[i * 2] | (audioData[i * 2 + 1] << 8));
+            const signedSample = sample > 32767 ? sample - 65536 : sample;
+            floatChannelData[i] = signedSample / 32768.0;
+        }
+
+        void queueDecodedAudio(floatChannelData, sampleRate);
+    };
+
+    const handleAudioChunk = (base64AudioData, mimeType) => {
+        try {
+            const worker = ensureDecodeWorker();
+            if (worker) {
+                const requestId = decodeRequestIdRef.current++;
+                worker.postMessage({
+                    id: requestId,
+                    base64AudioData,
+                    mimeType
+                });
+            } else {
+                decodeChunkOnMainThread(base64AudioData, mimeType);
+            }
+        } catch (error) {
+            console.error('Error handling audio chunk:', error);
+        }
+    };
 
     const getWebSocketUrl = () => {
         const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
         if (!apiKey) {
             throw new Error('VITE_GEMINI_API_KEY is not configured');
         }
-        
-        // Using the correct Gemini Live API WebSocket endpoint
+
         return `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=${apiKey}`;
     };
 
@@ -75,32 +277,33 @@ export const useVoiceToGemini = () => {
             setIsError(false);
             setIsLoading(true);
 
-            const stream = await navigator.mediaDevices.getUserMedia({ 
+            const stream = await navigator.mediaDevices.getUserMedia({
                 audio: {
                     channelCount: 1,
-                    sampleRate: 16000,
+                    sampleRate: CAPTURE_SAMPLE_RATE,
                     echoCancellation: true,
                     noiseSuppression: true
                 }
             });
-            
+
             streamRef.current = stream;
-            
+            resetVadState();
+
             const websocketUrl = getWebSocketUrl();
             socketRef.current = new WebSocket(websocketUrl);
 
             socketRef.current.onopen = () => {
-                console.log("WebSocket connection established");
-                
+                console.log('WebSocket connection established');
+
                 const setupMessage = {
                     setup: {
-                        model: "models/gemini-2.5-flash-preview-native-audio-dialog",
+                        model: 'models/gemini-2.5-flash-preview-native-audio-dialog',
                         generation_config: {
-                            response_modalities: ["AUDIO"],
+                            response_modalities: ['AUDIO'],
                             speech_config: {
                                 voice_config: {
                                     prebuilt_voice_config: {
-                                        voice_name: "Orus"
+                                        voice_name: 'Orus'
                                     }
                                 }
                             }
@@ -114,15 +317,14 @@ export const useVoiceToGemini = () => {
                         }
                     }
                 };
-                
+
                 socketRef.current.send(JSON.stringify(setupMessage));
             };
 
             socketRef.current.onmessage = async (event) => {
                 try {
                     let response;
-                    
-                    // Handle both text and blob responses
+
                     if (typeof event.data === 'string') {
                         response = JSON.parse(event.data);
                     } else if (event.data instanceof Blob) {
@@ -132,25 +334,23 @@ export const useVoiceToGemini = () => {
                         console.warn('Unexpected data type:', typeof event.data);
                         return;
                     }
-                    
+
                     console.log('Received response:', response);
-                    
-                    // Handle setup completion
+
                     if (response.setupComplete) {
-                        console.log("Setup complete, starting Web Audio API recording...");
-                        
-                        // Use Web Audio API for raw PCM audio capture
-                        if (!audioContextRef.current) {
-                            audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)({
-                                sampleRate: 16000
+                        console.log('Setup complete, starting Web Audio API recording...');
+
+                        if (!captureContextRef.current) {
+                            captureContextRef.current = new (window.AudioContext || window.webkitAudioContext)({
+                                sampleRate: CAPTURE_SAMPLE_RATE
                             });
                         }
-                        
-                        const audioContext = audioContextRef.current;
+
+                        const audioContext = captureContextRef.current;
                         if (audioContext.state === 'suspended') {
                             await audioContext.resume();
                         }
-                        
+
                         if (!audioContext.audioWorklet) {
                             throw new Error('AudioWorklet API is not supported in this browser.');
                         }
@@ -168,7 +368,32 @@ export const useVoiceToGemini = () => {
                             channelCount: 1
                         });
 
+                        const silentGain = audioContext.createGain();
+                        silentGain.gain.value = 0;
+
                         let isProcessing = true;
+
+                        const sendChunk = (pcmChunk) => {
+                            if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {
+                                return;
+                            }
+
+                            const base64Audio = convertInt16ToBase64(pcmChunk);
+                            if (!base64Audio) {
+                                return;
+                            }
+
+                            const audioMessage = {
+                                realtimeInput: {
+                                    mediaChunks: [{
+                                        mimeType: 'audio/pcm;rate=16000',
+                                        data: base64Audio
+                                    }]
+                                }
+                            };
+
+                            socketRef.current.send(JSON.stringify(audioMessage));
+                        };
 
                         workletNode.port.onmessage = (event) => {
                             if (!isProcessing || socketRef.current?.readyState !== WebSocket.OPEN) {
@@ -180,304 +405,190 @@ export const useVoiceToGemini = () => {
                                 return;
                             }
 
-                            let hasAudio = false;
-                            for (let i = 0; i < rawData.length; i++) {
-                                if (Math.abs(rawData[i]) > PCM_SILENCE_THRESHOLD) {
-                                    hasAudio = true;
-                                    break;
-                                }
-                            }
+                            const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+                            const vadState = vadStateRef.current;
+                            const chunkDurationMs = (rawData.length / CAPTURE_SAMPLE_RATE) * 1000;
+                            const rms = computeRms(rawData);
+                            const loudEnoughToStart = rms >= VAD_RMS_START_THRESHOLD;
+                            const loudEnoughToContinue = rms >= VAD_RMS_CONTINUE_THRESHOLD;
 
-                            if (!hasAudio) {
+                            if (loudEnoughToStart) {
+                                if (!vadState.isSpeech) {
+                                    if (vadState.speechStartTs === 0) {
+                                        vadState.speechStartTs = now;
+                                    }
+
+                                    vadState.pendingChunks.push(rawData.slice());
+                                    const elapsed = (now - vadState.speechStartTs) + chunkDurationMs;
+                                    if (elapsed >= VAD_MIN_SPEECH_DURATION_MS) {
+                                        vadState.isSpeech = true;
+                                        vadState.lastSpeechTs = now;
+                                        vadState.pendingChunks.forEach(sendChunk);
+                                        vadState.pendingChunks = [];
+                                    }
+                                } else {
+                                    vadState.lastSpeechTs = now;
+                                    sendChunk(rawData);
+                                }
+
                                 return;
                             }
 
-                            const base64Audio = convertInt16ToBase64(rawData);
-                            const audioMessage = {
-                                realtimeInput: {
-                                    mediaChunks: [{
-                                        mimeType: "audio/pcm;rate=16000",
-                                        data: base64Audio
-                                    }]
-                                }
-                            };
+                            if (vadState.isSpeech && loudEnoughToContinue) {
+                                vadState.lastSpeechTs = now;
+                                sendChunk(rawData);
+                                return;
+                            }
 
-                            console.log("Sending PCM audio chunk, size:", rawData.length);
-                            socketRef.current.send(JSON.stringify(audioMessage));
+                            if (vadState.isSpeech) {
+                                if (now - vadState.lastSpeechTs <= VAD_MAX_SILENCE_DURATION_MS) {
+                                    sendChunk(rawData);
+                                } else {
+                                    vadState.isSpeech = false;
+                                    vadState.speechStartTs = 0;
+                                    vadState.pendingChunks = [];
+                                }
+                            } else {
+                                vadState.pendingChunks = [];
+                                vadState.speechStartTs = 0;
+                            }
                         };
+
+                        workletNode.connect(silentGain);
+                        silentGain.connect(audioContext.destination);
+                        source.connect(workletNode);
 
                         const audioProcessor = {
                             workletNode,
                             source,
-                            isProcessing: () => isProcessing,
+                            silentGain,
                             stop: () => {
                                 isProcessing = false;
                                 workletNode.port.onmessage = null;
                             }
                         };
 
-                        source.connect(workletNode);
-                        workletNode.connect(audioContext.destination);
-
-                        // Store the audio processor so we can stop it later
                         mediaRecorderRef.current = audioProcessor;
-                        
+
                         setIsRecording(true);
                         setIsLoading(false);
                         return;
                     }
-                    
-                    // Handle audio responses - prioritize realtimeResponse over serverContent to avoid duplicates
+
                     let audioProcessed = false;
-                    
-                    // Check realtime responses first (preferred format)
+
                     if (response.realtimeResponse?.parts) {
-                        const audioPart = response.realtimeResponse.parts.find(part => 
+                        const audioPart = response.realtimeResponse.parts.find(part =>
                             part.inlineData?.mimeType?.includes('audio')
                         );
-                        
+
                         if (audioPart && audioPart.inlineData?.data) {
-                            console.log("Processing REALTIME audio chunk, mimeType:", audioPart.inlineData.mimeType, "data length:", audioPart.inlineData.data.length);
+                            console.log('Processing REALTIME audio chunk, mimeType:', audioPart.inlineData.mimeType, 'data length:', audioPart.inlineData.data.length);
                             setIsLoading(false);
-                            await handleAudioChunk(audioPart.inlineData.data, audioPart.inlineData.mimeType);
+                            handleAudioChunk(audioPart.inlineData.data, audioPart.inlineData.mimeType);
                             audioProcessed = true;
                         }
                     }
-                    
-                    // Only process serverContent if no realtime response was found
+
                     if (!audioProcessed && response.serverContent?.modelTurn?.parts) {
-                        const audioPart = response.serverContent.modelTurn.parts.find(part => 
+                        const audioPart = response.serverContent.modelTurn.parts.find(part =>
                             part.inlineData?.mimeType?.includes('audio')
                         );
-                        
+
                         if (audioPart && audioPart.inlineData?.data) {
-                            console.log("Processing SERVER audio chunk, mimeType:", audioPart.inlineData.mimeType, "data length:", audioPart.inlineData.data.length);
+                            console.log('Processing SERVER audio chunk, mimeType:', audioPart.inlineData.mimeType, 'data length:', audioPart.inlineData.data.length);
                             setIsLoading(false);
-                            await handleAudioChunk(audioPart.inlineData.data, audioPart.inlineData.mimeType);
+                            handleAudioChunk(audioPart.inlineData.data, audioPart.inlineData.mimeType);
                             audioProcessed = true;
                         }
                     }
-                    
+
                     if (audioProcessed) {
-                        console.log("Audio response processed successfully");
+                        console.log('Audio response processed successfully');
                     }
                 } catch (error) {
-                    console.error("Error processing audio response:", error);
-                    console.log("Raw event data:", event.data);
+                    console.error('Error processing audio response:', error);
+                    console.log('Raw event data:', event.data);
                 }
             };
 
             socketRef.current.onerror = (error) => {
-                console.error("WebSocket error:", error);
+                console.error('WebSocket error:', error);
                 setIsError(true);
                 setIsLoading(false);
             };
 
             socketRef.current.onclose = (event) => {
-                console.log("WebSocket connection closed", event.code, event.reason);
-                
-                // Clean up Web Audio API components
+                console.log('WebSocket connection closed', event.code, event.reason);
+
                 if (mediaRecorderRef.current?.workletNode) {
-                    console.log("Stopping audio processing due to WebSocket close");
+                    console.log('Stopping audio processing due to WebSocket close');
                     mediaRecorderRef.current.stop();
                     mediaRecorderRef.current.workletNode.disconnect();
                     mediaRecorderRef.current.source.disconnect();
+                    mediaRecorderRef.current.silentGain.disconnect();
                     mediaRecorderRef.current = null;
                 }
-                
-                // Stop media stream
+
                 if (streamRef.current) {
                     streamRef.current.getTracks().forEach(track => track.stop());
                 }
-                
+
+                if (captureContextRef.current) {
+                    captureContextRef.current.close();
+                    captureContextRef.current = null;
+                    audioWorkletModuleLoadedRef.current = false;
+                }
+
+                if (playbackContextRef.current) {
+                    playbackContextRef.current.close();
+                    playbackContextRef.current = null;
+                    playbackGainRef.current = null;
+                }
+
+                playbackStateRef.current = { nextStartTime: 0, activeSources: 0 };
+                resetVadState();
+
                 setIsLoading(false);
                 setIsRecording(false);
                 setIsPlaying(false);
-                
-                // Clear audio queue and processing state
-                audioQueueRef.current = [];
-                isProcessingAudioRef.current = false;
-                audioChunksRef.current = [];
-                if (audioPlaybackTimeoutRef.current) {
-                    clearTimeout(audioPlaybackTimeoutRef.current);
-                    audioPlaybackTimeoutRef.current = null;
-                }
             };
-
         } catch (error) {
-            console.error("Error starting recording:", error);
+            console.error('Error starting recording:', error);
             setIsError(true);
             setIsLoading(false);
         }
     };
 
-    const handleAudioChunk = async (base64AudioData, mimeType) => {
-        try {
-            // Convert base64 to binary data
-            const binaryString = atob(base64AudioData);
-            const audioData = new Uint8Array(binaryString.length);
-            for (let i = 0; i < binaryString.length; i++) {
-                audioData[i] = binaryString.charCodeAt(i);
-            }
-            
-            // Add chunk to current buffer
-            audioChunksRef.current.push(audioData);
-            console.log(`Added audio chunk. Buffer now has ${audioChunksRef.current.length} chunks`);
-            
-            // Clear any existing timeout
-            if (audioPlaybackTimeoutRef.current) {
-                clearTimeout(audioPlaybackTimeoutRef.current);
-            }
-            
-            // Set a new timeout to process the audio after chunks stop coming
-            audioPlaybackTimeoutRef.current = setTimeout(() => {
-                processAudioBuffer(mimeType);
-            }, 500); // Wait 500ms after last chunk
-            
-        } catch (error) {
-            console.error("Error handling audio chunk:", error);
-        }
-    };
-
-    const processAudioBuffer = (mimeType) => {
-        if (audioChunksRef.current.length === 0) {
-            console.log("No audio chunks to process");
-            return;
-        }
-
-        // Move current buffer to queue and reset buffer for next response
-        const audioToQueue = [...audioChunksRef.current];
-        audioChunksRef.current = [];
-        
-        // Add to queue
-        audioQueueRef.current.push({ chunks: audioToQueue, mimeType });
-        console.log(`Added audio to queue. Queue length: ${audioQueueRef.current.length}`);
-        
-        // Process queue if not already processing
-        if (!isProcessingAudioRef.current) {
-            processAudioQueue();
-        }
-    };
-
-    const processAudioQueue = async () => {
-        if (isProcessingAudioRef.current || audioQueueRef.current.length === 0) {
-            return;
-        }
-
-        isProcessingAudioRef.current = true;
-        console.log(`Starting audio queue processing. ${audioQueueRef.current.length} items in queue`);
-
-        while (audioQueueRef.current.length > 0) {
-            const audioItem = audioQueueRef.current.shift();
-            await playBufferedAudio(audioItem.chunks, audioItem.mimeType);
-        }
-
-        isProcessingAudioRef.current = false;
-        console.log("Audio queue processing completed");
-    };
-
-    const playBufferedAudio = async (audioChunks, mimeType) => {
-        try {
-            if (!audioChunks || audioChunks.length === 0) {
-                console.log("No audio chunks to play");
-                return;
-            }
-            
-            console.log(`Playing ${audioChunks.length} audio chunks with mimeType: ${mimeType}`);
-            setIsPlaying(true);
-            
-            // Concatenate all audio chunks
-            const totalLength = audioChunks.reduce((sum, chunk) => sum + chunk.length, 0);
-            const combinedAudio = new Uint8Array(totalLength);
-            let offset = 0;
-            
-            for (const chunk of audioChunks) {
-                combinedAudio.set(chunk, offset);
-                offset += chunk.length;
-            }
-            
-            // Parse sample rate from mimeType (e.g., "audio/pcm;rate=24000")
-            const sampleRateMatch = mimeType.match(/rate=(\d+)/);
-            const sampleRate = sampleRateMatch ? parseInt(sampleRateMatch[1]) : 24000;
-            
-            // Convert raw PCM data to AudioBuffer
-            if (!audioContextRef.current) {
-                audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)({
-                    sampleRate: sampleRate
-                });
-            }
-            
-            const audioContext = audioContextRef.current;
-            if (audioContext.state === 'suspended') {
-                await audioContext.resume();
-            }
-            
-            // Create audio buffer for the PCM data
-            // PCM data is 16-bit signed integers, so divide length by 2 for sample count
-            const sampleCount = combinedAudio.length / 2;
-            const audioBuffer = audioContext.createBuffer(1, sampleCount, sampleRate);
-            const channelData = audioBuffer.getChannelData(0);
-            
-            // Convert 16-bit PCM to float values (-1.0 to 1.0)
-            for (let i = 0; i < sampleCount; i++) {
-                const sample = (combinedAudio[i * 2] | (combinedAudio[i * 2 + 1] << 8));
-                // Convert signed 16-bit to signed value
-                const signedSample = sample > 32767 ? sample - 65536 : sample;
-                channelData[i] = signedSample / 32768.0;
-            }
-            
-            // Play the audio
-            const source = audioContext.createBufferSource();
-            source.buffer = audioBuffer;
-            source.connect(audioContext.destination);
-            
-            return new Promise((resolve) => {
-                source.onended = () => {
-                    console.log("Audio playback completed");
-                    setIsPlaying(false);
-                    resolve();
-                };
-                
-                source.onerror = () => {
-                    console.error("Audio playback error");
-                    setIsPlaying(false);
-                    resolve();
-                };
-                
-                source.start(0);
-                console.log(`Started playing audio: ${sampleCount} samples at ${sampleRate}Hz`);
-            });
-            
-        } catch (error) {
-            console.error("Error playing buffered audio:", error);
-            setIsPlaying(false);
-            return Promise.resolve();
-        }
-    };
-
-
     const stopRecording = () => {
-        console.log("Stopping recording...");
-        
+        console.log('Stopping recording...');
+
         setIsRecording(false);
-        
-        // Clean up Web Audio API components
+
         if (mediaRecorderRef.current?.workletNode) {
-            console.log("Stopping audio processing and disconnecting...");
+            console.log('Stopping audio processing and disconnecting...');
             mediaRecorderRef.current.stop();
             mediaRecorderRef.current.workletNode.disconnect();
             mediaRecorderRef.current.source.disconnect();
+            mediaRecorderRef.current.silentGain.disconnect();
             mediaRecorderRef.current = null;
         }
-        
+
         if (streamRef.current) {
-            console.log("Stopping media stream...");
+            console.log('Stopping media stream...');
             streamRef.current.getTracks().forEach(track => track.stop());
         }
-        
-        // Send completion signal
+
+        if (captureContextRef.current) {
+            captureContextRef.current.close();
+            captureContextRef.current = null;
+            audioWorkletModuleLoadedRef.current = false;
+        }
+
+        resetVadState();
+
         if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-            console.log("Sending completion signal...");
+            console.log('Sending completion signal...');
             const completionMessage = {
                 realtimeInput: {
                     mediaChunks: []
@@ -485,10 +596,10 @@ export const useVoiceToGemini = () => {
             };
             socketRef.current.send(JSON.stringify(completionMessage));
         }
-        
-        setIsLoading(true); // Keep loading while processing
-        
-        console.log("Recording stopped, waiting for response...");
+
+        setIsLoading(true);
+
+        console.log('Recording stopped, waiting for response...');
     };
 
     const sendTestAudio = async (audioFilename) => {
@@ -496,27 +607,25 @@ export const useVoiceToGemini = () => {
             setIsError(false);
             setIsLoading(true);
 
-            console.log("Loading test audio file:", audioFilename);
+            console.log('Loading test audio file:', audioFilename);
 
-            // Ensure WebSocket is connected
             if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {
-                // Initialize WebSocket connection
                 const websocketUrl = getWebSocketUrl();
                 socketRef.current = new WebSocket(websocketUrl);
 
                 await new Promise((resolve, reject) => {
                     socketRef.current.onopen = () => {
-                        console.log("WebSocket connection established for test audio");
+                        console.log('WebSocket connection established for test audio');
 
                         const setupMessage = {
                             setup: {
-                                model: "models/gemini-2.5-flash-preview-native-audio-dialog",
+                                model: 'models/gemini-2.5-flash-preview-native-audio-dialog',
                                 generation_config: {
-                                    response_modalities: ["AUDIO"],
+                                    response_modalities: ['AUDIO'],
                                     speech_config: {
                                         voice_config: {
                                             prebuilt_voice_config: {
-                                                voice_name: "Orus"
+                                                voice_name: 'Orus'
                                             }
                                         }
                                     }
@@ -536,21 +645,20 @@ export const useVoiceToGemini = () => {
                     };
 
                     socketRef.current.onerror = (error) => {
-                        console.error("WebSocket error:", error);
+                        console.error('WebSocket error:', error);
                         reject(error);
                     };
 
                     socketRef.current.onclose = (event) => {
-                        console.log("WebSocket connection closed", event.code, event.reason);
+                        console.log('WebSocket connection closed', event.code, event.reason);
                         setIsLoading(false);
                         setIsPlaying(false);
-                        audioQueueRef.current = [];
-                        isProcessingAudioRef.current = false;
-                        audioChunksRef.current = [];
-                        if (audioPlaybackTimeoutRef.current) {
-                            clearTimeout(audioPlaybackTimeoutRef.current);
-                            audioPlaybackTimeoutRef.current = null;
+                        if (playbackContextRef.current) {
+                            playbackContextRef.current.close();
+                            playbackContextRef.current = null;
+                            playbackGainRef.current = null;
                         }
+                        playbackStateRef.current = { nextStartTime: 0, activeSources: 0 };
                     };
 
                     socketRef.current.onmessage = async (event) => {
@@ -569,13 +677,11 @@ export const useVoiceToGemini = () => {
 
                             console.log('Received response:', response);
 
-                            // Handle setup completion
                             if (response.setupComplete) {
-                                console.log("Setup complete for test audio");
+                                console.log('Setup complete for test audio');
                                 return;
                             }
 
-                            // Handle audio responses
                             let audioProcessed = false;
 
                             if (response.realtimeResponse?.parts) {
@@ -584,9 +690,9 @@ export const useVoiceToGemini = () => {
                                 );
 
                                 if (audioPart && audioPart.inlineData?.data) {
-                                    console.log("Processing REALTIME audio chunk");
+                                    console.log('Processing REALTIME audio chunk');
                                     setIsLoading(false);
-                                    await handleAudioChunk(audioPart.inlineData.data, audioPart.inlineData.mimeType);
+                                    handleAudioChunk(audioPart.inlineData.data, audioPart.inlineData.mimeType);
                                     audioProcessed = true;
                                 }
                             }
@@ -597,20 +703,19 @@ export const useVoiceToGemini = () => {
                                 );
 
                                 if (audioPart && audioPart.inlineData?.data) {
-                                    console.log("Processing SERVER audio chunk");
+                                    console.log('Processing SERVER audio chunk');
                                     setIsLoading(false);
-                                    await handleAudioChunk(audioPart.inlineData.data, audioPart.inlineData.mimeType);
+                                    handleAudioChunk(audioPart.inlineData.data, audioPart.inlineData.mimeType);
                                     audioProcessed = true;
                                 }
                             }
                         } catch (error) {
-                            console.error("Error processing audio response:", error);
+                            console.error('Error processing audio response:', error);
                         }
                     };
                 });
             }
 
-            // Load and send the test audio file
             const response = await fetch(`/test-audio/${audioFilename}`);
             if (!response.ok) {
                 throw new Error(`Failed to load test audio file: ${audioFilename}`);
@@ -618,12 +723,9 @@ export const useVoiceToGemini = () => {
 
             const arrayBuffer = await response.arrayBuffer();
 
-            // Convert audio file to base64 PCM format
-            // Note: This assumes the file is already in the correct format (16kHz PCM)
-            // Convert Uint8Array to base64 in chunks to avoid stack overflow
             const uint8Array = new Uint8Array(arrayBuffer);
             let binaryString = '';
-            const chunkSize = 8192; // Process in 8KB chunks
+            const chunkSize = 8192;
             for (let i = 0; i < uint8Array.length; i += chunkSize) {
                 const chunk = uint8Array.slice(i, i + chunkSize);
                 binaryString += String.fromCharCode(...chunk);
@@ -633,16 +735,15 @@ export const useVoiceToGemini = () => {
             const audioMessage = {
                 realtimeInput: {
                     mediaChunks: [{
-                        mimeType: "audio/pcm;rate=16000",
+                        mimeType: 'audio/pcm;rate=16000',
                         data: base64Audio
                     }]
                 }
             };
 
-            console.log("Sending test audio chunk, size:", arrayBuffer.byteLength);
+            console.log('Sending test audio chunk, size:', arrayBuffer.byteLength);
             socketRef.current.send(JSON.stringify(audioMessage));
 
-            // Send completion signal
             setTimeout(() => {
                 const completionMessage = {
                     realtimeInput: {
@@ -650,11 +751,10 @@ export const useVoiceToGemini = () => {
                     }
                 };
                 socketRef.current.send(JSON.stringify(completionMessage));
-                console.log("Test audio completed, waiting for response...");
+                console.log('Test audio completed, waiting for response...');
             }, 100);
-
         } catch (error) {
-            console.error("Error sending test audio:", error);
+            console.error('Error sending test audio:', error);
             setIsError(true);
             setIsLoading(false);
         }
@@ -670,4 +770,3 @@ export const useVoiceToGemini = () => {
         sendTestAudio
     };
 };
-
