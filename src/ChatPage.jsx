@@ -30,8 +30,10 @@ function ChatPage() {
   const [isChatHistoryPopupVisible, setIsChatHistoryPopupVisible] = useState(false)
   const [isSignInModalVisible, setIsSignInModalVisible] = useState(false)
   const [isSettingsPopupVisible, setIsSettingsPopupVisible] = useState(false)
+  const [testAudioFiles, setTestAudioFiles] = useState([])
+  const [showTestPanel, setShowTestPanel] = useState(false)
   const inputRef = useRef(null)
-  const { isRecording, isPlaying, isLoading: isVoiceLoading, isError, startRecording, stopRecording } = useVoiceToGemini()
+  const { isRecording, isPlaying, isLoading: isVoiceLoading, isError, startRecording, stopRecording, sendTestAudio } = useVoiceToGemini()
 
   useEffect(() => {
     // Focus input field when component mounts
@@ -92,6 +94,20 @@ function ChatPage() {
 
     loadSession()
   }, [sessionId, user, navigate])
+
+  // Load test audio files in development mode
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      fetch('/test-audio/audio-files.json')
+        .then(response => response.json())
+        .then(data => {
+          setTestAudioFiles(data.testAudioFiles || [])
+        })
+        .catch(error => {
+          console.warn('Could not load test audio files:', error)
+        })
+    }
+  }, [])
 
 
   const handleSendMessage = async () => {
@@ -233,6 +249,18 @@ function ChatPage() {
     }
   }
 
+  const handleTestAudioClick = async (filename) => {
+    try {
+      await sendTestAudio(filename)
+    } catch (error) {
+      console.error('Error sending test audio:', error)
+    }
+  }
+
+  const toggleTestPanel = () => {
+    setShowTestPanel(!showTestPanel)
+  }
+
   return (
     <div className="chat-page">
       <div className="profile-icon" onClick={handleProfileClick}>
@@ -240,6 +268,94 @@ function ChatPage() {
           <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="white"/>
         </svg>
       </div>
+
+      {/* Development Test Audio Panel */}
+      {import.meta.env.DEV && (
+        <div className="test-audio-panel">
+          <button
+            className="test-panel-toggle"
+            onClick={toggleTestPanel}
+            style={{
+              position: 'fixed',
+              top: '20px',
+              right: '20px',
+              background: '#FFEB5B',
+              color: '#6B1FAD',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '8px 12px',
+              fontSize: '12px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              zIndex: 1000,
+              fontFamily: 'Hangyaboly, sans-serif'
+            }}
+          >
+            {showTestPanel ? 'Hide Test' : 'Test Audio'}
+          </button>
+
+          {showTestPanel && (
+            <div
+              className="test-audio-files"
+              style={{
+                position: 'fixed',
+                top: '60px',
+                right: '20px',
+                background: 'rgba(255, 255, 255, 0.95)',
+                border: '2px solid #6B1FAD',
+                borderRadius: '12px',
+                padding: '16px',
+                maxWidth: '200px',
+                zIndex: 1000,
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
+              }}
+            >
+              <h3 style={{
+                margin: '0 0 12px 0',
+                fontSize: '14px',
+                color: '#6B1FAD',
+                fontFamily: 'Hangyaboly, sans-serif'
+              }}>
+                Test Audio Files
+              </h3>
+              {testAudioFiles.length > 0 ? (
+                testAudioFiles.map((file, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleTestAudioClick(file.filename)}
+                    disabled={isVoiceLoading}
+                    style={{
+                      display: 'block',
+                      width: '100%',
+                      margin: '4px 0',
+                      padding: '8px 12px',
+                      background: isVoiceLoading ? '#ccc' : '#FFEB5B',
+                      color: '#6B1FAD',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontSize: '12px',
+                      cursor: isVoiceLoading ? 'not-allowed' : 'pointer',
+                      fontFamily: 'Hangyaboly, sans-serif'
+                    }}
+                  >
+                    {file.name}
+                  </button>
+                ))
+              ) : (
+                <p style={{
+                  margin: 0,
+                  fontSize: '12px',
+                  color: '#666',
+                  fontStyle: 'italic'
+                }}>
+                  No test audio files found.<br/>
+                  Add files to /public/test-audio/
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
       
       <div className="chat-content">
         <div className="character-container">

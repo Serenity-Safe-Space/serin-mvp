@@ -1,0 +1,16 @@
+{
+  "testAudioFiles": [
+    {
+      "name": "Message 1",
+      "filename": "message-1.wav"
+    },
+    {
+      "name": "Message 2",
+      "filename": "message-2.wav"
+    },
+    {
+      "name": "Message 3",
+      "filename": "message-3.wav"
+    }
+  ]
+}

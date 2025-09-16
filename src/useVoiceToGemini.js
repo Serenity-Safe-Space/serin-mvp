@@ -456,12 +456,182 @@ export const useVoiceToGemini = () => {
         console.log("Recording stopped, waiting for response...");
     };
 
-    return { 
-        isRecording, 
-        isPlaying, 
-        isLoading, 
-        isError, 
-        startRecording, 
-        stopRecording 
+    const sendTestAudio = async (audioFilename) => {
+        try {
+            setIsError(false);
+            setIsLoading(true);
+
+            console.log("Loading test audio file:", audioFilename);
+
+            // Ensure WebSocket is connected
+            if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {
+                // Initialize WebSocket connection
+                const websocketUrl = getWebSocketUrl();
+                socketRef.current = new WebSocket(websocketUrl);
+
+                await new Promise((resolve, reject) => {
+                    socketRef.current.onopen = () => {
+                        console.log("WebSocket connection established for test audio");
+
+                        const setupMessage = {
+                            setup: {
+                                model: "models/gemini-2.5-flash-preview-native-audio-dialog",
+                                generation_config: {
+                                    response_modalities: ["AUDIO"],
+                                    speech_config: {
+                                        voice_config: {
+                                            prebuilt_voice_config: {
+                                                voice_name: "Orus"
+                                            }
+                                        }
+                                    }
+                                },
+                                systemInstruction: {
+                                    parts: [
+                                        {
+                                            text: getSerinVoiceInstruction()
+                                        }
+                                    ]
+                                }
+                            }
+                        };
+
+                        socketRef.current.send(JSON.stringify(setupMessage));
+                        resolve();
+                    };
+
+                    socketRef.current.onerror = (error) => {
+                        console.error("WebSocket error:", error);
+                        reject(error);
+                    };
+
+                    socketRef.current.onclose = (event) => {
+                        console.log("WebSocket connection closed", event.code, event.reason);
+                        setIsLoading(false);
+                        setIsPlaying(false);
+                        audioQueueRef.current = [];
+                        isProcessingAudioRef.current = false;
+                        audioChunksRef.current = [];
+                        if (audioPlaybackTimeoutRef.current) {
+                            clearTimeout(audioPlaybackTimeoutRef.current);
+                            audioPlaybackTimeoutRef.current = null;
+                        }
+                    };
+
+                    socketRef.current.onmessage = async (event) => {
+                        try {
+                            let response;
+
+                            if (typeof event.data === 'string') {
+                                response = JSON.parse(event.data);
+                            } else if (event.data instanceof Blob) {
+                                const text = await event.data.text();
+                                response = JSON.parse(text);
+                            } else {
+                                console.warn('Unexpected data type:', typeof event.data);
+                                return;
+                            }
+
+                            console.log('Received response:', response);
+
+                            // Handle setup completion
+                            if (response.setupComplete) {
+                                console.log("Setup complete for test audio");
+                                return;
+                            }
+
+                            // Handle audio responses
+                            let audioProcessed = false;
+
+                            if (response.realtimeResponse?.parts) {
+                                const audioPart = response.realtimeResponse.parts.find(part =>
+                                    part.inlineData?.mimeType?.includes('audio')
+                                );
+
+                                if (audioPart && audioPart.inlineData?.data) {
+                                    console.log("Processing REALTIME audio chunk");
+                                    setIsLoading(false);
+                                    await handleAudioChunk(audioPart.inlineData.data, audioPart.inlineData.mimeType);
+                                    audioProcessed = true;
+                                }
+                            }
+
+                            if (!audioProcessed && response.serverContent?.modelTurn?.parts) {
+                                const audioPart = response.serverContent.modelTurn.parts.find(part =>
+                                    part.inlineData?.mimeType?.includes('audio')
+                                );
+
+                                if (audioPart && audioPart.inlineData?.data) {
+                                    console.log("Processing SERVER audio chunk");
+                                    setIsLoading(false);
+                                    await handleAudioChunk(audioPart.inlineData.data, audioPart.inlineData.mimeType);
+                                    audioProcessed = true;
+                                }
+                            }
+                        } catch (error) {
+                            console.error("Error processing audio response:", error);
+                        }
+                    };
+                });
+            }
+
+            // Load and send the test audio file
+            const response = await fetch(`/test-audio/${audioFilename}`);
+            if (!response.ok) {
+                throw new Error(`Failed to load test audio file: ${audioFilename}`);
+            }
+
+            const arrayBuffer = await response.arrayBuffer();
+
+            // Convert audio file to base64 PCM format
+            // Note: This assumes the file is already in the correct format (16kHz PCM)
+            // Convert Uint8Array to base64 in chunks to avoid stack overflow
+            const uint8Array = new Uint8Array(arrayBuffer);
+            let binaryString = '';
+            const chunkSize = 8192; // Process in 8KB chunks
+            for (let i = 0; i < uint8Array.length; i += chunkSize) {
+                const chunk = uint8Array.slice(i, i + chunkSize);
+                binaryString += String.fromCharCode(...chunk);
+            }
+            const base64Audio = btoa(binaryString);
+
+            const audioMessage = {
+                realtimeInput: {
+                    mediaChunks: [{
+                        mimeType: "audio/pcm;rate=16000",
+                        data: base64Audio
+                    }]
+                }
+            };
+
+            console.log("Sending test audio chunk, size:", arrayBuffer.byteLength);
+            socketRef.current.send(JSON.stringify(audioMessage));
+
+            // Send completion signal
+            setTimeout(() => {
+                const completionMessage = {
+                    realtimeInput: {
+                        mediaChunks: []
+                    }
+                };
+                socketRef.current.send(JSON.stringify(completionMessage));
+                console.log("Test audio completed, waiting for response...");
+            }, 100);
+
+        } catch (error) {
+            console.error("Error sending test audio:", error);
+            setIsError(true);
+            setIsLoading(false);
+        }
+    };
+
+    return {
+        isRecording,
+        isPlaying,
+        isLoading,
+        isError,
+        startRecording,
+        stopRecording,
+        sendTestAudio
     };
 };
