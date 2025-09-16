@@ -4,6 +4,24 @@ import { getSerinVoiceInstruction } from './utils/serinPrompt';
 const VAD_MIN_SPEECH_DURATION_MS = 250;
 const VAD_MAX_SILENCE_DURATION_MS = 1000;
 const VAD_VOICE_PROBABILITY = 0.8;
+const PCM_SILENCE_THRESHOLD = 500;
+
+const convertInt16ToBase64 = (pcmData) => {
+    if (!pcmData || pcmData.length === 0) {
+        return '';
+    }
+
+    const byteView = new Uint8Array(pcmData.buffer);
+    const chunkSize = 0x8000;
+    let binaryString = '';
+
+    for (let i = 0; i < byteView.length; i += chunkSize) {
+        const chunk = byteView.subarray(i, i + chunkSize);
+        binaryString += String.fromCharCode.apply(null, chunk);
+    }
+
+    return btoa(binaryString);
+};
 
 export const useVoiceToGemini = () => {
     const [isRecording, setIsRecording] = useState(false);
@@ -19,6 +37,7 @@ export const useVoiceToGemini = () => {
     const audioPlaybackTimeoutRef = useRef(null);
     const audioQueueRef = useRef([]);
     const isProcessingAudioRef = useRef(false);
+    const audioWorkletModuleLoadedRef = useRef(false);
 
     useEffect(() => {
         return () => {
@@ -30,6 +49,8 @@ export const useVoiceToGemini = () => {
             }
             if (audioContextRef.current) {
                 audioContextRef.current.close();
+                audioContextRef.current = null;
+                audioWorkletModuleLoadedRef.current = false;
             }
             if (audioPlaybackTimeoutRef.current) {
                 clearTimeout(audioPlaybackTimeoutRef.current);
@@ -130,60 +151,74 @@ export const useVoiceToGemini = () => {
                             await audioContext.resume();
                         }
                         
+                        if (!audioContext.audioWorklet) {
+                            throw new Error('AudioWorklet API is not supported in this browser.');
+                        }
+
+                        if (!audioWorkletModuleLoadedRef.current) {
+                            await audioContext.audioWorklet.addModule(new URL('./audio/pcmWorkletProcessor.js', import.meta.url));
+                            audioWorkletModuleLoadedRef.current = true;
+                        }
+
                         const source = audioContext.createMediaStreamSource(stream);
-                        const processor = audioContext.createScriptProcessor(4096, 1, 1);
-                        
+                        const workletNode = new AudioWorkletNode(audioContext, 'pcm-processor', {
+                            numberOfInputs: 1,
+                            numberOfOutputs: 1,
+                            outputChannelCount: [1],
+                            channelCount: 1
+                        });
+
                         let isProcessing = true;
-                        
-                        processor.onaudioprocess = (event) => {
-                            console.log("Audio process event triggered, isProcessing:", isProcessing, "WebSocket state:", socketRef.current?.readyState);
-                            
-                            if (socketRef.current?.readyState === WebSocket.OPEN && isProcessing) {
-                                const inputBuffer = event.inputBuffer;
-                                const inputData = inputBuffer.getChannelData(0);
-                                
-                                // Check if there's actual audio data
-                                let hasAudio = false;
-                                for (let i = 0; i < inputData.length; i++) {
-                                    if (Math.abs(inputData[i]) > 0.01) {
-                                        hasAudio = true;
-                                        break;
-                                    }
-                                }
-                                
-                                if (hasAudio) {
-                                    // Convert Float32Array to Int16Array (PCM)
-                                    const pcmData = new Int16Array(inputData.length);
-                                    for (let i = 0; i < inputData.length; i++) {
-                                        pcmData[i] = Math.max(-32768, Math.min(32767, inputData[i] * 32768));
-                                    }
-                                    
-                                    // Convert to base64
-                                    const base64Audio = btoa(String.fromCharCode(...new Uint8Array(pcmData.buffer)));
-                                    
-                                    const audioMessage = {
-                                        realtimeInput: {
-                                            mediaChunks: [{
-                                                mimeType: "audio/pcm;rate=16000",
-                                                data: base64Audio
-                                            }]
-                                        }
-                                    };
-                                    
-                                    console.log("Sending PCM audio chunk, size:", pcmData.length);
-                                    socketRef.current.send(JSON.stringify(audioMessage));
-                                } else {
-                                    console.log("Silent audio chunk, skipping");
+
+                        workletNode.port.onmessage = (event) => {
+                            if (!isProcessing || socketRef.current?.readyState !== WebSocket.OPEN) {
+                                return;
+                            }
+
+                            const rawData = event.data instanceof ArrayBuffer ? new Int16Array(event.data) : event.data;
+                            if (!rawData || rawData.length === 0) {
+                                return;
+                            }
+
+                            let hasAudio = false;
+                            for (let i = 0; i < rawData.length; i++) {
+                                if (Math.abs(rawData[i]) > PCM_SILENCE_THRESHOLD) {
+                                    hasAudio = true;
+                                    break;
                                 }
                             }
+
+                            if (!hasAudio) {
+                                return;
+                            }
+
+                            const base64Audio = convertInt16ToBase64(rawData);
+                            const audioMessage = {
+                                realtimeInput: {
+                                    mediaChunks: [{
+                                        mimeType: "audio/pcm;rate=16000",
+                                        data: base64Audio
+                                    }]
+                                }
+                            };
+
+                            console.log("Sending PCM audio chunk, size:", rawData.length);
+                            socketRef.current.send(JSON.stringify(audioMessage));
                         };
-                        
-                        // Store the processing flag so we can stop it
-                        const audioProcessor = { processor, source, isProcessing: () => isProcessing, stop: () => { isProcessing = false; } };
-                        
-                        source.connect(processor);
-                        processor.connect(audioContext.destination);
-                        
+
+                        const audioProcessor = {
+                            workletNode,
+                            source,
+                            isProcessing: () => isProcessing,
+                            stop: () => {
+                                isProcessing = false;
+                                workletNode.port.onmessage = null;
+                            }
+                        };
+
+                        source.connect(workletNode);
+                        workletNode.connect(audioContext.destination);
+
                         // Store the audio processor so we can stop it later
                         mediaRecorderRef.current = audioProcessor;
                         
@@ -242,10 +277,10 @@ export const useVoiceToGemini = () => {
                 console.log("WebSocket connection closed", event.code, event.reason);
                 
                 // Clean up Web Audio API components
-                if (mediaRecorderRef.current?.processor) {
+                if (mediaRecorderRef.current?.workletNode) {
                     console.log("Stopping audio processing due to WebSocket close");
-                    mediaRecorderRef.current.stop(); // Stop the processing flag
-                    mediaRecorderRef.current.processor.disconnect();
+                    mediaRecorderRef.current.stop();
+                    mediaRecorderRef.current.workletNode.disconnect();
                     mediaRecorderRef.current.source.disconnect();
                     mediaRecorderRef.current = null;
                 }
@@ -427,10 +462,10 @@ export const useVoiceToGemini = () => {
         setIsRecording(false);
         
         // Clean up Web Audio API components
-        if (mediaRecorderRef.current?.processor) {
+        if (mediaRecorderRef.current?.workletNode) {
             console.log("Stopping audio processing and disconnecting...");
-            mediaRecorderRef.current.stop(); // Stop the processing flag
-            mediaRecorderRef.current.processor.disconnect();
+            mediaRecorderRef.current.stop();
+            mediaRecorderRef.current.workletNode.disconnect();
             mediaRecorderRef.current.source.disconnect();
             mediaRecorderRef.current = null;
         }
@@ -635,3 +670,4 @@ export const useVoiceToGemini = () => {
         sendTestAudio
     };
 };
+
