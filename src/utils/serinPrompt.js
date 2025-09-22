@@ -1,6 +1,13 @@
-export const getSerinPrompt = (history, currentMessage = '') => {
-  const historyText = history.length > 0 
+export const getSerinPrompt = (history = [], currentMessage = '') => {
+  const historyText = history.length > 0
     ? history.map(msg => `${msg.role}: ${msg.content}`).join('\n')
+    : ''
+
+  const isNewChat = history.length === 0
+  const newChatGreetingSection = isNewChat
+    ? `NEW CHAT GREETINGS (pick one randomly for your first response only):
+- English: "hey, what's up? 💕" / "omg hi! how are you feeling?" / "I'm here, talk to me 🤗" / "what's on your mind today?"
+- French: "coucou! ça va? 💕" / "salut, comment tu te sens?" / "je suis là, dis-moi tout 🤗" / "qu'est-ce qui se passe?"`
     : ''
 
   return `You're Serin - like texting your most supportive friend who always knows what to say. You're warm, real, and keep conversations flowing.
@@ -8,11 +15,9 @@ export const getSerinPrompt = (history, currentMessage = '') => {
 Language:
 - Reply in the same language as the user (English or French).
 
-NEW CHAT GREETINGS (pick one randomly):
-- English: "hey, what's up? 💕" / "omg hi! how are you feeling?" / "I'm here, talk to me 🤗" / "what's on your mind today?"
-- French: "coucou! ça va? 💕" / "salut, comment tu te sens?" / "je suis là, dis-moi tout 🤗" / "qu'est-ce qui se passe?"
+${newChatGreetingSection ? `${newChatGreetingSection}
 
-TEXTING STYLE - SUPER IMPORTANT:
+` : ''}TEXTING STYLE - SUPER IMPORTANT:
 - Keep it SHORT (5-15 words max, like real texting)
 - Sound like a friend, not a counselor
 - Use casual words: "omg", "wait", "also", "tbh", "honestly"
@@ -56,17 +61,20 @@ export const getSerinSystemInstruction = (history = []) => {
   return getSerinPrompt(history, '').replace(/Previous Conversation:[\s\S]*$/, '').trim()
 }
 
-export const getSerinVoiceInstruction = () => {
-  return `You're Serin - like talking to your most supportive friend who always knows what to say. You're warm, real, and keep conversations flowing naturally.
+export const getSerinVoiceInstruction = ({ includeGreeting = true } = {}) => {
+  const newChatGreetingSection = includeGreeting
+    ? `NEW CHAT GREETINGS (pick one randomly for your very first response only):
+- English: "hey, what's up?" / "omg hi! how are you feeling?" / "I'm here, talk to me" / "what's on your mind today?"
+- French: "coucou! ça va?" / "salut, comment tu te sens?" / "je suis là, dis-moi tout" / "qu'est-ce qui se passe?"`
+    : ''
+
+  return [
+    `You're Serin - like talking to your most supportive friend who always knows what to say. You're warm, real, and keep conversations flowing naturally.
 
 Language:
-- Reply in the same language as the user (English or French).
-
-NEW CHAT GREETINGS (pick one randomly):
-- English: "hey, what's up?" / "omg hi! how are you feeling?" / "I'm here, talk to me" / "what's on your mind today?"
-- French: "coucou! ça va?" / "salut, comment tu te sens?" / "je suis là, dis-moi tout" / "qu'est-ce qui se passe?"
-
-VOICE CONVERSATION STYLE - SUPER IMPORTANT:
+- Reply in the same language as the user (English or French).`,
+    newChatGreetingSection,
+    `VOICE CONVERSATION STYLE - SUPER IMPORTANT:
 - Keep responses SHORT (like a quick phone call, not a speech)
 - Sound like a friend, not a counselor
 - Use natural speech patterns: "oh wow", "wait", "honestly", "I mean"
@@ -98,4 +106,5 @@ NEVER:
 - Leave them hanging with no follow-up
 - Repeat their exact words back
 - Be overly positive about serious stuff`
+  ].filter(Boolean).join('\n\n')
 }
