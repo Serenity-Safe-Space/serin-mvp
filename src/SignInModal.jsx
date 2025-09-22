@@ -3,26 +3,58 @@ import { useAuth } from './contexts/AuthContext'
 import './SignInModal.css'
 
 function SignInModal({ isVisible, onClose }) {
-  const { signIn, signUp, loading } = useAuth()
+  const { signIn, signUp, resetPassword, loading } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  const [isSignUp, setIsSignUp] = useState(false) // Default to Sign In
+  const [authMode, setAuthMode] = useState('signIn') // signIn | signUp | reset
   
   if (!isVisible) return null
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+  const isSignUp = authMode === 'signUp'
+  const isReset = authMode === 'reset'
+
+  const clearStatus = () => {
     setError('')
     setSuccess('')
+  }
 
-    if (!email || !password) {
+  const switchMode = (mode) => {
+    setAuthMode(mode)
+    clearStatus()
+    if (mode === 'reset') {
+      setPassword('')
+    }
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    clearStatus()
+
+    if (!email) {
+      setError('Please enter your email')
+      return
+    }
+
+    if (isReset) {
+      const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/reset-password` : undefined
+      const { error } = await resetPassword(email, redirectTo)
+
+      if (error) {
+        setError(error.message)
+      } else {
+        setSuccess('Password reset email sent! Check your inbox for the link.')
+      }
+      return
+    }
+
+    if (!password) {
       setError('Please fill in all fields')
       return
     }
 
-    if (password.length < 6) {
+    if (isSignUp && password.length < 6) {
       setError('Password must be at least 6 characters')
       return
     }
@@ -68,15 +100,8 @@ function SignInModal({ isVisible, onClose }) {
     onClose()
     setEmail('')
     setPassword('')
-    setError('')
-    setSuccess('')
-    setIsSignUp(false) // Reset to Sign In when closing
-  }
-
-  const toggleMode = () => {
-    setIsSignUp(!isSignUp)
-    setError('')
-    setSuccess('')
+    clearStatus()
+    setAuthMode('signIn')
   }
 
   return (
@@ -84,7 +109,9 @@ function SignInModal({ isVisible, onClose }) {
       <div className="signin-modal" onClick={(e) => e.stopPropagation()}>
         <div className="signin-modal-content">
           <div className="signin-modal-header">
-            <h2 className="signin-modal-title">{isSignUp ? 'Create Account' : 'Sign In'}</h2>
+            <h2 className="signin-modal-title">
+              {isSignUp ? 'Create Account' : isReset ? 'Reset Password' : 'Sign In'}
+            </h2>
             <button className="signin-modal-close" onClick={handleClose}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M18 6L6 18M6 6l12 12" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -92,22 +119,32 @@ function SignInModal({ isVisible, onClose }) {
             </button>
           </div>
 
-          <div className="auth-mode-toggle">
-            <button 
-              className={`toggle-btn ${!isSignUp ? 'active' : ''}`}
-              onClick={() => !isSignUp || toggleMode()}
+          {isReset ? (
+            <button
               type="button"
+              className="back-to-signin"
+              onClick={() => switchMode('signIn')}
             >
-              Sign In
+              Back to Sign In
             </button>
-            <button 
-              className={`toggle-btn ${isSignUp ? 'active' : ''}`}
-              onClick={() => isSignUp || toggleMode()}
-              type="button"
-            >
-              Sign Up
-            </button>
-          </div>
+          ) : (
+            <div className="auth-mode-toggle">
+              <button
+                className={`toggle-btn ${authMode === 'signIn' ? 'active' : ''}`}
+                onClick={() => authMode !== 'signIn' && switchMode('signIn')}
+                type="button"
+              >
+                Sign In
+              </button>
+              <button
+                className={`toggle-btn ${isSignUp ? 'active' : ''}`}
+                onClick={() => !isSignUp && switchMode('signUp')}
+                type="button"
+              >
+                Sign Up
+              </button>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="signin-form">
             <div className="form-group">
@@ -123,32 +160,53 @@ function SignInModal({ isVisible, onClose }) {
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="password">Password</label>
-              <input
-                type="password"
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
+            {!isReset && (
+              <div className="form-group">
+                <label htmlFor="password">Password</label>
+                <input
+                  type="password"
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  disabled={loading}
+                  required
+                  minLength="6"
+                />
+              </div>
+            )}
+
+            {authMode === 'signIn' && (
+              <button
+                type="button"
+                className="forgot-password-link"
+                onClick={() => switchMode('reset')}
                 disabled={loading}
-                required
-                minLength="6"
-              />
-            </div>
+              >
+                Forgot your password?
+              </button>
+            )}
 
             {error && <div className="error-message">{error}</div>}
             {success && <div className="success-message">{success}</div>}
 
             <button type="submit" className="signin-submit" disabled={loading}>
-              {loading ? 'Please wait...' : (isSignUp ? 'Create Account' : 'Sign In')}
+              {loading
+                ? 'Please wait...'
+                : isSignUp
+                  ? 'Create Account'
+                  : isReset
+                    ? 'Send Reset Link'
+                    : 'Sign In'}
             </button>
           </form>
 
           <p className="signin-info">
-            {isSignUp 
-              ? "Already have an account? Click 'Sign In' above." 
-              : "Don't have an account? Click 'Sign Up' above."
+            {isSignUp
+              ? "Already have an account? Click 'Sign In' above."
+              : isReset
+                ? 'Enter your account email and we will send you a reset link.'
+                : "Don't have an account? Click 'Sign Up' above."
             }
           </p>
         </div>

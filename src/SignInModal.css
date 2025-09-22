@@ -283,3 +283,38 @@
   margin-bottom: 0;
   line-height: 1.5;
 }
+
+.forgot-password-link {
+  background: none;
+  border: none;
+  color: #6b46c1;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  align-self: flex-end;
+}
+
+.forgot-password-link:hover:not(:disabled) {
+  color: #553c9a;
+}
+
+.forgot-password-link:disabled {
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.back-to-signin {
+  background: none;
+  border: none;
+  color: #6b46c1;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 0;
+  margin-bottom: 32px;
+}
+
+.back-to-signin:hover {
+  color: #553c9a;
+}
