@@ -49,7 +49,8 @@ const computeRms = (pcmData) => {
     return Math.sqrt(sum / pcmData.length);
 };
 
-export const useVoiceToGemini = () => {
+export const useVoiceToGemini = (options = {}) => {
+    const { onConversationUpdate } = options;
     const [isRecording, setIsRecording] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -71,6 +72,10 @@ export const useVoiceToGemini = () => {
         pendingChunks: []
     });
     const audioWorkletModuleLoadedRef = useRef(false);
+    const conversationTextBufferRef = useRef({
+        user: { text: '', emittedAt: 0 },
+        assistant: { text: '', emittedAt: 0 }
+    });
 
     useEffect(() => {
         return () => {
@@ -101,6 +106,7 @@ export const useVoiceToGemini = () => {
                 lastSpeechTs: 0,
                 pendingChunks: []
             };
+            resetConversationBuffers();
         };
     }, []);
 
@@ -111,6 +117,104 @@ export const useVoiceToGemini = () => {
             lastSpeechTs: 0,
             pendingChunks: []
         };
+    };
+
+    const resetConversationBuffers = () => {
+        conversationTextBufferRef.current = {
+            user: { text: '', emittedAt: 0 },
+            assistant: { text: '', emittedAt: 0 }
+        };
+    };
+
+    const emitConversationUpdate = (role, text) => {
+        if (typeof onConversationUpdate !== 'function') {
+            return;
+        }
+
+        const normalized = typeof text === 'string' ? text.trim() : '';
+
+        if (!normalized) {
+            return;
+        }
+
+        onConversationUpdate({ role, content: normalized });
+    };
+
+    const updateConversationBuffer = (role, text) => {
+        if (!text) {
+            return;
+        }
+
+        const normalized = text.trim();
+
+        if (!normalized) {
+            return;
+        }
+
+        const now = Date.now();
+        const existing = conversationTextBufferRef.current[role] || { text: '', emittedAt: 0 };
+
+        if (existing.text === normalized && now - existing.emittedAt < 750) {
+            return;
+        }
+
+        conversationTextBufferRef.current[role] = { text: normalized, emittedAt: now };
+        emitConversationUpdate(role, normalized);
+    };
+
+    const coalesceTextFromParts = (parts) => {
+        if (!Array.isArray(parts)) {
+            return '';
+        }
+
+        return parts
+            .map((part) => {
+                if (typeof part?.text === 'string') {
+                    return part.text;
+                }
+
+                const inlineData = part?.inlineData;
+                if (inlineData?.mimeType?.startsWith('text/') && typeof inlineData?.data === 'string') {
+                    try {
+                        return atob(inlineData.data);
+                    } catch (error) {
+                        console.warn('Failed to decode inline text data:', error);
+                        return '';
+                    }
+                }
+
+                return '';
+            })
+            .filter(Boolean)
+            .join(' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    };
+
+    const handleTextualSegments = (response) => {
+        if (!response) {
+            return;
+        }
+
+        if (response.realtimeResponse?.parts) {
+            const assistantText = coalesceTextFromParts(response.realtimeResponse.parts);
+            updateConversationBuffer('assistant', assistantText);
+        }
+
+        if (response.serverContent?.modelTurn?.parts) {
+            const assistantText = coalesceTextFromParts(response.serverContent.modelTurn.parts);
+            updateConversationBuffer('assistant', assistantText);
+        }
+
+        if (response.clientContent?.parts) {
+            const userText = coalesceTextFromParts(response.clientContent.parts);
+            updateConversationBuffer('user', userText);
+        }
+
+        if (response.serverContent?.clientTurn?.parts) {
+            const userText = coalesceTextFromParts(response.serverContent.clientTurn.parts);
+            updateConversationBuffer('user', userText);
+        }
     };
 
     const ensurePlaybackContext = async (sampleRate) => {
@@ -288,6 +392,7 @@ export const useVoiceToGemini = () => {
 
             streamRef.current = stream;
             resetVadState();
+            resetConversationBuffers();
 
             const websocketUrl = getWebSocketUrl();
             socketRef.current = new WebSocket(websocketUrl);
@@ -299,7 +404,7 @@ export const useVoiceToGemini = () => {
                     setup: {
                         model: 'models/gemini-2.5-flash-preview-native-audio-dialog',
                         generation_config: {
-                            response_modalities: ['AUDIO'],
+                            response_modalities: ['AUDIO', 'TEXT'],
                             speech_config: {
                                 voice_config: {
                                     prebuilt_voice_config: {
@@ -336,6 +441,7 @@ export const useVoiceToGemini = () => {
                     }
 
                     console.log('Received response:', response);
+                    handleTextualSegments(response);
 
                     if (response.setupComplete) {
                         console.log('Setup complete, starting Web Audio API recording...');
@@ -548,6 +654,7 @@ export const useVoiceToGemini = () => {
 
                 playbackStateRef.current = { nextStartTime: 0, activeSources: 0 };
                 resetVadState();
+                resetConversationBuffers();
 
                 setIsLoading(false);
                 setIsRecording(false);
@@ -586,6 +693,7 @@ export const useVoiceToGemini = () => {
         }
 
         resetVadState();
+        resetConversationBuffers();
 
         if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
             console.log('Sending completion signal...');
@@ -608,6 +716,7 @@ export const useVoiceToGemini = () => {
             setIsLoading(true);
 
             console.log('Loading test audio file:', audioFilename);
+            resetConversationBuffers();
 
             if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {
                 const websocketUrl = getWebSocketUrl();
@@ -621,7 +730,7 @@ export const useVoiceToGemini = () => {
                             setup: {
                                 model: 'models/gemini-2.5-flash-preview-native-audio-dialog',
                                 generation_config: {
-                                    response_modalities: ['AUDIO'],
+                                    response_modalities: ['AUDIO', 'TEXT'],
                                     speech_config: {
                                         voice_config: {
                                             prebuilt_voice_config: {
@@ -676,6 +785,7 @@ export const useVoiceToGemini = () => {
                             }
 
                             console.log('Received response:', response);
+                            handleTextualSegments(response);
 
                             if (response.setupComplete) {
                                 console.log('Setup complete for test audio');

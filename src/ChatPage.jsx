@@ -1,9 +1,11 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { useAuth } from './contexts/AuthContext'
 import { recordDailyActivity } from './lib/activityService'
 import { createChatSession, saveMessage, getChatSession } from './lib/chatHistoryService'
+import { analyzeMoodShift } from './lib/memoryAnalyzer'
+import { upsertMoodMemory } from './lib/memoryService'
 import { useVoiceToGemini } from './useVoiceToGemini'
 import { getSerinPrompt } from './utils/serinPrompt'
 import ProfilePopup from './ProfilePopup'
@@ -33,7 +35,107 @@ function ChatPage() {
   const [testAudioFiles, setTestAudioFiles] = useState([])
   const [showTestPanel, setShowTestPanel] = useState(false)
   const inputRef = useRef(null)
-  const { isRecording, isPlaying, isLoading: isVoiceLoading, isError, startRecording, stopRecording, sendTestAudio } = useVoiceToGemini()
+  const sessionIdRef = useRef(currentSessionId)
+  const userRef = useRef(user)
+  const pendingAnalysisRef = useRef(null)
+  const lastAnalyzedUserMessageRef = useRef(null)
+  const voiceTranscriptRef = useRef([])
+
+  const triggerMoodAnalysis = useCallback((history, source = 'text') => {
+    if (!userRef.current?.id || !Array.isArray(history)) {
+      return
+    }
+
+    const sanitizedHistory = history
+      .filter((message) => message && typeof message.content === 'string')
+      .map((message) => ({
+        role: message.role,
+        content: message.content.trim()
+      }))
+      .filter((message) => message.content.length > 0)
+
+    if (sanitizedHistory.length === 0) {
+      return
+    }
+
+    const recentHistory = sanitizedHistory.slice(-8)
+    const userMessages = recentHistory.filter((message) => message.role === 'user')
+
+    if (userMessages.length < 2) {
+      return
+    }
+
+    const lastUserMessage = userMessages[userMessages.length - 1]
+    const lastUserContent = lastUserMessage.content?.trim()
+
+    if (!lastUserContent) {
+      return
+    }
+
+    const cacheKey = `${source}:${lastUserContent}`
+
+    if (lastAnalyzedUserMessageRef.current === cacheKey) {
+      return
+    }
+
+    lastAnalyzedUserMessageRef.current = cacheKey
+
+    const analysisPromise = (async () => {
+      try {
+        const analysis = await analyzeMoodShift(recentHistory)
+
+        if (!analysis || !analysis.transitionDetected || analysis.confidence < 0.55) {
+          return
+        }
+
+        const result = await upsertMoodMemory({
+          userId: userRef.current.id,
+          sessionId: sessionIdRef.current,
+          triggerSummary: analysis.triggerSummary,
+          supportingQuote: analysis.supportingUserQuote,
+          keywords: analysis.keywords,
+          confidence: analysis.confidence
+        })
+
+        if (result.error) {
+          console.warn('Failed to store mood memory:', result.error)
+        }
+      } catch (error) {
+        console.error('Mood analysis pipeline error:', error)
+      }
+    })()
+
+    pendingAnalysisRef.current = analysisPromise
+
+    analysisPromise.finally(() => {
+      if (pendingAnalysisRef.current === analysisPromise) {
+        pendingAnalysisRef.current = null
+      }
+    })
+  }, [])
+
+  const handleVoiceConversationUpdate = useCallback((message) => {
+    if (!message || typeof message.content !== 'string') {
+      return
+    }
+
+    voiceTranscriptRef.current = [
+      ...voiceTranscriptRef.current,
+      {
+        role: message.role,
+        content: message.content.trim()
+      }
+    ].slice(-12)
+
+    if (message.role === 'user') {
+      const snapshot = voiceTranscriptRef.current.slice()
+      Promise.resolve().then(() => triggerMoodAnalysis(snapshot, 'voice'))
+    }
+  }, [triggerMoodAnalysis])
+
+  const { isRecording, isPlaying, isLoading: isVoiceLoading, isError, startRecording, stopRecording, sendTestAudio } = useVoiceToGemini({
+    onConversationUpdate: handleVoiceConversationUpdate
+  })
 
   useEffect(() => {
     // Focus input field when component mounts
@@ -41,6 +143,19 @@ function ChatPage() {
       inputRef.current.focus()
     }
   }, [])
+
+  useEffect(() => {
+    sessionIdRef.current = currentSessionId
+  }, [currentSessionId])
+
+  useEffect(() => {
+    userRef.current = user
+  }, [user])
+
+  useEffect(() => {
+    voiceTranscriptRef.current = []
+    lastAnalyzedUserMessageRef.current = null
+  }, [currentSessionId, user])
 
   // Load existing session if sessionId is provided
   useEffect(() => {
@@ -137,9 +252,14 @@ function ChatPage() {
         } else if (session) {
           sessionIdToUse = session.id
           setCurrentSessionId(session.id)
+          sessionIdRef.current = session.id
           // Update URL to include session ID
           navigate(`/chat/${session.id}`, { replace: true })
         }
+      }
+
+      if (sessionIdToUse) {
+        sessionIdRef.current = sessionIdToUse
       }
 
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" })
@@ -157,9 +277,10 @@ function ChatPage() {
         { role: 'user', content: userMessage },
         { role: 'assistant', content: response }
       ]
-      
+
       setChatHistory(newHistory)
       setCurrentMessage(response)
+      Promise.resolve().then(() => triggerMoodAnalysis(newHistory, 'text'))
 
       // Save messages to database if user is logged in and we have a session
       if (user && sessionIdToUse) {
