@@ -50,7 +50,7 @@ const computeRms = (pcmData) => {
 };
 
 export const useVoiceToGemini = (options = {}) => {
-    const { onConversationUpdate, voiceInstruction } = options;
+    const { onConversationUpdate } = options;
     const [isRecording, setIsRecording] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -124,23 +124,6 @@ export const useVoiceToGemini = (options = {}) => {
             user: { text: '', emittedAt: 0 },
             assistant: { text: '', emittedAt: 0 }
         };
-    };
-
-    const resolveVoiceInstruction = () => {
-        if (typeof voiceInstruction === 'function') {
-            try {
-                const candidate = voiceInstruction();
-                if (typeof candidate === 'string' && candidate.trim()) {
-                    return candidate.trim();
-                }
-            } catch (error) {
-                console.warn('voiceInstruction callback threw an error:', error);
-            }
-        } else if (typeof voiceInstruction === 'string' && voiceInstruction.trim()) {
-            return voiceInstruction.trim();
-        }
-
-        return getSerinVoiceInstruction();
     };
 
     const emitConversationUpdate = (role, text) => {
@@ -433,7 +416,7 @@ export const useVoiceToGemini = (options = {}) => {
                         systemInstruction: {
                             parts: [
                                 {
-                                    text: resolveVoiceInstruction()
+                                    text: getSerinVoiceInstruction()
                                 }
                             ]
                         }
@@ -759,7 +742,7 @@ export const useVoiceToGemini = (options = {}) => {
                                 systemInstruction: {
                                     parts: [
                                         {
-                                            text: resolveVoiceInstruction()
+                                            text: getSerinVoiceInstruction()
                                         }
                                     ]
                                 }

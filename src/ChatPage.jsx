@@ -5,10 +5,9 @@ import { useAuth } from './contexts/AuthContext'
 import { recordDailyActivity } from './lib/activityService'
 import { createChatSession, saveMessage, getChatSession } from './lib/chatHistoryService'
 import { analyzeMoodShift } from './lib/memoryAnalyzer'
-import { fetchMoodMemories, markMoodMemoryReferenced, upsertMoodMemory } from './lib/memoryService'
-import { buildConversationSnapshot, chooseMemory } from './lib/memorySelector'
+import { upsertMoodMemory } from './lib/memoryService'
 import { useVoiceToGemini } from './useVoiceToGemini'
-import { getSerinPrompt, getSerinVoiceInstruction } from './utils/serinPrompt'
+import { getSerinPrompt } from './utils/serinPrompt'
 import ProfilePopup from './ProfilePopup'
 import ChatHistoryPopup from './ChatHistoryPopup'
 import SignInModal from './SignInModal'
@@ -35,40 +34,12 @@ function ChatPage() {
   const [isSettingsPopupVisible, setIsSettingsPopupVisible] = useState(false)
   const [testAudioFiles, setTestAudioFiles] = useState([])
   const [showTestPanel, setShowTestPanel] = useState(false)
-  const [moodMemories, setMoodMemories] = useState([])
-  const [voiceInstructionOverride, setVoiceInstructionOverride] = useState('')
   const inputRef = useRef(null)
   const sessionIdRef = useRef(currentSessionId)
   const userRef = useRef(user)
   const pendingAnalysisRef = useRef(null)
   const lastAnalyzedUserMessageRef = useRef(null)
   const voiceTranscriptRef = useRef([])
-  const usedMemoryIdsRef = useRef(new Set())
-  const moodMemoriesRef = useRef([])
-  const pendingVoiceMemoryRef = useRef(null)
-
-  const upsertMemoryInState = useCallback((memory) => {
-    if (!memory?.id) {
-      return
-    }
-
-    setMoodMemories((prev) => {
-      const existingIndex = prev.findIndex((item) => item.id === memory.id)
-
-      if (existingIndex === -1) {
-        const updated = [memory, ...prev]
-        return updated.slice(0, 50)
-      }
-
-      const updated = [...prev]
-      updated[existingIndex] = { ...updated[existingIndex], ...memory }
-      return updated
-    })
-  }, [])
-
-  useEffect(() => {
-    moodMemoriesRef.current = moodMemories
-  }, [moodMemories])
 
   const triggerMoodAnalysis = useCallback((history, source = 'text') => {
     if (!userRef.current?.id || !Array.isArray(history)) {
@@ -128,8 +99,6 @@ function ChatPage() {
 
         if (result.error) {
           console.warn('Failed to store mood memory:', result.error)
-        } else if (result.memory) {
-          upsertMemoryInState(result.memory)
         }
       } catch (error) {
         console.error('Mood analysis pipeline error:', error)
@@ -143,7 +112,7 @@ function ChatPage() {
         pendingAnalysisRef.current = null
       }
     })
-  }, [upsertMemoryInState])
+  }, [])
 
   const handleVoiceConversationUpdate = useCallback((message) => {
     if (!message || typeof message.content !== 'string') {
@@ -161,53 +130,11 @@ function ChatPage() {
     if (message.role === 'user') {
       const snapshot = voiceTranscriptRef.current.slice()
       Promise.resolve().then(() => triggerMoodAnalysis(snapshot, 'voice'))
-
-      const structuredSnapshot = buildConversationSnapshot(snapshot)
-      const candidate = chooseMemory({
-        memories: moodMemoriesRef.current,
-        message: message.content,
-        snapshot: structuredSnapshot,
-        usedMemoryIds: usedMemoryIdsRef.current
-      })
-
-      if (candidate?.memory) {
-        const pending = pendingVoiceMemoryRef.current
-        if (!pending || pending.id !== candidate.memory.id) {
-          pendingVoiceMemoryRef.current = candidate.memory
-          setVoiceInstructionOverride(
-            getSerinVoiceInstruction({ includeGreeting: false, memory: candidate.memory })
-          )
-        }
-      }
-    } else if (message.role === 'assistant' && pendingVoiceMemoryRef.current) {
-      const referencedMemory = pendingVoiceMemoryRef.current
-      pendingVoiceMemoryRef.current = null
-      usedMemoryIdsRef.current.add(referencedMemory.id)
-      setVoiceInstructionOverride('')
-
-      const currentStateMemory = moodMemoriesRef.current.find((item) => item.id === referencedMemory.id)
-      const nextReferenceCount = (currentStateMemory?.reference_count ?? referencedMemory.reference_count ?? 0) + 1
-      const nowIso = new Date().toISOString()
-
-      upsertMemoryInState({
-        ...referencedMemory,
-        last_referenced_at: nowIso,
-        reference_count: nextReferenceCount
-      })
-
-      markMoodMemoryReferenced({
-        id: referencedMemory.id,
-        userId: userRef.current?.id,
-        referenceCount: nextReferenceCount - 1
-      }).catch((error) => {
-        console.warn('Failed to mark voice memory referenced:', error)
-      })
     }
-  }, [triggerMoodAnalysis, upsertMemoryInState])
+  }, [triggerMoodAnalysis])
 
   const { isRecording, isPlaying, isLoading: isVoiceLoading, isError, startRecording, stopRecording, sendTestAudio } = useVoiceToGemini({
-    onConversationUpdate: handleVoiceConversationUpdate,
-    voiceInstruction: voiceInstructionOverride
+    onConversationUpdate: handleVoiceConversationUpdate
   })
 
   useEffect(() => {
@@ -229,43 +156,6 @@ function ChatPage() {
     voiceTranscriptRef.current = []
     lastAnalyzedUserMessageRef.current = null
   }, [currentSessionId, user])
-
-  useEffect(() => {
-    usedMemoryIdsRef.current = new Set()
-    pendingVoiceMemoryRef.current = null
-    setVoiceInstructionOverride('')
-  }, [currentSessionId, user])
-
-  useEffect(() => {
-    if (!user?.id) {
-      setMoodMemories([])
-      moodMemoriesRef.current = []
-      return
-    }
-
-    let cancelled = false
-
-    const loadMemories = async () => {
-      const { memories, error } = await fetchMoodMemories(user.id, { limit: 50 })
-
-      if (cancelled) {
-        return
-      }
-
-      if (error) {
-        console.warn('Failed to load mood memories:', error)
-        return
-      }
-
-      setMoodMemories(memories)
-    }
-
-    loadMemories()
-
-    return () => {
-      cancelled = true
-    }
-  }, [user])
 
   // Load existing session if sessionId is provided
   useEffect(() => {
@@ -372,24 +262,9 @@ function ChatPage() {
         sessionIdRef.current = sessionIdToUse
       }
 
-      const pendingHistory = [
-        ...chatHistory,
-        { role: 'user', content: userMessage }
-      ]
-
-      const snapshot = buildConversationSnapshot(pendingHistory)
-      const candidate = chooseMemory({
-        memories: moodMemoriesRef.current,
-        message: userMessage,
-        snapshot,
-        usedMemoryIds: usedMemoryIdsRef.current
-      })
-
-      const memoryForPrompt = candidate?.memory
-
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" })
       
-      const prompt = getSerinPrompt(chatHistory, userMessage, { memory: memoryForPrompt })
+      const prompt = getSerinPrompt(chatHistory, userMessage)
       const result = await model.generateContent(prompt)
       const response = result.response.text()
       
@@ -406,28 +281,6 @@ function ChatPage() {
       setChatHistory(newHistory)
       setCurrentMessage(response)
       Promise.resolve().then(() => triggerMoodAnalysis(newHistory, 'text'))
-
-      if (memoryForPrompt && typeof response === 'string' && response.trim().length > 0) {
-        usedMemoryIdsRef.current.add(memoryForPrompt.id)
-
-        const existingMemory = moodMemoriesRef.current.find((item) => item.id === memoryForPrompt.id)
-        const nextReferenceCount = (existingMemory?.reference_count ?? memoryForPrompt.reference_count ?? 0) + 1
-        const nowIso = new Date().toISOString()
-
-        upsertMemoryInState({
-          ...memoryForPrompt,
-          last_referenced_at: nowIso,
-          reference_count: nextReferenceCount
-        })
-
-        markMoodMemoryReferenced({
-          id: memoryForPrompt.id,
-          userId: user?.id,
-          referenceCount: nextReferenceCount - 1
-        }).catch((error) => {
-          console.warn('Failed to mark memory referenced:', error)
-        })
-      }
 
       // Save messages to database if user is logged in and we have a session
       if (user && sessionIdToUse) {

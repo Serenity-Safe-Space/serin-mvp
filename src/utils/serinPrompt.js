@@ -1,30 +1,4 @@
-const formatMemoryContext = (memory) => {
-  if (!memory) {
-    return ''
-  }
-
-  const triggerSummary = memory.trigger_summary?.trim?.()
-  const supportingQuote = memory.supporting_quote?.trim?.()
-
-  if (!triggerSummary && !supportingQuote) {
-    return ''
-  }
-
-  const lines = ['Mention this gently, only if it naturally fits the moment.']
-
-  if (triggerSummary) {
-    lines.push(`• They once felt better after ${triggerSummary}.`)
-  }
-
-  if (supportingQuote) {
-    lines.push(`• Their words: "${supportingQuote}"`)
-  }
-
-  return lines.join('\n')
-}
-
-export const getSerinPrompt = (history = [], currentMessage = '', options = {}) => {
-  const { memory = null } = options
+export const getSerinPrompt = (history = [], currentMessage = '') => {
   const historyText = history.length > 0
     ? history.map(msg => `${msg.role}: ${msg.content}`).join('\n')
     : ''
@@ -34,12 +8,6 @@ export const getSerinPrompt = (history = [], currentMessage = '', options = {}) 
     ? `NEW CHAT GREETINGS (pick one randomly for your first response only):
 - English: "hey, what's up? 💕" / "omg hi! how are you feeling?" / "I'm here, talk to me 🤗" / "what's on your mind today?"
 - French: "coucou! ça va? 💕" / "salut, comment tu te sens?" / "je suis là, dis-moi tout 🤗" / "qu'est-ce qui se passe?"`
-    : ''
-
-  const memoryContext = formatMemoryContext(memory)
-  const memorySection = memoryContext
-    ? `FRIEND MEMORY REMINDER:
-${memoryContext}`
     : ''
 
   return `You're Serin - like texting your most supportive friend who always knows what to say. You're warm, real, and keep conversations flowing.
@@ -82,9 +50,7 @@ NEVER:
 - Repeat their exact words back
 - Be overly positive about serious stuff
 
-${memorySection ? `${memorySection}
-
-` : ''}Previous Conversation:
+Previous Conversation:
 ${historyText}
 
 Current Situation:
@@ -95,8 +61,7 @@ export const getSerinSystemInstruction = (history = []) => {
   return getSerinPrompt(history, '').replace(/Previous Conversation:[\s\S]*$/, '').trim()
 }
 
-export const getSerinVoiceInstruction = ({ includeGreeting = true, memory = null } = {}) => {
-  const memoryContext = formatMemoryContext(memory)
+export const getSerinVoiceInstruction = ({ includeGreeting = true } = {}) => {
   const newChatGreetingSection = includeGreeting
     ? `NEW CHAT GREETINGS (pick one randomly for your very first response only):
 - English: "hey, what's up?" / "omg hi! how are you feeling?" / "I'm here, talk to me" / "what's on your mind today?"
@@ -140,7 +105,6 @@ NEVER:
 - Sound like a therapist or life coach
 - Leave them hanging with no follow-up
 - Repeat their exact words back
-- Be overly positive about serious stuff`,
-    memoryContext
+- Be overly positive about serious stuff`
   ].filter(Boolean).join('\n\n')
 }
