@@ -401,18 +401,18 @@ export const useVoiceToGemini = (options = {}) => {
                 console.log('WebSocket connection established');
 
                 const setupMessage = {
-                    setup: {
-                        model: 'models/gemini-2.5-flash-preview-native-audio-dialog',
-                        generation_config: {
-                            response_modalities: ['AUDIO', 'TEXT'],
-                            speech_config: {
-                                voice_config: {
-                                    prebuilt_voice_config: {
-                                        voice_name: 'Orus'
+                            setup: {
+                                model: 'models/gemini-2.5-flash-preview-native-audio-dialog',
+                                generationConfig: {
+                                    responseModalities: ['AUDIO'],
+                                    speechConfig: {
+                                        voiceConfig: {
+                                            prebuiltVoiceConfig: {
+                                                voiceName: 'Orus'
+                                            }
+                                        }
                                     }
-                                }
-                            }
-                        },
+                                },
                         systemInstruction: {
                             parts: [
                                 {
@@ -729,12 +729,12 @@ export const useVoiceToGemini = (options = {}) => {
                         const setupMessage = {
                             setup: {
                                 model: 'models/gemini-2.5-flash-preview-native-audio-dialog',
-                                generation_config: {
-                                    response_modalities: ['AUDIO', 'TEXT'],
-                                    speech_config: {
-                                        voice_config: {
-                                            prebuilt_voice_config: {
-                                                voice_name: 'Orus'
+                                generationConfig: {
+                                    responseModalities: ['AUDIO'],
+                                    speechConfig: {
+                                        voiceConfig: {
+                                            prebuiltVoiceConfig: {
+                                                voiceName: 'Orus'
                                             }
                                         }
                                     }
