@@ -20,7 +20,7 @@ function ChatPage() {
   const { user } = useAuth()
   const { sessionId } = useParams()
   const navigate = useNavigate()
-  const [currentMessage, setCurrentMessage] = useState("Gotchu. Let's talk.")
+  const [currentMessage, setCurrentMessage] = useState("Let's Talk")
   const [inputValue, setInputValue] = useState('')
   const [chatHistory, setChatHistory] = useState([])
   const [currentSessionId, setCurrentSessionId] = useState(sessionId || null)
@@ -203,7 +203,7 @@ function ChatPage() {
         setCurrentSessionId(null)
         setHasStartedChat(false)
         setIsFirstMessage(true)
-        setCurrentMessage("Gotchu. Let's talk.")
+        setCurrentMessage("Let's Talk")
       }
     }
 
@@ -386,7 +386,7 @@ function ChatPage() {
     <div className="chat-page">
       <div className="profile-icon" onClick={handleProfileClick}>
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="white"/>
+          <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="#3C2A73"/>
         </svg>
       </div>
 
@@ -399,9 +399,9 @@ function ChatPage() {
             style={{
               position: 'fixed',
               top: '20px',
-              right: '20px',
+              right: '80px',
               background: '#FFEB5B',
-              color: '#6B1FAD',
+              color: '#3C2A73',
               border: 'none',
               borderRadius: '8px',
               padding: '8px 12px',
@@ -423,18 +423,18 @@ function ChatPage() {
                 top: '60px',
                 right: '20px',
                 background: 'rgba(255, 255, 255, 0.95)',
-                border: '2px solid #6B1FAD',
+                border: '2px solid #3C2A73',
                 borderRadius: '12px',
                 padding: '16px',
                 maxWidth: '200px',
                 zIndex: 1000,
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
               }}
             >
               <h3 style={{
                 margin: '0 0 12px 0',
                 fontSize: '14px',
-                color: '#6B1FAD',
+                color: '#3C2A73',
                 fontFamily: 'Hangyaboly, sans-serif'
               }}>
                 Test Audio Files
@@ -451,7 +451,7 @@ function ChatPage() {
                       margin: '4px 0',
                       padding: '8px 12px',
                       background: isVoiceLoading ? '#ccc' : '#FFEB5B',
-                      color: '#6B1FAD',
+                      color: '#3C2A73',
                       border: 'none',
                       borderRadius: '6px',
                       fontSize: '12px',
@@ -498,7 +498,7 @@ function ChatPage() {
                 <p className="thinking-indicator">Serin is thinking...</p>
               )}
               {!hasStartedChat && (
-                <h2 className="chat-subtitle">Mood's all yours – spill it</h2>
+                <h2 className="chat-subtitle">Your Safe Space</h2>
               )}
               {isRecording && (
                 <p className="thinking-indicator">Recording...</p>
@@ -515,39 +515,32 @@ function ChatPage() {
 
         <div className="chat-input-section">
           <div className="input-container">
-            <div className="input-icons">
-              <button 
-                className={`input-icon voice-icon ${isRecording ? 'recording' : ''}`} 
-                onClick={handleVoiceButtonClick}
-                disabled={isVoiceLoading}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z" fill={isRecording ? "#FF0000" : "#FFEB5B"}/>
-                </svg>
-              </button>
-              <button className="input-icon connection-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z" fill="#6B1FAD"/>
-                </svg>
-              </button>
-            </div>
-            <input 
+            <button
+              className={`input-icon voice-icon ${isRecording ? 'recording' : ''}`}
+              onClick={handleVoiceButtonClick}
+              disabled={isVoiceLoading}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z" fill={isRecording ? "#FF0000" : "#FFEB5B"}/>
+              </svg>
+            </button>
+            <input
               ref={inputRef}
-              type="text" 
-              placeholder="Write something" 
+              type="text"
+              placeholder="How are you feeling today?"
               className="chat-input"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
               disabled={isLoading}
             />
-            <button 
+            <button
               className="send-button"
               onClick={handleSendMessage}
               disabled={isLoading || !inputValue.trim()}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="#6B1FAD"/>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="#2D1F5C"/>
               </svg>
             </button>
           </div>
