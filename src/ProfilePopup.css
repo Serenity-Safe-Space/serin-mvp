@@ -13,12 +13,12 @@
 }
 
 .profile-popup {
-  background: white;
+  background: linear-gradient(180deg, #3C2A73 0%, #2D1F5C 100%);
   border-radius: 20px;
   width: 100%;
   max-width: 400px;
-  padding: 24px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  padding: 32px 24px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
   animation: slideIn 0.3s ease-out;
 }
 
@@ -61,36 +61,25 @@
 }
 
 .profile-popup-close:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.profile-popup-close svg path {
+  stroke: rgba(255, 255, 255, 0.8);
 }
 
 .profile-popup-content {
   text-align: center;
 }
 
-.profile-avatar {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  background: #8B7FD9;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 20px auto;
-}
-
-.avatar-character {
-  font-size: 60px;
-  line-height: 1;
-}
-
 .profile-name {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 900;
-  color: #6B1FAD;
-  margin: 0 0 32px 0;
+  color: #FFFFFF;
+  margin: 0 0 40px 0;
   font-family: 'Hangyaboly', sans-serif;
   text-align: center;
+  line-height: 1.3;
 }
 
 .profile-subtitle {
@@ -137,13 +126,13 @@
 .stat-number {
   font-size: 24px;
   font-weight: 900;
-  color: #6B1FAD;
+  color: #FFFFFF;
   font-family: 'Hangyaboly', sans-serif;
 }
 
 .stat-label {
   font-size: 14px;
-  color: #666;
+  color: rgba(255, 255, 255, 0.8);
   font-weight: 700;
   font-family: 'Hangyaboly', sans-serif;
 }
@@ -152,9 +141,9 @@
   width: 100%;
   padding: 18px;
   background: #FFEB5B;
-  color: #6B1FAD;
+  color: #2D1F5C;
   border: none;
-  border-radius: 25px;
+  border-radius: 50px;
   font-size: 18px;
   font-weight: 900;
   cursor: pointer;
@@ -171,21 +160,30 @@
 .settings-btn {
   width: 100%;
   padding: 18px;
-  background: #2D3A87;
+  background: transparent;
   color: white;
-  border: none;
-  border-radius: 25px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50px;
   font-size: 18px;
   font-weight: 900;
   cursor: pointer;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
   transition: all 0.2s ease;
   font-family: 'Hangyaboly', sans-serif;
 }
 
 .settings-btn:hover {
-  background: #252f73;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.8);
   transform: translateY(-1px);
+}
+
+.privacy-footer {
+  text-align: center;
+  margin-top: 8px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: 'Hangyaboly', sans-serif;
 }
 
 .instagram-btn {

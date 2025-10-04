@@ -47,11 +47,9 @@ function ProfilePopup({ isVisible, onClose, onSignInClick, onChatHistoryClick, o
         <div className="profile-popup-content">
           {user ? (
             <>
-              <div className="profile-avatar">
-                <div className="avatar-character">🦒</div>
-              </div>
-
-              <h3 className="profile-name">{user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'}</h3>
+              <h3 className="profile-name">
+                Hey {user.user_metadata?.full_name?.split(' ')[0] || user.email?.split('@')[0] || 'there'}, keep going you got this ✨
+              </h3>
 
               <div className="profile-stats">
                 <div className="stat-item">
@@ -74,8 +72,10 @@ function ProfilePopup({ isVisible, onClose, onSignInClick, onChatHistoryClick, o
               </div>
 
               <button className="chat-history-btn" onClick={onChatHistoryClick}>Chat History</button>
-              
+
               <button className="settings-btn" onClick={onSettingsClick}>Settings</button>
+
+              <div className="privacy-footer">We keep it private.</div>
             </>
           ) : (
             <div className="signed-out-content">
