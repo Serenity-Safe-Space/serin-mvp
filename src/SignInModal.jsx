@@ -109,14 +109,15 @@ function SignInModal({ isVisible, onClose }) {
       <div className="signin-modal" onClick={(e) => e.stopPropagation()}>
         <div className="signin-modal-content">
           <div className="signin-modal-header">
-            <h2 className="signin-modal-title">
-              {isSignUp ? 'Create Account' : isReset ? 'Reset Password' : 'Sign In'}
-            </h2>
             <button className="signin-modal-close" onClick={handleClose}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M18 6L6 18M6 6l12 12" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M18 6L6 18M6 6l12 12" stroke="rgba(255, 255, 255, 0.8)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
+            <h2 className="signin-modal-title">
+              {isSignUp ? 'Sign Up' : isReset ? 'Reset Password' : 'Sign In'}
+            </h2>
+            <p className="signin-modal-subtitle">We keep it private</p>
           </div>
 
           {isReset ? (
