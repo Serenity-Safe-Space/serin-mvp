@@ -178,6 +178,27 @@
   transform: translateY(-1px);
 }
 
+.sign-out-btn {
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  border: none;
+  border-radius: 50px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 12px;
+  transition: all 0.2s ease;
+  font-family: 'Hangyaboly', sans-serif;
+  text-decoration: none;
+}
+
+.sign-out-btn:hover {
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: underline;
+}
+
 .privacy-footer {
   text-align: center;
   margin-top: 8px;

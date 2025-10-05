@@ -17,7 +17,7 @@ function ProfilePopup({ isVisible, onClose, onSignInClick, onChatHistoryClick, o
 
   const loadUserActivity = async () => {
     if (!user) return
-    
+
     setLoadingActivity(true)
     try {
       const { count } = await getDaysActive(user.id)
@@ -28,6 +28,19 @@ function ProfilePopup({ isVisible, onClose, onSignInClick, onChatHistoryClick, o
       setDaysActive(1) // Fallback to 1 for signed-in users
     } finally {
       setLoadingActivity(false)
+    }
+  }
+
+  const handleSignOut = async () => {
+    try {
+      const { error } = await signOut()
+      if (error) {
+        console.error('Error signing out:', error)
+      } else {
+        onClose() // Close popup after successful sign out
+      }
+    } catch (error) {
+      console.error('Unexpected error during sign out:', error)
     }
   }
 
@@ -74,6 +87,8 @@ function ProfilePopup({ isVisible, onClose, onSignInClick, onChatHistoryClick, o
               <button className="chat-history-btn" onClick={onChatHistoryClick}>Chat History</button>
 
               <button className="settings-btn" onClick={onSettingsClick}>Settings</button>
+
+              <button className="sign-out-btn" onClick={handleSignOut}>Sign Out</button>
 
               <div className="privacy-footer">We keep it private.</div>
             </>
