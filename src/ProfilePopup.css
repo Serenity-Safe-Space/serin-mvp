@@ -13,13 +13,14 @@
 }
 
 .profile-popup {
-  background: linear-gradient(180deg, #3C2A73 0%, #2D1F5C 100%);
-  border-radius: 20px;
+  background: var(--profile-color-surface, #281E4F);
+  border-radius: 32px;
   width: 100%;
-  max-width: 400px;
-  padding: 32px 24px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  max-width: 360px;
+  padding: 44px 40px 36px;
+  box-shadow: 0 30px 60px rgba(40, 30, 79, 0.55);
   animation: slideIn 0.3s ease-out;
+  color: var(--profile-color-primary-text, #FFFFFF);
 }
 
 @keyframes slideIn {
@@ -36,230 +37,131 @@
 .profile-popup-header {
   display: flex;
   justify-content: flex-end;
-  align-items: center;
-  margin-bottom: 24px;
-}
-
-.profile-popup-title {
-  font-size: 28px;
-  font-weight: 900;
-  color: #6B1FAD;
-  margin: 0;
-  font-family: 'Hangyaboly', sans-serif;
+  margin-bottom: 12px;
+  width: 100%;
 }
 
 .profile-popup-close {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 8px;
-  border-radius: 50%;
+  padding: 6px;
+  border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .profile-popup-close:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .profile-popup-close svg path {
-  stroke: rgba(255, 255, 255, 0.8);
+  stroke: currentColor;
+  transition: stroke 0.2s ease;
 }
 
 .profile-popup-content {
-  text-align: center;
-}
-
-.profile-name {
-  font-size: 32px;
-  font-weight: 900;
-  color: #FFFFFF;
-  margin: 0 0 40px 0;
-  font-family: 'Hangyaboly', sans-serif;
-  text-align: center;
-  line-height: 1.3;
-}
-
-.profile-subtitle {
-  font-size: 16px;
-  color: #666;
-  margin: 0 0 32px 0;
-  font-family: 'Hangyaboly', sans-serif;
-}
-
-.profile-stats {
-  display: flex;
-  justify-content: space-around;
-  margin-bottom: 32px;
-  padding: 0 16px;
-}
-
-.stat-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  text-align: center;
 }
 
-.stat-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.profile-encouragement {
+  margin: 0 0 32px 0;
+  font-size: 30px;
+  line-height: 1.3;
+  font-weight: 900;
+  color: var(--profile-color-primary-text, #FFFFFF);
+  font-family: 'Hangyaboly', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
 
-.stat-icon.fire, .stat-icon.arrow {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  display: flex;
+.profile-encouragement span {
+  margin-left: 6px;
+}
+
+.profile-streak {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 12px;
   font-size: 20px;
-  background: transparent;
+  font-weight: 800;
+  color: var(--profile-color-primary-text, #FFFFFF);
+  margin-bottom: 36px;
+  font-family: 'Hangyaboly', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
 
-.stat-number {
-  font-size: 24px;
+.profile-streak-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  line-height: 1;
+  transform: translateY(-1px);
+}
+
+.profile-streak-value {
   font-weight: 900;
-  color: #FFFFFF;
-  font-family: 'Hangyaboly', sans-serif;
 }
 
-.stat-label {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.8);
+.profile-streak-label {
   font-weight: 700;
-  font-family: 'Hangyaboly', sans-serif;
+  letter-spacing: 0.01em;
 }
 
-.chat-history-btn {
+.profile-action {
   width: 100%;
-  padding: 18px;
-  background: #FFEB5B;
-  color: #2D1F5C;
-  border: none;
-  border-radius: 50px;
+  padding: 18px 24px;
+  border-radius: 999px;
   font-size: 18px;
   font-weight: 900;
   cursor: pointer;
-  margin-bottom: 16px;
-  transition: all 0.2s ease;
-  font-family: 'Hangyaboly', sans-serif;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+  font-family: 'Hangyaboly', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
 
-.chat-history-btn:hover {
-  background: #f5df4a;
-  transform: translateY(-1px);
-}
-
-.settings-btn {
-  width: 100%;
-  padding: 18px;
-  background: transparent;
-  color: white;
-  border: 2px solid rgba(255, 255, 255, 0.5);
-  border-radius: 50px;
-  font-size: 18px;
-  font-weight: 900;
-  cursor: pointer;
-  margin-bottom: 20px;
-  transition: all 0.2s ease;
-  font-family: 'Hangyaboly', sans-serif;
-}
-
-.settings-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.8);
-  transform: translateY(-1px);
-}
-
-.sign-out-btn {
-  width: 100%;
-  padding: 12px;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.6);
+.profile-action--primary {
+  background: var(--profile-color-accent, #FFEB5B);
+  color: var(--profile-color-accent-text, #281E4F);
   border: none;
-  border-radius: 50px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  margin-bottom: 12px;
-  transition: all 0.2s ease;
-  font-family: 'Hangyaboly', sans-serif;
-  text-decoration: none;
+  margin-bottom: 18px;
+  box-shadow: 0 16px 32px rgba(255, 235, 91, 0.35);
 }
 
-.sign-out-btn:hover {
-  color: rgba(255, 255, 255, 0.9);
-  text-decoration: underline;
+.profile-action--primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 20px 36px rgba(255, 235, 91, 0.4);
+}
+
+.profile-action--secondary {
+  background: transparent;
+  color: var(--profile-color-primary-text, #FFFFFF);
+  border: 2px solid var(--profile-color-outline, rgba(168, 156, 207, 0.5));
+  margin-bottom: 26px;
+}
+
+.profile-action--secondary:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--profile-color-secondary-text, #B5A8D6);
 }
 
 .privacy-footer {
   text-align: center;
-  margin-top: 8px;
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.7);
-  font-family: 'Hangyaboly', sans-serif;
-}
-
-.instagram-btn {
-  width: 100%;
-  padding: 18px;
-  background: white;
-  color: #6B1FAD;
-  border: 2px solid #6B1FAD;
-  border-radius: 25px;
-  font-size: 18px;
-  font-weight: 900;
-  cursor: pointer;
-  margin-bottom: 16px;
-  transition: all 0.2s ease;
-  font-family: 'Hangyaboly', sans-serif;
-}
-
-.instagram-btn:hover {
-  background: #f8f8fb;
-  transform: translateY(-1px);
-}
-
-
-.profile-footer {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.footer-btn {
-  flex: 1;
-  padding: 12px 16px;
-  background: none;
-  border: none;
-  color: #666;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: all 0.2s ease;
-  font-family: 'Hangyaboly', sans-serif;
-}
-
-.footer-btn:hover {
-  background: rgba(0, 0, 0, 0.05);
-  color: #4a4a5e;
+  color: var(--profile-color-secondary-text, #B5A8D6);
+  font-family: 'Hangyaboly', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
 
 .signed-out-content {
   text-align: center;
   padding: 20px 0;
+  width: 100%;
 }
 
 .signed-out-message {
@@ -267,77 +169,60 @@
 }
 
 .signed-out-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: #6B1FAD;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--profile-color-primary-text, #FFFFFF);
   margin: 0 0 12px 0;
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: 'Hangyaboly', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
 
 .signed-out-subtitle {
   font-size: 16px;
-  color: #666;
+  color: var(--profile-color-secondary-text, #B5A8D6);
   margin: 0;
   line-height: 1.4;
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: 'Hangyaboly', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
 
 .sign-in-btn {
   width: 100%;
-  padding: 16px;
-  background: #FFEB5B;
-  color: #6B1FAD;
+  padding: 18px 24px;
+  background: var(--profile-color-accent, #FFEB5B);
+  color: var(--profile-color-accent-text, #281E4F);
   border: none;
-  border-radius: 25px;
-  font-size: 16px;
-  font-weight: 600;
+  border-radius: 999px;
+  font-size: 18px;
+  font-weight: 900;
   cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: 'Hangyaboly', sans-serif;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  font-family: 'Hangyaboly', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
 
 .sign-in-btn:hover {
-  background: #f5df4a;
   transform: translateY(-1px);
+  box-shadow: 0 20px 36px rgba(255, 235, 91, 0.3);
+  background: var(--profile-color-accent, #FFEB5B);
 }
 
 @media (max-width: 480px) {
   .profile-popup {
-    padding: 20px;
-    margin: 10px;
+    padding: 32px 24px 28px;
   }
-  
-  .profile-stats {
-    padding: 0 8px;
+
+  .profile-encouragement {
+    font-size: 26px;
   }
-  
-  .stat-icon {
-    width: 36px;
-    height: 36px;
-  }
-  
-  .stat-number {
+
+  .profile-streak {
     font-size: 18px;
-  }
-  
-  .profile-footer {
-    flex-direction: column;
-    gap: 8px;
-  }
-  
-  .signed-out-content {
-    padding: 16px 0;
-  }
-  
-  .signed-out-message {
     margin-bottom: 28px;
   }
-  
-  .signed-out-title {
-    font-size: 18px;
+
+  .profile-action {
+    font-size: 17px;
   }
-  
-  .signed-out-subtitle {
-    font-size: 15px;
+
+  .sign-in-btn {
+    font-size: 17px;
   }
 }
