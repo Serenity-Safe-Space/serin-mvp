@@ -1,27 +1,26 @@
 .chat-history-popup-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background: rgba(0, 0, 0, 0.5);
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   z-index: 1000;
   padding: 20px;
 }
 
 .chat-history-popup {
-  background: white;
-  border-radius: 20px;
+  background: var(--chat-history-surface, #281E4F);
+  border-radius: 36px;
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
   max-height: 80vh;
-  padding: 24px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  padding: 44px 40px 32px;
+  box-shadow: 0 30px 60px rgba(40, 30, 79, 0.55);
+  color: var(--chat-history-primary-text, #FFFFFF);
   animation: slideIn 0.3s ease-out;
   overflow-y: auto;
+  position: relative;
 }
 
 @keyframes slideIn {
@@ -38,169 +37,258 @@
 .chat-history-header {
   display: flex;
   justify-content: flex-end;
-  align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 18px;
 }
 
 .chat-history-close {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 8px;
-  border-radius: 50%;
+  padding: 6px;
+  border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s ease;
+  color: rgba(255, 255, 255, 0.72);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .chat-history-close:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.92);
 }
 
 .chat-history-content {
-  text-align: center;
-}
-
-.chat-history-avatar {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  background: #FFEB5B;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 20px auto;
-  overflow: hidden;
-}
-
-.llama-image {
-  width: 80%;
-  height: 80%;
-  object-fit: cover;
-  object-position: center;
+  flex-direction: column;
+  align-items: stretch;
+  text-align: center;
+  gap: 24px;
 }
 
 .chat-history-title {
-  font-size: 32px;
+  margin: 0;
+  font-size: 36px;
   font-weight: 900;
-  color: #6B1FAD;
-  margin: 0 0 32px 0;
-  font-family: 'Hangyaboly', sans-serif;
+  line-height: 1.2;
+  color: var(--chat-history-primary-text, #FFFFFF);
+  font-family: 'Hangyaboly', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
 
 .chat-history-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-bottom: 32px;
+  gap: 18px;
 }
 
 .chat-history-item {
+  background: transparent;
+  border: 2px solid var(--chat-history-outline, #FFEB5B);
+  border-radius: 24px;
+  padding: 16px 22px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
-  border: 2px solid #FFEB5B;
-  border-radius: 25px;
-  background: white;
-  transition: all 0.2s ease;
+  justify-content: space-between;
+  color: var(--chat-history-primary-text, #FFFFFF);
   cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  font-family: 'Hangyaboly', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
 
 .chat-history-item:hover {
-  border-color: #f5df4a;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(255, 235, 91, 0.2);
+  box-shadow: 0 10px 24px rgba(255, 235, 91, 0.2);
+  background: rgba(255, 235, 91, 0.08);
 }
 
 .chat-preview {
-  font-size: 16px;
-  font-weight: 600;
-  color: #6B1FAD;
-  font-family: 'Hangyaboly', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
   text-align: left;
-  flex: 1;
+  margin-right: 16px;
+  color: inherit;
 }
 
 .chat-date {
-  font-size: 14px;
-  font-weight: 600;
-  color: #6B1FAD;
-  font-family: 'Hangyaboly', sans-serif;
-  margin-left: 16px;
-}
-
-.chat-history-footer {
   font-size: 16px;
   font-weight: 600;
-  color: #6B1FAD;
-  font-family: 'Hangyaboly', sans-serif;
-  margin-top: 24px;
+  color: var(--chat-history-secondary-text, #B5A8D6);
+  white-space: nowrap;
 }
 
-.chat-history-loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 40px 20px;
+.chat-history-loading,
+.chat-history-error,
+.chat-history-empty {
+  padding: 48px 20px;
   font-size: 16px;
-  font-weight: 600;
-  color: #6B1FAD;
-  font-family: 'Hangyaboly', sans-serif;
+  font-weight: 700;
+  color: var(--chat-history-secondary-text, #B5A8D6);
+  font-family: 'Hangyaboly', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
 
 .chat-history-error {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 40px 20px;
-  font-size: 16px;
-  font-weight: 600;
-  color: #d32f2f;
-  font-family: 'Hangyaboly', sans-serif;
-  text-align: center;
+  color: #FF7A72;
 }
 
 .chat-history-empty {
+  line-height: 1.5;
+}
+
+.chat-history-delete {
+  background: none;
+  border: none;
+  color: var(--chat-history-secondary-text, #B5A8D6);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Hangyaboly', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+.chat-history-delete:hover {
+  color: var(--chat-history-primary-text, #FFFFFF);
+  opacity: 0.9;
+}
+
+.chat-history-popup.is-confirming .chat-history-content,
+.chat-history-popup.is-confirming .chat-history-delete {
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+.chat-history-confirm-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(40, 30, 79, 0.85);
   display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  z-index: 2;
+}
+
+.chat-history-confirm-card {
+  width: 100%;
+  background: var(--chat-history-surface, #281E4F);
+  border-radius: 28px;
+  padding: 32px 28px 28px;
+  box-shadow: 0 18px 36px rgba(20, 12, 48, 0.45);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.chat-history-confirm-title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 900;
+  line-height: 1.4;
+  color: var(--chat-history-primary-text, #FFFFFF);
+  font-family: 'Hangyaboly', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.chat-history-confirm-error {
+  margin: -12px 0 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #FF7A72;
+  font-family: 'Hangyaboly', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.chat-history-confirm-actions {
+  display: flex;
+  gap: 16px;
   justify-content: center;
   align-items: center;
-  padding: 40px 20px;
-  font-size: 16px;
-  font-weight: 600;
-  color: #888;
-  font-family: 'Hangyaboly', sans-serif;
-  text-align: center;
-  line-height: 1.4;
+}
+
+.chat-history-confirm-btn {
+  flex: 1;
+  border-radius: 999px;
+  padding: 16px 18px;
+  font-size: 18px;
+  font-weight: 900;
+  font-family: 'Hangyaboly', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.chat-history-confirm-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+  transform: none;
+  box-shadow: none;
+}
+
+.chat-history-confirm-btn--cancel {
+  background: var(--chat-history-outline, #FFEB5B);
+  color: var(--chat-history-surface, #281E4F);
+  border-color: var(--chat-history-outline, #FFEB5B);
+  box-shadow: 0 12px 24px rgba(255, 235, 91, 0.35);
+}
+
+.chat-history-confirm-btn--cancel:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 28px rgba(255, 235, 91, 0.4);
+}
+
+.chat-history-confirm-btn--confirm {
+  background: transparent;
+  border-color: rgba(168, 156, 207, 0.6);
+  color: var(--chat-history-primary-text, #FFFFFF);
+}
+
+.chat-history-confirm-btn--confirm:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--chat-history-secondary-text, #B5A8D6);
 }
 
 @media (max-width: 480px) {
   .chat-history-popup {
-    padding: 20px;
-    margin: 10px;
-    max-height: 85vh;
+    padding: 32px 24px 28px;
+    max-width: 340px;
   }
-  
-  .chat-history-avatar {
-    width: 100px;
-    height: 100px;
-  }
-  
+
   .chat-history-title {
-    font-size: 28px;
+    font-size: 30px;
   }
-  
+
   .chat-history-item {
+    padding: 14px 18px;
+    border-radius: 22px;
+  }
+
+  .chat-preview {
+    font-size: 16px;
+  }
+
+  .chat-date {
+    font-size: 14px;
+  }
+
+  .chat-history-confirm-overlay {
+    padding: 24px 18px;
+  }
+
+  .chat-history-confirm-card {
+    padding: 26px 20px 22px;
+    gap: 22px;
+  }
+
+  .chat-history-confirm-title {
+    font-size: 22px;
+  }
+
+  .chat-history-confirm-btn {
+    font-size: 16px;
     padding: 14px 16px;
   }
-  
-  .chat-preview {
-    font-size: 15px;
-  }
-  
-  .chat-date {
-    font-size: 13px;
-    margin-left: 12px;
+
+  .chat-history-confirm-error {
+    font-size: 14px;
   }
 }

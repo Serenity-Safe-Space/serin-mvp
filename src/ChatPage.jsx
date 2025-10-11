@@ -340,11 +340,6 @@ function ChatPage() {
     setIsChatHistoryPopupVisible(false)
   }
 
-  const handleBackToProfile = () => {
-    setIsChatHistoryPopupVisible(false)
-    setIsProfilePopupVisible(true)
-  }
-
   const handleSelectChatHistory = (selectedSessionId) => {
     setIsChatHistoryPopupVisible(false)
     setIsProfilePopupVisible(false)
@@ -562,7 +557,6 @@ function ChatPage() {
       <ChatHistoryPopup 
         isVisible={isChatHistoryPopupVisible}
         onClose={handleCloseChatHistory}
-        onBackToProfile={handleBackToProfile}
         onSelectChat={handleSelectChatHistory}
       />
 

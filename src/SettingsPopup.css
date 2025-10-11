@@ -1,24 +1,22 @@
 .settings-popup-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background: rgba(0, 0, 0, 0.5);
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   z-index: 1000;
   padding: 20px;
 }
 
 .settings-popup {
-  background: white;
-  border-radius: 20px;
+  background: var(--settings-color-surface, #281E4F);
+  border-radius: 32px;
   width: 100%;
-  max-width: 400px;
-  padding: 24px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  max-width: 360px;
+  padding: 40px 36px 32px;
+  box-shadow: 0 30px 60px rgba(40, 30, 79, 0.55);
+  color: var(--settings-color-primary-text, #FFFFFF);
   animation: slideIn 0.3s ease-out;
 }
 
@@ -36,162 +34,189 @@
 .settings-popup-header {
   display: flex;
   justify-content: flex-end;
-  align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .settings-popup-close {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 8px;
-  border-radius: 50%;
+  padding: 6px;
+  border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s ease;
+  color: rgba(255, 255, 255, 0.72);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .settings-popup-close:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.92);
 }
 
 .settings-popup-content {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 28px;
+}
+
+.settings-heading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.settings-heading-icon {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--settings-color-accent, #FFEB5B);
 }
 
 .settings-title {
-  font-size: 48px;
-  font-weight: 800;
-  color: #6B1FAD;
   margin: 0;
-  text-align: left;
-  font-family: 'Hangyaboly', sans-serif;
-  line-height: 1.1;
+  font-size: 34px;
+  font-weight: 900;
+  line-height: 1.2;
+  font-family: 'Hangyaboly', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  color: var(--settings-color-primary-text, #FFFFFF);
 }
 
-.settings-list {
+.settings-panel {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 0;
+  border-radius: 24px;
+  background: rgba(40, 30, 79, 0.38);
+  padding: 8px 0;
 }
 
-.settings-item {
+.settings-row {
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  padding: 18px 24px;
+  text-align: left;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px;
-  background: white;
-  border: 3px solid #6B1FAD;
-  border-radius: 20px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  min-height: 80px;
-}
-
-.settings-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(107, 31, 173, 0.15);
-}
-
-.settings-item-content {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex: 1;
-}
-
-.settings-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.settings-icon.language-icon {
-  background: #4CAF50;
-  color: white;
-}
-
-.settings-icon.privacy-icon {
-  background: #6B1FAD;
-  color: white;
-}
-
-.settings-icon.contact-icon {
-  background: #FFEB5B;
-  color: #6B1FAD;
-}
-
-.settings-icon.alert-icon {
-  background: #FFEB5B;
-  color: #6B1FAD;
-}
-
-.settings-text {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.settings-main-text {
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 700;
-  color: #6B1FAD;
-  font-family: 'Hangyaboly', sans-serif;
   line-height: 1.2;
+  font-family: 'Hangyaboly', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  transition: background-color 0.2s ease;
 }
 
-.settings-sub-text {
-  font-size: 16px;
-  font-weight: 500;
-  color: #6B1FAD;
-  font-family: 'Hangyaboly', sans-serif;
-  line-height: 1.3;
-  opacity: 0.8;
+.settings-row:hover {
+  background: rgba(255, 255, 255, 0.04);
 }
 
-.settings-arrow {
-  display: flex;
+.settings-row--language {
+  cursor: default;
+}
+
+.settings-row--language:hover {
+  background: none;
+}
+
+.settings-row-label {
+  color: var(--settings-color-primary-text, #FFFFFF);
+  font-weight: 700;
+}
+
+.settings-language-toggle {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+  gap: 14px;
+  font-family: 'Hangyaboly', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.settings-language-button {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--settings-color-secondary-text, #A89CCF);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.settings-language-button:hover {
+  color: var(--settings-color-primary-text, #FFFFFF);
+}
+
+.settings-language-button.is-active {
+  color: var(--settings-color-primary-text, #FFFFFF);
+}
+
+.settings-language-separator {
+  color: var(--settings-color-secondary-text, #A89CCF);
+}
+
+.settings-divider {
+  height: 1px;
+  background: var(--settings-color-divider, rgba(168, 156, 207, 0.4));
+  margin: 0 24px;
+}
+
+.settings-signout {
+  width: 100%;
+  padding: 18px 24px;
+  border-radius: 999px;
+  border: none;
+  background: var(--settings-color-accent, #FFEB5B);
+  color: var(--settings-color-accent-text, #281E4F);
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+  font-family: 'Hangyaboly', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 16px 32px rgba(255, 235, 91, 0.35);
+}
+
+.settings-signout:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 20px 38px rgba(255, 235, 91, 0.42);
+}
+
+.settings-delete {
+  background: none;
+  border: none;
+  padding: 6px 0 0;
+  color: #FF7A72;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Hangyaboly', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  transition: opacity 0.2s ease;
+}
+
+.settings-delete:hover {
+  opacity: 0.85;
 }
 
 @media (max-width: 480px) {
   .settings-popup {
-    padding: 20px;
-    margin: 10px;
+    padding: 32px 24px 28px;
+    max-width: 320px;
   }
-  
+
   .settings-title {
-    font-size: 36px;
+    font-size: 30px;
   }
-  
-  .settings-item {
-    padding: 16px;
-    min-height: 70px;
+
+  .settings-row {
+    font-size: 17px;
+    padding: 16px 20px;
   }
-  
-  .settings-icon {
-    width: 40px;
-    height: 40px;
-  }
-  
-  .settings-main-text {
-    font-size: 20px;
-  }
-  
-  .settings-sub-text {
-    font-size: 14px;
-  }
-  
-  .settings-item-content {
-    gap: 12px;
+
+  .settings-signout {
+    font-size: 17px;
   }
 }
+

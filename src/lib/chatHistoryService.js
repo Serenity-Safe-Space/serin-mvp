@@ -230,3 +230,31 @@ export const deleteChatSession = async (sessionId, userId) => {
     return { success: false, error: error.message }
   }
 }
+
+/**
+ * Deletes all chat sessions for a user
+ * @param {string} userId - The user's ID
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export const deleteAllChatSessions = async (userId) => {
+  if (!userId) {
+    return { success: false, error: 'User ID is required' }
+  }
+
+  try {
+    const { error } = await supabase
+      .from('chat_sessions')
+      .delete()
+      .eq('user_id', userId)
+
+    if (error) {
+      console.error('Error deleting all chat sessions:', error)
+      return { success: false, error: error.message }
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error('Error in deleteAllChatSessions:', error)
+    return { success: false, error: error.message }
+  }
+}

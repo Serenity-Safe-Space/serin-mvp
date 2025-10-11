@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from './contexts/AuthContext'
-import { getUserChatSessions } from './lib/chatHistoryService'
+import { getUserChatSessions, deleteAllChatSessions } from './lib/chatHistoryService'
+import { SERIN_COLORS } from './utils/serinColors'
 import './ChatHistoryPopup.css'
 
-function ChatHistoryPopup({ isVisible, onClose, onBackToProfile, onSelectChat }) {
+function ChatHistoryPopup({ isVisible, onClose, onSelectChat }) {
   const { user } = useAuth()
   const [chatSessions, setChatSessions] = useState([])
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState(null)
+  const [loadError, setLoadError] = useState(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState(null)
 
   // Load chat sessions when popup becomes visible
   useEffect(() => {
@@ -15,17 +19,17 @@ function ChatHistoryPopup({ isVisible, onClose, onBackToProfile, onSelectChat })
       if (!isVisible || !user) return
       
       setIsLoading(true)
-      setError(null)
+      setLoadError(null)
       
       try {
         const { sessions, error } = await getUserChatSessions(user.id)
         if (error) {
-          setError(error)
+          setLoadError(error)
         } else {
           setChatSessions(sessions)
         }
       } catch (err) {
-        setError('Failed to load chat history')
+        setLoadError('Failed to load chat history')
         console.error('Error loading chat sessions:', err)
       } finally {
         setIsLoading(false)
@@ -37,54 +41,77 @@ function ChatHistoryPopup({ isVisible, onClose, onBackToProfile, onSelectChat })
 
   const formatDate = (dateString) => {
     const date = new Date(dateString)
-    const now = new Date()
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000)
-    const chatDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-    
-    const timeStr = date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
+    const month = date.toLocaleString('en-US', { month: 'short' })
+    const day = date.getDate()
+    const time = date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
       minute: '2-digit',
       hour12: false
     })
-    
-    if (chatDate.getTime() === today.getTime()) {
-      return `Today, ${timeStr}`
-    } else if (chatDate.getTime() === yesterday.getTime()) {
-      return `Yesterday, ${timeStr}`
-    } else {
-      return date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: false
-      })
-    }
+    return `${month} ${day} at ${time}`
   }
 
   const handleChatClick = (sessionId) => {
     onSelectChat(sessionId)
   }
 
+  const handleDeleteAll = () => {
+    setDeleteError(null)
+    setShowDeleteConfirm(true)
+  }
+
+  const handleCancelDelete = () => {
+    if (isDeleting) return
+    setShowDeleteConfirm(false)
+    setDeleteError(null)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!user || isDeleting) return
+
+    setIsDeleting(true)
+    setDeleteError(null)
+
+    try {
+      const { success, error: deleteError } = await deleteAllChatSessions(user.id)
+      if (!success && deleteError) {
+        setDeleteError(deleteError)
+        return
+      }
+
+      setChatSessions([])
+      setShowDeleteConfirm(false)
+    } catch (err) {
+      console.error('Error deleting all chat sessions:', err)
+      setDeleteError('Failed to delete your chat history. Please try again.')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   if (!isVisible) return null
 
   return (
     <div className="chat-history-popup-overlay" onClick={onClose}>
-      <div className="chat-history-popup" onClick={(e) => e.stopPropagation()}>
+      <div
+        className={`chat-history-popup${showDeleteConfirm ? ' is-confirming' : ''}`}
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          '--chat-history-surface': SERIN_COLORS.DEEP_SERIN_PURPLE.hex,
+          '--chat-history-primary-text': SERIN_COLORS.COOL_WHITE.hex,
+          '--chat-history-secondary-text': SERIN_COLORS.LILAC_GRAY.hex,
+          '--chat-history-outline': SERIN_COLORS.SUNBEAM_YELLOW.hex,
+        }}
+      >
         <div className="chat-history-header">
-          <button className="chat-history-close" onClick={onClose}>
+          <button className="chat-history-close" onClick={onClose} aria-label="Close chat history">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M18 6L6 18M6 6l12 12" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
         </div>
 
         <div className="chat-history-content">
-          <div className="chat-history-avatar">
-            <img src="/llama.png" alt="Serin the llama" className="llama-image" />
-          </div>
-
           <h2 className="chat-history-title">Chat History</h2>
 
           <div className="chat-history-list">
@@ -94,34 +121,72 @@ function ChatHistoryPopup({ isVisible, onClose, onBackToProfile, onSelectChat })
               </div>
             )}
             
-            {error && (
+            {loadError && (
               <div className="chat-history-error">
-                {error}
+                {loadError}
               </div>
             )}
             
-            {!isLoading && !error && chatSessions.length === 0 && (
+            {!isLoading && !loadError && chatSessions.length === 0 && (
               <div className="chat-history-empty">
                 No chat history yet. Start a conversation to see it here!
               </div>
             )}
             
-            {!isLoading && !error && chatSessions.map((session) => (
-              <div 
+            {!isLoading && !loadError && chatSessions.map((session) => (
+              <button
                 key={session.id} 
-                className="chat-history-item" 
+                className="chat-history-item"
+                type="button"
                 onClick={() => handleChatClick(session.id)}
               >
                 <div className="chat-preview">{session.title}</div>
                 <div className="chat-date">{formatDate(session.updated_at)}</div>
-              </div>
+              </button>
             ))}
           </div>
 
-          <div className="chat-history-footer">
-            Learn about my data
-          </div>
+          <button
+            type="button"
+            className="chat-history-delete"
+            onClick={handleDeleteAll}
+            disabled={showDeleteConfirm}
+          >
+            Delete all my history
+          </button>
         </div>
+        {showDeleteConfirm && (
+          <div className="chat-history-confirm-overlay" role="alertdialog" aria-modal="true">
+            <div className="chat-history-confirm-card">
+              <p className="chat-history-confirm-title">
+                Are you sure you want to delete everything?
+              </p>
+              {deleteError && (
+                <p className="chat-history-confirm-error" role="alert">
+                  {deleteError}
+                </p>
+              )}
+              <div className="chat-history-confirm-actions">
+                <button
+                  type="button"
+                  className="chat-history-confirm-btn chat-history-confirm-btn--cancel"
+                  onClick={handleCancelDelete}
+                  disabled={isDeleting}
+                >
+                  Oops, was a mistake
+                </button>
+                <button
+                  type="button"
+                  className="chat-history-confirm-btn chat-history-confirm-btn--confirm"
+                  onClick={handleConfirmDelete}
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? 'Deleting...' : 'Yes, I am sure'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
