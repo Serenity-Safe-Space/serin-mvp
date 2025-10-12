@@ -880,3 +880,9 @@ export const useVoiceToGemini = (options = {}) => {
         sendTestAudio
     };
 };
+
+export const __testables = {
+    convertInt16ToBase64,
+    parseSampleRateFromMime,
+    computeRms
+};
