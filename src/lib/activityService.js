@@ -40,34 +40,79 @@ export const recordDailyActivity = async (userId) => {
 }
 
 /**
- * Gets the number of unique days a user has been active
+ * Gets the user's current consecutive-day streak.
  * @param {string} userId - The user's ID
  * @returns {Promise<{count: number, error?: string}>}
  */
-export const getDaysActive = async (userId) => {
+export const getCurrentStreak = async (userId) => {
   if (!userId) {
     return { count: 0, error: 'User ID is required' }
   }
 
   try {
-    const { count, error } = await supabase
+    const { data, error } = await supabase
       .from('user_activity')
-      .select('*', { count: 'exact', head: true })
+      .select('activity_date')
       .eq('user_id', userId)
+      .order('activity_date', { ascending: false })
+      .limit(365)
 
     if (error) {
-      console.error('Error getting days active:', error)
+      console.error('Error getting current streak:', error)
       return { count: 0, error: error.message }
     }
 
-    // Ensure minimum of 1 if user has any activity, 0 if completely new
-    const activeCount = count || 0
-    return { count: activeCount }
+    const activityDates = (data || []).map(({ activity_date }) => activity_date).filter(Boolean)
+    if (activityDates.length === 0) {
+      return { count: 0 }
+    }
+
+    const parseDate = (dateString) => {
+      const [year, month, day] = dateString.split('-').map(Number)
+      return Date.UTC(year, month - 1, day)
+    }
+
+    const diffInDays = (newer, older) => {
+      return Math.round((parseDate(newer) - parseDate(older)) / 86400000)
+    }
+
+    const today = new Date().toISOString().split('T')[0]
+    const mostRecent = activityDates[0]
+    const daysSinceMostRecent = diffInDays(today, mostRecent)
+
+    if (daysSinceMostRecent > 1) {
+      return { count: 0 }
+    }
+
+    let streak = 1
+    let previousDate = mostRecent
+
+    for (let i = 1; i < activityDates.length; i += 1) {
+      const currentDate = activityDates[i]
+      const gap = diffInDays(previousDate, currentDate)
+
+      if (gap === 1) {
+        streak += 1
+        previousDate = currentDate
+        continue
+      }
+
+      // Any gap larger than a day breaks the streak
+      if (gap > 1) {
+        break
+      }
+      // Defensive: skip duplicates just in case the unique constraint is missing
+    }
+
+    return { count: streak }
   } catch (error) {
-    console.error('Error in getDaysActive:', error)
+    console.error('Error in getCurrentStreak:', error)
     return { count: 0, error: error.message }
   }
 }
+
+// Backwards compatibility export for existing callers
+export const getDaysActive = getCurrentStreak
 
 /**
  * Gets detailed activity data for a user (for debugging/analytics)

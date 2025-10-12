@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from './contexts/AuthContext'
 import { useLanguage } from './contexts/LanguageContext'
-import { getDaysActive } from './lib/activityService'
+import { getCurrentStreak } from './lib/activityService'
 import { SERIN_COLORS } from './utils/serinColors'
 import './ProfilePopup.css'
 
 function ProfilePopup({ isVisible, onClose, onSignInClick, onChatHistoryClick, onSettingsClick }) {
   const { user } = useAuth()
-  const [daysActive, setDaysActive] = useState(0)
+  const [currentStreak, setCurrentStreak] = useState(0)
   const [loadingActivity, setLoadingActivity] = useState(false)
   const { t } = useLanguage()
 
@@ -23,12 +23,11 @@ function ProfilePopup({ isVisible, onClose, onSignInClick, onChatHistoryClick, o
 
     setLoadingActivity(true)
     try {
-      const { count } = await getDaysActive(user.id)
-      // Ensure minimum of 1 if user is signed in (they're active today)
-      setDaysActive(Math.max(count, 1))
+      const { count } = await getCurrentStreak(user.id)
+      setCurrentStreak(count)
     } catch (error) {
       console.warn('Failed to load user activity:', error)
-      setDaysActive(1) // Fallback to 1 for signed-in users
+      setCurrentStreak(0)
     } finally {
       setLoadingActivity(false)
     }
@@ -41,7 +40,7 @@ function ProfilePopup({ isVisible, onClose, onSignInClick, onChatHistoryClick, o
     user?.email?.split('@')[0] ||
     t('profile.friendFallback')
 
-  const streakValue = loadingActivity ? '...' : daysActive
+  const streakValue = loadingActivity ? '...' : currentStreak
 
   return (
     <div className="profile-popup-overlay" onClick={onClose}>
