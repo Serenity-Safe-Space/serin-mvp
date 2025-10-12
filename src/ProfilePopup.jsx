@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from './contexts/AuthContext'
+import { useLanguage } from './contexts/LanguageContext'
 import { getDaysActive } from './lib/activityService'
 import { SERIN_COLORS } from './utils/serinColors'
 import './ProfilePopup.css'
@@ -8,6 +9,7 @@ function ProfilePopup({ isVisible, onClose, onSignInClick, onChatHistoryClick, o
   const { user } = useAuth()
   const [daysActive, setDaysActive] = useState(0)
   const [loadingActivity, setLoadingActivity] = useState(false)
+  const { t } = useLanguage()
 
   // Load user activity data when popup opens and user is signed in
   useEffect(() => {
@@ -37,7 +39,7 @@ function ProfilePopup({ isVisible, onClose, onSignInClick, onChatHistoryClick, o
   const firstName =
     user?.user_metadata?.full_name?.split(' ')[0] ||
     user?.email?.split('@')[0] ||
-    'friend'
+    t('profile.friendFallback')
 
   const streakValue = loadingActivity ? '...' : daysActive
 
@@ -67,7 +69,8 @@ function ProfilePopup({ isVisible, onClose, onSignInClick, onChatHistoryClick, o
           {user ? (
             <>
               <h3 className="profile-encouragement">
-                Keep going, {firstName}, you got this <span aria-hidden="true">✨</span>
+                {t('profile.encouragement', { name: firstName })}
+                <span aria-hidden="true">✨</span>
               </h3>
 
               <div className="profile-streak" role="status" aria-live="polite">
@@ -75,31 +78,31 @@ function ProfilePopup({ isVisible, onClose, onSignInClick, onChatHistoryClick, o
                   🦙
                 </span>
                 <span className="profile-streak-value">{streakValue}</span>
-                <span className="profile-streak-label">Streak</span>
+                <span className="profile-streak-label">{t('profile.streakLabel')}</span>
               </div>
 
               <button className="profile-action profile-action--primary" onClick={onChatHistoryClick}>
-                Chat history
+                {t('profile.chatHistory')}
               </button>
 
               <button className="profile-action profile-action--secondary" onClick={onSettingsClick}>
-                Settings
+                {t('profile.settings')}
               </button>
 
-              <div className="privacy-footer">We keep it private.</div>
+              <div className="privacy-footer">{t('profile.privacy')}</div>
             </>
           ) : (
             <div className="signed-out-content">
               <div className="signed-out-message">
                 <h3 className="signed-out-title">
-                  Hi there! <span aria-hidden="true">✨</span>
+                  {t('profile.signedOutTitle')} <span aria-hidden="true">✨</span>
                 </h3>
                 <p className="signed-out-subtitle">
-                  Create an account or sign in now to save your chats, keep your streak, and sync across devices.
+                  {t('profile.signedOutSubtitle')}
                 </p>
               </div>
               <button className="sign-in-btn" onClick={onSignInClick}>
-                Sign In
+                {t('profile.signIn')}
               </button>
             </div>
           )}

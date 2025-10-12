@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from './contexts/AuthContext'
+import { useLanguage } from './contexts/LanguageContext'
 import { getUserChatSessions, deleteAllChatSessions } from './lib/chatHistoryService'
 import { SERIN_COLORS } from './utils/serinColors'
 import './ChatHistoryPopup.css'
 
 function ChatHistoryPopup({ isVisible, onClose, onSelectChat }) {
   const { user } = useAuth()
+  const { t, language } = useLanguage()
   const [chatSessions, setChatSessions] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [loadError, setLoadError] = useState(null)
@@ -24,12 +26,12 @@ function ChatHistoryPopup({ isVisible, onClose, onSelectChat }) {
       try {
         const { sessions, error } = await getUserChatSessions(user.id)
         if (error) {
-          setLoadError(error)
+          setLoadError(error || t('chatHistory.errorLoad'))
         } else {
           setChatSessions(sessions)
         }
       } catch (err) {
-        setLoadError('Failed to load chat history')
+        setLoadError(t('chatHistory.errorLoad'))
         console.error('Error loading chat sessions:', err)
       } finally {
         setIsLoading(false)
@@ -37,18 +39,23 @@ function ChatHistoryPopup({ isVisible, onClose, onSelectChat }) {
     }
 
     loadChatSessions()
-  }, [isVisible, user])
+  }, [isVisible, t, user])
 
   const formatDate = (dateString) => {
     const date = new Date(dateString)
-    const month = date.toLocaleString('en-US', { month: 'short' })
-    const day = date.getDate()
-    const time = date.toLocaleTimeString('en-US', {
+    if (Number.isNaN(date.getTime())) {
+      return ''
+    }
+
+    const locale = language === 'fr' ? 'fr-FR' : 'en-US'
+    const dateFormatter = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric' })
+    const timeFormatter = new Intl.DateTimeFormat(locale, {
       hour: '2-digit',
       minute: '2-digit',
-      hour12: false
+      hour12: false,
     })
-    return `${month} ${day} at ${time}`
+
+    return `${dateFormatter.format(date)} ${t('chatHistory.dateSeparator')} ${timeFormatter.format(date)}`
   }
 
   const handleChatClick = (sessionId) => {
@@ -75,7 +82,7 @@ function ChatHistoryPopup({ isVisible, onClose, onSelectChat }) {
     try {
       const { success, error: deleteError } = await deleteAllChatSessions(user.id)
       if (!success && deleteError) {
-        setDeleteError(deleteError)
+        setDeleteError(deleteError || t('chatHistory.errorDelete'))
         return
       }
 
@@ -83,7 +90,7 @@ function ChatHistoryPopup({ isVisible, onClose, onSelectChat }) {
       setShowDeleteConfirm(false)
     } catch (err) {
       console.error('Error deleting all chat sessions:', err)
-      setDeleteError('Failed to delete your chat history. Please try again.')
+      setDeleteError(t('chatHistory.errorDelete'))
     } finally {
       setIsDeleting(false)
     }
@@ -104,7 +111,7 @@ function ChatHistoryPopup({ isVisible, onClose, onSelectChat }) {
         }}
       >
         <div className="chat-history-header">
-          <button className="chat-history-close" onClick={onClose} aria-label="Close chat history">
+          <button className="chat-history-close" onClick={onClose} aria-label={t('chatHistory.closeAria')}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
@@ -112,12 +119,12 @@ function ChatHistoryPopup({ isVisible, onClose, onSelectChat }) {
         </div>
 
         <div className="chat-history-content">
-          <h2 className="chat-history-title">Chat History</h2>
+          <h2 className="chat-history-title">{t('chatHistory.title')}</h2>
 
           <div className="chat-history-list">
             {isLoading && (
               <div className="chat-history-loading">
-                Loading your chats...
+                {t('chatHistory.loading')}
               </div>
             )}
             
@@ -129,7 +136,7 @@ function ChatHistoryPopup({ isVisible, onClose, onSelectChat }) {
             
             {!isLoading && !loadError && chatSessions.length === 0 && (
               <div className="chat-history-empty">
-                No chat history yet. Start a conversation to see it here!
+                {t('chatHistory.empty')}
               </div>
             )}
             
@@ -152,14 +159,14 @@ function ChatHistoryPopup({ isVisible, onClose, onSelectChat }) {
             onClick={handleDeleteAll}
             disabled={showDeleteConfirm}
           >
-            Delete all my history
+            {t('chatHistory.deleteAll')}
           </button>
         </div>
         {showDeleteConfirm && (
           <div className="chat-history-confirm-overlay" role="alertdialog" aria-modal="true">
             <div className="chat-history-confirm-card">
               <p className="chat-history-confirm-title">
-                Are you sure you want to delete everything?
+                {t('chatHistory.deleteConfirmTitle')}
               </p>
               {deleteError && (
                 <p className="chat-history-confirm-error" role="alert">
@@ -173,7 +180,7 @@ function ChatHistoryPopup({ isVisible, onClose, onSelectChat }) {
                   onClick={handleCancelDelete}
                   disabled={isDeleting}
                 >
-                  Oops, was a mistake
+                  {t('chatHistory.deleteConfirmCancel')}
                 </button>
                 <button
                   type="button"
@@ -181,7 +188,7 @@ function ChatHistoryPopup({ isVisible, onClose, onSelectChat }) {
                   onClick={handleConfirmDelete}
                   disabled={isDeleting}
                 >
-                  {isDeleting ? 'Deleting...' : 'Yes, I am sure'}
+                  {isDeleting ? t('chatHistory.deleteConfirmDeleting') : t('chatHistory.deleteConfirmConfirm')}
                 </button>
               </div>
             </div>

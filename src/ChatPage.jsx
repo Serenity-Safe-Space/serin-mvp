@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { useAuth } from './contexts/AuthContext'
+import { useLanguage } from './contexts/LanguageContext'
 import { recordDailyActivity } from './lib/activityService'
 import { createChatSession, saveMessage, getChatSession } from './lib/chatHistoryService'
 import { analyzeMoodShift } from './lib/memoryAnalyzer'
@@ -21,7 +22,8 @@ function ChatPage() {
   const { user } = useAuth()
   const { sessionId } = useParams()
   const navigate = useNavigate()
-  const [currentMessage, setCurrentMessage] = useState("Let's Talk")
+  const { t } = useLanguage()
+  const [currentMessage, setCurrentMessage] = useState(() => t('chat.initialGreeting'))
   const [inputValue, setInputValue] = useState('')
   const [chatHistory, setChatHistory] = useState([])
   const [currentSessionId, setCurrentSessionId] = useState(sessionId || null)
@@ -41,6 +43,12 @@ function ChatPage() {
   const pendingAnalysisRef = useRef(null)
   const lastAnalyzedUserMessageRef = useRef(null)
   const voiceTranscriptRef = useRef([])
+
+  useEffect(() => {
+    if (!hasStartedChat) {
+      setCurrentMessage(t('chat.initialGreeting'))
+    }
+  }, [hasStartedChat, t])
 
   const triggerMoodAnalysis = useCallback((history, source = 'text') => {
     if (!userRef.current?.id || !Array.isArray(history)) {
@@ -204,7 +212,6 @@ function ChatPage() {
         setCurrentSessionId(null)
         setHasStartedChat(false)
         setIsFirstMessage(true)
-        setCurrentMessage("Let's Talk")
       }
     }
 
@@ -297,7 +304,7 @@ function ChatPage() {
       }
     } catch (error) {
       console.error('Error calling Gemini API:', error)
-      setCurrentMessage("Sorry, I'm having trouble connecting right now. Try again in a moment.")
+      setCurrentMessage(t('chat.connectionError'))
     } finally {
       setIsLoading(false)
       // Focus the input field after response
@@ -408,7 +415,7 @@ function ChatPage() {
               fontFamily: 'Hangyaboly, sans-serif'
             }}
           >
-            {showTestPanel ? 'Hide Test' : 'Test Audio'}
+            {showTestPanel ? t('chat.devPanel.hide') : t('chat.devPanel.show')}
           </button>
 
           {showTestPanel && (
@@ -433,7 +440,7 @@ function ChatPage() {
                 color: '#3C2A73',
                 fontFamily: 'Hangyaboly, sans-serif'
               }}>
-                Test Audio Files
+                {t('chat.devPanel.title')}
               </h3>
               {testAudioFiles.length > 0 ? (
                 testAudioFiles.map((file, index) => (
@@ -459,14 +466,16 @@ function ChatPage() {
                   </button>
                 ))
               ) : (
-                <p style={{
-                  margin: 0,
-                  fontSize: '12px',
-                  color: '#666',
-                  fontStyle: 'italic'
-                }}>
-                  No test audio files found.<br/>
-                  Add files to /public/test-audio/
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: '12px',
+                    color: '#666',
+                    fontStyle: 'italic'
+                  }}
+                >
+                  {t('chat.devPanel.empty')}<br />
+                  {t('chat.devPanel.hint')}
                 </p>
               )}
             </div>
@@ -484,26 +493,26 @@ function ChatPage() {
 
         <div className="chat-title-section">
           {isLoadingSession ? (
-            <p className="thinking-indicator">Loading chat...</p>
+            <p className="thinking-indicator">{t('chat.statuses.loadingSession')}</p>
           ) : (
             <>
               <h1 className="chat-main-title">
                 {currentMessage}
               </h1>
               {(isLoading || isVoiceLoading) && hasStartedChat && (
-                <p className="thinking-indicator">Serin is thinking...</p>
+                <p className="thinking-indicator">{t('chat.statuses.thinking')}</p>
               )}
               {!hasStartedChat && (
-                <h2 className="chat-subtitle">Your Safe Space</h2>
+                <h2 className="chat-subtitle">{t('chat.subtitle')}</h2>
               )}
               {isRecording && (
-                <p className="thinking-indicator">Recording...</p>
+                <p className="thinking-indicator">{t('chat.statuses.recording')}</p>
               )}
               {isPlaying && (
-                <p className="thinking-indicator">Serin is speaking...</p>
+                <p className="thinking-indicator">{t('chat.statuses.speaking')}</p>
               )}
               {isError && (
-                <p className="error-message">Voice connection error. Please try again.</p>
+                <p className="error-message">{t('chat.statuses.voiceError')}</p>
               )}
             </>
           )}
@@ -557,7 +566,7 @@ function ChatPage() {
             <input
               ref={inputRef}
               type="text"
-              placeholder="How are you feeling today?"
+              placeholder={t('chat.inputPlaceholder')}
               className="chat-input"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
@@ -576,7 +585,7 @@ function ChatPage() {
           </div>
           
           <div className="privacy-notice">
-            <Link to="/privacy" className="privacy-link">Learn how we use your data</Link>
+            <Link to="/privacy" className="privacy-link">{t('chat.privacyLink')}</Link>
           </div>
         </div>
       </div>

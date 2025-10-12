@@ -1,13 +1,13 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext'
+import { useLanguage } from './contexts/LanguageContext'
 import { SERIN_COLORS } from './utils/serinColors'
 import './SettingsPopup.css'
 
 function SettingsPopup({ isVisible, onClose }) {
   const navigate = useNavigate()
   const { signOut } = useAuth()
-  const [selectedLanguage, setSelectedLanguage] = useState('EN')
+  const { language, setLanguage, t } = useLanguage()
 
   if (!isVisible) return null
 
@@ -38,10 +38,6 @@ function SettingsPopup({ isVisible, onClose }) {
     console.info('Delete account flow not implemented yet.')
   }
 
-  const handleLanguageSelect = (languageCode) => {
-    setSelectedLanguage(languageCode)
-  }
-
   return (
     <div className="settings-popup-overlay" onClick={onClose}>
       <div
@@ -57,7 +53,7 @@ function SettingsPopup({ isVisible, onClose }) {
         }}
       >
         <div className="settings-popup-header">
-          <button className="settings-popup-close" onClick={onClose} aria-label="Close settings">
+          <button className="settings-popup-close" onClick={onClose} aria-label={t('settings.closeAria')}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
@@ -77,33 +73,33 @@ function SettingsPopup({ isVisible, onClose }) {
                 />
               </svg>
             </span>
-            <h2 className="settings-title">Settings</h2>
+            <h2 className="settings-title">{t('settings.title')}</h2>
           </div>
 
           <div className="settings-panel">
             <button type="button" className="settings-row" onClick={handleChangePasswordClick}>
-              Change password
+              {t('settings.changePassword')}
             </button>
 
             <div className="settings-divider" aria-hidden="true" />
 
             <div className="settings-row settings-row--language">
-              <span className="settings-row-label">Language</span>
-              <div className="settings-language-toggle" role="group" aria-label="Language selection">
+              <span className="settings-row-label">{t('settings.language')}</span>
+              <div className="settings-language-toggle" role="group" aria-label={t('settings.languageAria')}>
                 <button
                   type="button"
-                  className={`settings-language-button${selectedLanguage === 'EN' ? ' is-active' : ''}`}
-                  onClick={() => handleLanguageSelect('EN')}
-                  aria-pressed={selectedLanguage === 'EN'}
+                  className={`settings-language-button${language === 'en' ? ' is-active' : ''}`}
+                  onClick={() => setLanguage('en')}
+                  aria-pressed={language === 'en'}
                 >
                   EN
                 </button>
                 <span className="settings-language-separator" aria-hidden="true">|</span>
                 <button
                   type="button"
-                  className={`settings-language-button${selectedLanguage === 'FR' ? ' is-active' : ''}`}
-                  onClick={() => handleLanguageSelect('FR')}
-                  aria-pressed={selectedLanguage === 'FR'}
+                  className={`settings-language-button${language === 'fr' ? ' is-active' : ''}`}
+                  onClick={() => setLanguage('fr')}
+                  aria-pressed={language === 'fr'}
                 >
                   FR
                 </button>
@@ -113,16 +109,16 @@ function SettingsPopup({ isVisible, onClose }) {
             <div className="settings-divider" aria-hidden="true" />
 
             <button type="button" className="settings-row" onClick={handlePrivacyClick}>
-              How we use your data
+              {t('settings.privacy')}
             </button>
           </div>
 
           <button type="button" className="settings-signout" onClick={handleSignOut}>
-            Sign out
+            {t('settings.signOut')}
           </button>
 
           <button type="button" className="settings-delete" onClick={handleDeleteAccount}>
-            Delete account
+            {t('settings.deleteAccount')}
           </button>
         </div>
       </div>

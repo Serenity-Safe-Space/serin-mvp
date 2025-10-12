@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from './lib/supabase'
+import { useLanguage } from './contexts/LanguageContext'
 import './ResetPassword.css'
 
 function ResetPassword() {
@@ -12,6 +13,7 @@ function ResetPassword() {
   const [isReady, setIsReady] = useState(false)
   const navigate = useNavigate()
   const redirectTimeoutRef = useRef(null)
+  const { t } = useLanguage()
 
   useEffect(() => {
     let isMounted = true
@@ -21,7 +23,7 @@ function ResetPassword() {
       if (!isMounted) return
 
       if (error) {
-        setError('Something went wrong while verifying your reset link. Please request a new email.')
+        setError(t('resetPassword.errors.verify'))
         return
       }
 
@@ -49,7 +51,7 @@ function ResetPassword() {
       isMounted = false
       listener?.subscription?.unsubscribe()
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     return () => {
@@ -65,17 +67,17 @@ function ResetPassword() {
     setSuccess('')
 
     if (newPassword.length < 6) {
-      setError('Password must be at least 6 characters long.')
+      setError(t('resetPassword.errors.length'))
       return
     }
 
     if (newPassword !== confirmPassword) {
-      setError('Passwords do not match.')
+      setError(t('resetPassword.errors.mismatch'))
       return
     }
 
     if (!isReady) {
-      setError('Your reset link is not active. Try opening the link again from your email.')
+      setError(t('resetPassword.errors.inactive'))
       return
     }
 
@@ -88,12 +90,12 @@ function ResetPassword() {
         return
       }
 
-      setSuccess('Your password has been updated! Redirecting you back to Serin…')
+      setSuccess(t('resetPassword.success'))
       setNewPassword('')
       setConfirmPassword('')
       redirectTimeoutRef.current = setTimeout(() => navigate('/'), 1500)
     } catch (err) {
-      setError(err.message || 'Failed to update password. Please try again.')
+      setError(err.message || t('resetPassword.errors.update'))
     } finally {
       setIsSubmitting(false)
     }
@@ -102,14 +104,14 @@ function ResetPassword() {
   return (
     <div className="reset-password-page">
       <div className="reset-card">
-        <h1 className="reset-title">Reset Password</h1>
+        <h1 className="reset-title">{t('resetPassword.title')}</h1>
         <p className="reset-subtitle">
-          Enter a new password for your account. We\'ll sign you in with the updated credentials.
+          {t('resetPassword.subtitle')}
         </p>
 
         {!isReady && !error && (
           <div className="reset-helper">
-            Verifying your reset link&hellip;
+            {t('resetPassword.verifying')}
           </div>
         )}
 
@@ -117,27 +119,27 @@ function ResetPassword() {
         {success && <div className="reset-success">{success}</div>}
 
         <form onSubmit={handleSubmit} className="reset-form">
-          <label className="reset-label" htmlFor="new-password">New password</label>
+          <label className="reset-label" htmlFor="new-password">{t('resetPassword.form.newPasswordLabel')}</label>
           <input
             type="password"
             id="new-password"
             className="reset-input"
             value={newPassword}
             onChange={(event) => setNewPassword(event.target.value)}
-            placeholder="Enter a new password"
+            placeholder={t('resetPassword.form.newPasswordPlaceholder')}
             disabled={isSubmitting}
             minLength={6}
             required
           />
 
-          <label className="reset-label" htmlFor="confirm-password">Confirm password</label>
+          <label className="reset-label" htmlFor="confirm-password">{t('resetPassword.form.confirmPasswordLabel')}</label>
           <input
             type="password"
             id="confirm-password"
             className="reset-input"
             value={confirmPassword}
             onChange={(event) => setConfirmPassword(event.target.value)}
-            placeholder="Re-enter the new password"
+            placeholder={t('resetPassword.form.confirmPasswordPlaceholder')}
             disabled={isSubmitting}
             minLength={6}
             required
@@ -148,7 +150,7 @@ function ResetPassword() {
             className="reset-submit"
             disabled={isSubmitting || !isReady}
           >
-            {isSubmitting ? 'Updating…' : 'Update Password'}
+            {isSubmitting ? t('resetPassword.buttons.submitLoading') : t('resetPassword.buttons.submitIdle')}
           </button>
         </form>
 
@@ -157,7 +159,7 @@ function ResetPassword() {
           className="reset-back"
           onClick={() => navigate('/')}
         >
-          Back to Serin
+          {t('resetPassword.buttons.back')}
         </button>
       </div>
     </div>

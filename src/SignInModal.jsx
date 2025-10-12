@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useAuth } from './contexts/AuthContext'
+import { useLanguage } from './contexts/LanguageContext'
 import './SignInModal.css'
 
 function SignInModal({ isVisible, onClose }) {
   const { signIn, signUp, resetPassword, loading } = useAuth()
+  const { t } = useLanguage()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -33,7 +35,7 @@ function SignInModal({ isVisible, onClose }) {
     clearStatus()
 
     if (!email) {
-      setError('Please enter your email')
+      setError(t('auth.errors.emailRequired'))
       return
     }
 
@@ -44,18 +46,18 @@ function SignInModal({ isVisible, onClose }) {
       if (error) {
         setError(error.message)
       } else {
-        setSuccess('Password reset email sent! Check your inbox for the link.')
+        setSuccess(t('auth.success.resetEmail'))
       }
       return
     }
 
     if (!password) {
-      setError('Please fill in all fields')
+      setError(t('auth.errors.fieldsRequired'))
       return
     }
 
     if (isSignUp && password.length < 6) {
-      setError('Password must be at least 6 characters')
+      setError(t('auth.errors.passwordLength'))
       return
     }
 
@@ -67,9 +69,9 @@ function SignInModal({ isVisible, onClose }) {
         setError(error.message)
       } else {
         if (data.user && !data.session) {
-          setSuccess('Account created! Please check your email to confirm your account before signing in.')
+          setSuccess(t('auth.success.signUpPending'))
         } else {
-          setSuccess('Account created and you are now signed in!')
+          setSuccess(t('auth.success.signUpComplete'))
           setTimeout(() => {
             onClose()
             setEmail('')
@@ -85,7 +87,7 @@ function SignInModal({ isVisible, onClose }) {
       if (error) {
         setError(error.message)
       } else {
-        setSuccess('Welcome back!')
+        setSuccess(t('auth.success.signIn'))
         setTimeout(() => {
           onClose()
           setEmail('')
@@ -115,9 +117,9 @@ function SignInModal({ isVisible, onClose }) {
               </svg>
             </button>
             <h2 className="signin-modal-title">
-              {isSignUp ? 'Sign Up' : isReset ? 'Reset Password' : 'Sign In'}
+              {isSignUp ? t('auth.titles.signUp') : isReset ? t('auth.titles.reset') : t('auth.titles.signIn')}
             </h2>
-            <p className="signin-modal-subtitle">We keep it private</p>
+            <p className="signin-modal-subtitle">{t('auth.subtitle')}</p>
           </div>
 
           {isReset ? (
@@ -126,7 +128,7 @@ function SignInModal({ isVisible, onClose }) {
               className="back-to-signin"
               onClick={() => switchMode('signIn')}
             >
-              Back to Sign In
+              {t('auth.backToSignIn')}
             </button>
           ) : (
             <div className="auth-mode-toggle">
@@ -135,27 +137,27 @@ function SignInModal({ isVisible, onClose }) {
                 onClick={() => authMode !== 'signIn' && switchMode('signIn')}
                 type="button"
               >
-                Sign In
+                {t('auth.toggle.signIn')}
               </button>
               <button
                 className={`toggle-btn ${isSignUp ? 'active' : ''}`}
                 onClick={() => !isSignUp && switchMode('signUp')}
                 type="button"
               >
-                Sign Up
+                {t('auth.toggle.signUp')}
               </button>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="signin-form">
             <div className="form-group">
-              <label htmlFor="email">Email</label>
+              <label htmlFor="email">{t('auth.form.emailLabel')}</label>
               <input
                 type="email"
                 id="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
+                placeholder={t('auth.form.emailPlaceholder')}
                 disabled={loading}
                 required
               />
@@ -163,13 +165,13 @@ function SignInModal({ isVisible, onClose }) {
 
             {!isReset && (
               <div className="form-group">
-                <label htmlFor="password">Password</label>
+                <label htmlFor="password">{t('auth.form.passwordLabel')}</label>
                 <input
                   type="password"
                   id="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder={t('auth.form.passwordPlaceholder')}
                   disabled={loading}
                   required
                   minLength="6"
@@ -184,7 +186,7 @@ function SignInModal({ isVisible, onClose }) {
                 onClick={() => switchMode('reset')}
                 disabled={loading}
               >
-                Forgot your password?
+                {t('auth.reset.link')}
               </button>
             )}
 
@@ -193,22 +195,21 @@ function SignInModal({ isVisible, onClose }) {
 
             <button type="submit" className="signin-submit" disabled={loading}>
               {loading
-                ? 'Please wait...'
+                ? t('auth.buttons.loading')
                 : isSignUp
-                  ? 'Create Account'
+                  ? t('auth.buttons.submitSignUp')
                   : isReset
-                    ? 'Send Reset Link'
-                    : 'Sign In'}
+                    ? t('auth.buttons.submitReset')
+                    : t('auth.buttons.submitSignIn')}
             </button>
           </form>
 
           <p className="signin-info">
             {isSignUp
-              ? "Already have an account? Click 'Sign In' above."
+              ? t('auth.info.signInPrompt')
               : isReset
-                ? 'Enter your account email and we will send you a reset link.'
-                : "Don't have an account? Click 'Sign Up' above."
-            }
+                ? t('auth.info.resetPrompt')
+                : t('auth.info.signUpPrompt')}
           </p>
         </div>
       </div>
