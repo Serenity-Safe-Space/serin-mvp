@@ -91,8 +91,12 @@ function ProfilePopup({ isVisible, onClose, onSignInClick, onChatHistoryClick, o
           ) : (
             <div className="signed-out-content">
               <div className="signed-out-message">
-                <h3 className="signed-out-title">You're not signed in</h3>
-                <p className="signed-out-subtitle">Sign in to track your wellbeing journey and access your personalized experience</p>
+                <h3 className="signed-out-title">
+                  Hi there! <span aria-hidden="true">✨</span>
+                </h3>
+                <p className="signed-out-subtitle">
+                  Create an account or sign in now to save your chats, keep your streak, and sync across devices.
+                </p>
               </div>
               <button className="sign-in-btn" onClick={onSignInClick}>
                 Sign In
