@@ -8,6 +8,7 @@ import { analyzeMoodShift } from './lib/memoryAnalyzer'
 import { upsertMoodMemory } from './lib/memoryService'
 import { useVoiceToGemini } from './useVoiceToGemini'
 import { getSerinPrompt } from './utils/serinPrompt'
+import { SERIN_COLORS } from './utils/serinColors'
 import ProfilePopup from './ProfilePopup'
 import ChatHistoryPopup from './ChatHistoryPopup'
 import SignInModal from './SignInModal'
@@ -515,8 +516,42 @@ function ChatPage() {
               onClick={handleVoiceButtonClick}
               disabled={isVoiceLoading}
             >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z" fill={isRecording ? "#FF0000" : "#FFEB5B"}/>
+              <svg
+                width="48"
+                height="48"
+                viewBox="0 0 64 64"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <circle
+                  cx="32"
+                  cy="32"
+                  r="28"
+                  fill={SERIN_COLORS.SUNBEAM_YELLOW.hex}
+                />
+                <rect
+                  x="26"
+                  y="12"
+                  width="12"
+                  height="28"
+                  rx="6"
+                  fill={SERIN_COLORS.DEEP_SERIN_PURPLE.hex}
+                />
+                <path
+                  d="M20 30v5c0 6.627 5.373 12 12 12s12-5.373 12-12v-5"
+                  fill="none"
+                  stroke={SERIN_COLORS.DEEP_SERIN_PURPLE.hex}
+                  strokeWidth="4.5"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M32 42v10"
+                  fill="none"
+                  stroke={SERIN_COLORS.DEEP_SERIN_PURPLE.hex}
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                />
               </svg>
             </button>
             <input
@@ -534,7 +569,7 @@ function ChatPage() {
               onClick={handleSendMessage}
               disabled={isLoading || !inputValue.trim()}
             >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="#2D1F5C"/>
               </svg>
             </button>
