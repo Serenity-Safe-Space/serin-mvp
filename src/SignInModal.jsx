@@ -4,13 +4,14 @@ import { useLanguage } from './contexts/LanguageContext'
 import './SignInModal.css'
 
 function SignInModal({ isVisible, onClose }) {
-  const { signIn, signUp, resetPassword, loading } = useAuth()
+  const { signIn, signUp, resetPassword, signInWithGoogle, loading } = useAuth()
   const { t } = useLanguage()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [authMode, setAuthMode] = useState('signIn') // signIn | signUp | reset
+  const [googleLoading, setGoogleLoading] = useState(false)
   
   if (!isVisible) return null
 
@@ -20,6 +21,7 @@ function SignInModal({ isVisible, onClose }) {
   const clearStatus = () => {
     setError('')
     setSuccess('')
+    setGoogleLoading(false)
   }
 
   const switchMode = (mode) => {
@@ -98,6 +100,34 @@ function SignInModal({ isVisible, onClose }) {
     }
   }
 
+  const handleGoogleSignIn = async () => {
+    clearStatus()
+    setGoogleLoading(true)
+
+    const redirectTo = typeof window !== 'undefined' ? window.location.origin : undefined
+    const { data, error } = await signInWithGoogle(redirectTo)
+
+    if (error) {
+      setError(error.message)
+      setGoogleLoading(false)
+      return
+    }
+
+    if (data?.url) {
+      if (typeof window !== 'undefined') {
+        if (typeof window.location?.assign === 'function') {
+          window.location.assign(data.url)
+        } else {
+          window.location.href = data.url
+        }
+      }
+      return
+    }
+
+    setSuccess(t('auth.success.oauthRedirect'))
+    setGoogleLoading(false)
+  }
+
   const handleClose = () => {
     onClose()
     setEmail('')
@@ -145,6 +175,24 @@ function SignInModal({ isVisible, onClose }) {
                 type="button"
               >
                 {t('auth.toggle.signUp')}
+              </button>
+            </div>
+          )}
+
+          {!isReset && (
+            <div className="oauth-buttons">
+              <button
+                type="button"
+                className="oauth-button oauth-google"
+                onClick={handleGoogleSignIn}
+                disabled={loading || googleLoading}
+              >
+                <span className="oauth-icon" aria-hidden="true">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M21.35 11.1H12.2v2.96h5.22c-.23 1.33-1.4 3.9-5.22 3.9-3.14 0-5.7-2.6-5.7-5.82s2.56-5.82 5.7-5.82c1.79 0 3 .76 3.69 1.41l2.52-2.42C16.84 3.5 14.7 2.6 12.2 2.6 6.94 2.6 2.7 6.84 2.7 12.1s4.24 9.5 9.5 9.5c5.49 0 9.12-3.86 9.12-9.3 0-.62-.07-1.1-.17-1.6z" fill="#4285F4"/>
+                  </svg>
+                </span>
+                <span>{googleLoading ? t('auth.buttons.redirecting') : t('auth.buttons.continueWithGoogle')}</span>
               </button>
             </div>
           )}

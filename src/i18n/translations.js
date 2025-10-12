@@ -81,6 +81,7 @@ export const translations = {
         signUpComplete: 'Account created and you are now signed in!',
         signIn: 'Welcome back!',
         resetEmail: 'Password reset email sent! Check your inbox for the link.',
+        oauthRedirect: 'Redirecting you to Google...',
       },
       form: {
         emailLabel: 'Email',
@@ -97,6 +98,8 @@ export const translations = {
         submitSignUp: 'Create Account',
         submitReset: 'Send Reset Link',
         loading: 'Please wait...',
+        continueWithGoogle: 'Continue with Google',
+        redirecting: 'Redirecting...',
       },
       info: {
         signUpPrompt: "Don't have an account? Click 'Sign Up' above.",
@@ -219,6 +222,7 @@ export const translations = {
         signUpComplete: 'Compte créé : te voilà connecté(e) !',
         signIn: 'Ravi de te revoir !',
         resetEmail: 'E-mail de réinitialisation envoyé ! Vérifie ta boîte de réception.',
+        oauthRedirect: 'Redirection vers Google...',
       },
       form: {
         emailLabel: 'E-mail',
@@ -235,6 +239,8 @@ export const translations = {
         submitSignUp: 'Créer mon compte',
         submitReset: 'Envoyer le lien de réinitialisation',
         loading: 'Merci de patienter...',
+        continueWithGoogle: 'Continuer avec Google',
+        redirecting: 'Redirection...',
       },
       info: {
         signUpPrompt: 'Pas encore de compte ? Clique sur « Créer un compte » ci-dessus.',

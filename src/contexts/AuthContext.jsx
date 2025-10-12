@@ -33,9 +33,16 @@ export const AuthProvider = ({ children }) => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        setUser(session?.user ?? null)
+        const authedUser = session?.user ?? null
+        setUser(authedUser)
         setLoading(false)
-      }
+
+        if (authedUser && event === 'SIGNED_IN') {
+          recordDailyActivity(authedUser.id).catch(error =>
+            console.warn('Failed to record daily activity after OAuth:', error),
+          )
+        }
+      },
     )
 
     return () => subscription.unsubscribe()
@@ -104,6 +111,30 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  const signInWithGoogle = async (redirectTo) => {
+    setLoading(true)
+    try {
+      const options = {}
+      if (redirectTo) {
+        options.redirectTo = redirectTo
+      } else if (typeof window !== 'undefined') {
+        options.redirectTo = window.location.origin
+      }
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options,
+      })
+      if (error) throw error
+
+      return { data, error: null }
+    } catch (error) {
+      return { data: null, error }
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const resetPassword = async (email, redirectTo) => {
     setLoading(true)
     try {
@@ -124,6 +155,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     signUp,
     signIn,
+    signInWithGoogle,
     signOut,
     resetPassword,
   }
