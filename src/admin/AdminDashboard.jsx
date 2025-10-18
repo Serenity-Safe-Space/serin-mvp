@@ -178,30 +178,32 @@ const AdminDashboard = () => {
   }, [userTableState])
 
   const overviewCards = useMemo(() => {
-    const formatCount = (state, decimals = 0) => {
-      if (state.status === 'loading') return '...'
-      if (state.status === 'error' || typeof state.value !== 'number') return 'ERR'
-      return state.value.toLocaleString(undefined, {
-        minimumFractionDigits: decimals,
-        maximumFractionDigits: decimals,
-      })
-    }
+    const buildCard = (title, state, formatter, subtitle) => {
+      const { status, value } = state
+      let displayValue = null
 
-    const formatDuration = (state) => {
-      if (state.status === 'loading') return '...'
-      if (state.status === 'error' || typeof state.value !== 'number') return 'ERR'
+      if (status === 'success' && typeof value === 'number') {
+        displayValue = formatter(value)
+      }
 
-      const roundedSeconds = Math.max(0, Math.round(state.value))
-      const minutes = Math.floor(roundedSeconds / 60)
-      const seconds = roundedSeconds % 60
-      return `${minutes}m ${seconds.toString().padStart(2, '0')}s`
+      return {
+        title,
+        subtitle,
+        status,
+        displayValue,
+      }
     }
 
     return [
-      { title: 'Total Users', value: formatCount(totalUsersState), subtitle: 'All Time' },
-      { title: 'Active Users', value: formatCount(activeUsersState), subtitle: 'Past 7 Days' },
-      { title: 'Avg Daily', value: formatCount(avgDailyUsersState, 1), subtitle: 'Unique / Day (7d Avg)' },
-      { title: 'Avg Session', value: formatDuration(avgSessionDurationState), subtitle: 'Duration (7d Avg)' },
+      buildCard('Total Users', totalUsersState, (val) => val.toLocaleString(), 'All Time'),
+      buildCard('Active Users', activeUsersState, (val) => val.toLocaleString(), 'Past 7 Days'),
+      buildCard('Avg Daily', avgDailyUsersState, (val) => val.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }), 'Unique / Day (7d Avg)'),
+      buildCard('Avg Session', avgSessionDurationState, (val) => {
+        const roundedSeconds = Math.max(0, Math.round(val))
+        const minutes = Math.floor(roundedSeconds / 60)
+        const seconds = roundedSeconds % 60
+        return `${minutes}m ${seconds.toString().padStart(2, '0')}s`
+      }, 'Duration (7d Avg)'),
     ]
   }, [totalUsersState, activeUsersState, avgDailyUsersState, avgSessionDurationState])
 
@@ -214,14 +216,19 @@ const AdminDashboard = () => {
       <div className="admin-dashboard__glow" />
       <div className="admin-dashboard__container">
         <header className="admin-dashboard__header">
-          <button type="button" className="admin-dashboard__brand" onClick={handleNavigateHome}>
-            <div className="admin-dashboard__logo">
-              <span role="img" aria-label="Serin llama">
-                🦙
-              </span>
+          <div className="admin-dashboard__header-left">
+            <div className="admin-dashboard__brand">
+              <div className="admin-dashboard__logo">
+                <span role="img" aria-label="Serin llama">
+                  🦙
+                </span>
+              </div>
+              <h1 className="admin-dashboard__title">Serin</h1>
             </div>
-            <h1 className="admin-dashboard__title">Serin</h1>
-          </button>
+            <button type="button" className="admin-dashboard__back-link" onClick={handleNavigateHome}>
+              ← Back to Chat
+            </button>
+          </div>
           {!roleLoading && (
             <span className={`admin-dashboard__role-badge admin-dashboard__role-badge--${adminRole.role}`}>
               {roleLabel}
@@ -245,9 +252,17 @@ const AdminDashboard = () => {
           </div>
           <div className="admin-dashboard__cards">
             {overviewCards.map(card => (
-              <div className="admin-dashboard__card" key={card.title}>
+              <div className={`admin-dashboard__card admin-dashboard__card--${card.status}`} key={card.title}>
                 <p className="admin-dashboard__card-title">{card.title}</p>
-                <p className="admin-dashboard__card-value">{card.value}</p>
+                <div className="admin-dashboard__card-value-wrapper">
+                  {card.status === 'loading' && <div className="admin-dashboard__card-skeleton" />}
+                  {card.status === 'error' && (
+                    <span className="admin-dashboard__card-error">Unable to load</span>
+                  )}
+                  {card.status === 'success' && (
+                    <p className="admin-dashboard__card-value">{card.displayValue}</p>
+                  )}
+                </div>
                 <p className="admin-dashboard__card-subtitle">{card.subtitle}</p>
               </div>
             ))}

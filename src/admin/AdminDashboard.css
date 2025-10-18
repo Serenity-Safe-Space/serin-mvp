@@ -64,25 +64,32 @@
   color: #8CD9C8;
 }
 
+.admin-dashboard__header-left {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
 .admin-dashboard__brand {
   display: flex;
   align-items: center;
   gap: 16px;
-  background: transparent;
-  border: none;
-  padding: 0;
+}
+
+.admin-dashboard__back-link {
+  background: rgba(107, 79, 170, 0.45);
+  color: #F5E9FF;
+  border: 1px solid rgba(245, 233, 255, 0.35);
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-size: 14px;
   cursor: pointer;
-  transition: transform 0.15s ease, opacity 0.15s ease;
+  transition: background 0.2s ease, transform 0.2s ease;
 }
 
-.admin-dashboard__brand:focus-visible {
-  outline: 2px solid rgba(255, 235, 91, 0.7);
-  outline-offset: 4px;
-}
-
-.admin-dashboard__brand:hover {
+.admin-dashboard__back-link:hover {
+  background: rgba(107, 79, 170, 0.65);
   transform: translateY(-1px);
-  opacity: 0.95;
 }
 
 .admin-dashboard__logo {
@@ -180,6 +187,7 @@
   color: #F5E9FF;
 }
 
+
 .admin-dashboard__cards {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -195,6 +203,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-height: 152px;
 }
 
 .admin-dashboard__card-title {
@@ -203,16 +212,62 @@
   opacity: 0.85;
 }
 
+.admin-dashboard__card-value-wrapper {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+.admin-dashboard__card-skeleton {
+  width: 60%;
+  max-width: 160px;
+  height: 26px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 235, 91, 0.4) 50%, rgba(255, 255, 255, 0.18) 100%);
+  animation: admin-dashboard-skeleton 1.4s ease-in-out infinite;
+}
+
+.admin-dashboard__card-error {
+  font-size: 14px;
+  font-weight: 600;
+  color: #C13B5A;
+  background: rgba(193, 59, 90, 0.12);
+  padding: 6px 12px;
+  border-radius: 999px;
+}
+
 .admin-dashboard__card-value {
   font-size: 36px;
   font-weight: 700;
   letter-spacing: 0.5px;
+  margin: 0;
 }
 
 .admin-dashboard__card-subtitle {
   font-size: 15px;
   color: #4B2A86;
   opacity: 0.9;
+}
+
+.admin-dashboard__card--loading {
+  background: rgba(255, 235, 91, 0.75);
+}
+
+.admin-dashboard__card--error {
+  background: rgba(255, 205, 205, 0.45);
+  color: #40203A;
+}
+
+@keyframes admin-dashboard-skeleton {
+  0% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.4;
+  }
 }
 
 .admin-dashboard__feature-analytics {
@@ -382,6 +437,7 @@
     flex: 1 1 180px;
     min-width: 0;
   }
+
 }
 
 @media (max-width: 640px) {
