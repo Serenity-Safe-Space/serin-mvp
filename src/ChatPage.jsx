@@ -385,6 +385,10 @@ function ChatPage() {
     setShowTestPanel(!showTestPanel)
   }
 
+  const handleAdminDashboardClick = () => {
+    navigate('/admin')
+  }
+
   return (
     <div className="chat-page">
       <div className="profile-icon" onClick={handleProfileClick}>
@@ -396,27 +400,52 @@ function ChatPage() {
       {/* Development Test Audio Panel */}
       {import.meta.env.DEV && (
         <div className="test-audio-panel">
-          <button
-            className="test-panel-toggle"
-            onClick={toggleTestPanel}
+          <div
             style={{
               position: 'fixed',
               top: '20px',
-              right: '80px',
-              background: '#FFEB5B',
-              color: '#3C2A73',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '8px 12px',
-              fontSize: '12px',
-              fontWeight: 'bold',
-              cursor: 'pointer',
+              right: '20px',
+              display: 'flex',
+              gap: '12px',
               zIndex: 1000,
-              fontFamily: 'Hangyaboly, sans-serif'
             }}
           >
-            {showTestPanel ? t('chat.devPanel.hide') : t('chat.devPanel.show')}
-          </button>
+            <button
+              onClick={handleAdminDashboardClick}
+              style={{
+                background: '#FFEB5B',
+                color: '#3C2A73',
+                border: 'none',
+                borderRadius: '10px',
+                padding: '8px 14px',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                fontFamily: 'Hangyaboly, sans-serif',
+                boxShadow: '0 6px 18px rgba(255, 235, 91, 0.35)',
+              }}
+            >
+              Admin Dashboard
+            </button>
+            <button
+              className="test-panel-toggle"
+              onClick={toggleTestPanel}
+              style={{
+                background: '#FFEB5B',
+                color: '#3C2A73',
+                border: 'none',
+                borderRadius: '10px',
+                padding: '8px 12px',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                fontFamily: 'Hangyaboly, sans-serif',
+                boxShadow: '0 6px 18px rgba(255, 235, 91, 0.35)',
+              }}
+            >
+              {showTestPanel ? t('chat.devPanel.hide') : t('chat.devPanel.show')}
+            </button>
+          </div>
 
           {showTestPanel && (
             <div
