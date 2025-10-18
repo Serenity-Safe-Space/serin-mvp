@@ -13,7 +13,7 @@
   background: var(--chat-history-surface, #281E4F);
   border-radius: 36px;
   width: 100%;
-  max-width: 960px;
+  max-width: min(960px, 100%);
   max-height: 80vh;
   height: min(80vh, 760px);
   padding: 40px 44px 36px;
@@ -97,6 +97,8 @@
   overflow-y: auto;
   padding-right: 6px;
   min-height: 0;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .chat-history-list::-webkit-scrollbar {
@@ -334,6 +336,9 @@
   overflow-y: auto;
   padding-right: 6px;
   min-height: 0;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
 }
 
 .chat-history-detail-messages::-webkit-scrollbar {
@@ -497,15 +502,24 @@
 }
 
 @media (max-width: 860px) {
+  .chat-history-popup-overlay {
+    padding: 16px;
+    align-items: flex-start;
+  }
+
   .chat-history-popup {
     max-width: 720px;
+    width: calc(100vw - 32px);
     padding: 28px 24px 24px;
-    height: min(82vh, 720px);
+    height: calc(100vh - 48px);
+    max-height: none;
+    border-radius: 28px;
   }
 
   .chat-history-layout {
     flex-direction: column;
     min-height: 0;
+    overflow: hidden;
   }
 
   .chat-history-sidebar {
@@ -513,10 +527,12 @@
     min-width: 0;
     flex-direction: column;
     min-height: auto;
+    gap: 16px;
   }
 
   .chat-history-list {
-    max-height: 220px;
+    max-height: 40vh;
+    padding-right: 4px;
   }
 
   .chat-history-detail {
@@ -535,10 +551,16 @@
 }
 
 @media (max-width: 540px) {
+  .chat-history-popup-overlay {
+    padding: 8px;
+  }
+
   .chat-history-popup {
-    border-radius: 28px;
-    padding: 24px 20px 20px;
-    height: min(85vh, 680px);
+    border-radius: 22px;
+    padding: 20px 16px 18px;
+    width: calc(100vw - 16px);
+    max-width: 100%;
+    height: calc(100vh - 24px);
   }
 
   .chat-history-title {
@@ -551,6 +573,10 @@
 
   .chat-history-detail-body {
     padding: 20px 16px;
+  }
+
+  .chat-history-list {
+    max-height: 35vh;
   }
 
   .chat-history-detail-placeholder {
