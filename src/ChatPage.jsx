@@ -296,6 +296,7 @@ function ChatPage() {
     }
 
     const userMessage = inputValue.trim()
+    const userMessageTimestamp = new Date()
     setInputValue('')
     setCurrentMessage(userMessage)
     setHasStartedChat(true)
@@ -327,6 +328,11 @@ function ChatPage() {
       const prompt = getSerinPrompt(chatHistory, userMessage)
       const result = await model.generateContent(prompt)
       const response = result.response.text()
+      let assistantMessageTimestamp = new Date()
+
+      if (assistantMessageTimestamp <= userMessageTimestamp) {
+        assistantMessageTimestamp = new Date(userMessageTimestamp.getTime() + 1)
+      }
       
       if (isFirstMessage) {
         setIsFirstMessage(false)
@@ -345,12 +351,16 @@ function ChatPage() {
       // Save messages to database if user is logged in and we have a session
       if (user && sessionIdToUse) {
         // Save user message
-        saveMessage(sessionIdToUse, 'user', userMessage).catch(error => 
+        saveMessage(sessionIdToUse, 'user', userMessage, {
+          occurredAt: userMessageTimestamp.toISOString(),
+        }).catch(error => 
           console.warn('Failed to save user message:', error)
         )
         
         // Save assistant message
-        saveMessage(sessionIdToUse, 'assistant', response).catch(error => 
+        saveMessage(sessionIdToUse, 'assistant', response, {
+          occurredAt: assistantMessageTimestamp.toISOString(),
+        }).catch(error => 
           console.warn('Failed to save assistant message:', error)
         )
       }
@@ -708,6 +718,7 @@ function ChatPage() {
         isVisible={isChatHistoryPopupVisible}
         onClose={handleCloseChatHistory}
         onSelectChat={handleSelectChatHistory}
+        activeSessionId={currentSessionId}
       />
 
       <SignInModal 
