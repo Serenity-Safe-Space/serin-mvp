@@ -41,6 +41,7 @@ const AdminDashboard = () => {
   const [totalUsersState, setTotalUsersState] = useState({ status: 'loading', value: null })
   const [activeUsersState, setActiveUsersState] = useState({ status: 'loading', value: null })
   const [avgDailyUsersState, setAvgDailyUsersState] = useState({ status: 'loading', value: null })
+  const [avgSessionDurationState, setAvgSessionDurationState] = useState({ status: 'loading', value: null })
 
   useEffect(() => {
     const fetchTotalUsers = async () => {
@@ -111,6 +112,29 @@ const AdminDashboard = () => {
     fetchAvgDailyUsers()
   }, [])
 
+  useEffect(() => {
+    const fetchAvgSessionDuration = async () => {
+      try {
+        const { data, error } = await supabase.rpc('admin_avg_session_duration')
+        if (error) throw error
+
+        const seconds = typeof data === 'number' ? data : Number.parseFloat(data)
+        setAvgSessionDurationState({
+          status: Number.isNaN(seconds) ? 'error' : 'success',
+          value: Number.isNaN(seconds) ? null : seconds,
+        })
+      } catch (error) {
+        console.warn('Failed to fetch avg session duration:', error)
+        setAvgSessionDurationState({
+          status: 'error',
+          value: null,
+        })
+      }
+    }
+
+    fetchAvgSessionDuration()
+  }, [])
+
   const overviewCards = useMemo(() => {
     const formatCount = (state, decimals = 0) => {
       if (state.status === 'loading') return '...'
@@ -121,13 +145,23 @@ const AdminDashboard = () => {
       })
     }
 
+    const formatDuration = (state) => {
+      if (state.status === 'loading') return '...'
+      if (state.status === 'error' || typeof state.value !== 'number') return 'ERR'
+
+      const roundedSeconds = Math.max(0, Math.round(state.value))
+      const minutes = Math.floor(roundedSeconds / 60)
+      const seconds = roundedSeconds % 60
+      return `${minutes}m ${seconds.toString().padStart(2, '0')}s`
+    }
+
     return [
       { title: 'Total Users', value: formatCount(totalUsersState), subtitle: 'All Time' },
       { title: 'Active Users', value: formatCount(activeUsersState), subtitle: 'Past 7 Days' },
       { title: 'Avg Daily', value: formatCount(avgDailyUsersState, 1), subtitle: 'Unique / Day (7d Avg)' },
-      { title: 'Avg Session', value: '--:--', subtitle: 'Placeholder' },
+      { title: 'Avg Session', value: formatDuration(avgSessionDurationState), subtitle: 'Duration (7d Avg)' },
     ]
-  }, [totalUsersState, activeUsersState, avgDailyUsersState])
+  }, [totalUsersState, activeUsersState, avgDailyUsersState, avgSessionDurationState])
 
   return (
     <div className="admin-dashboard">

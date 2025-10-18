@@ -50,7 +50,7 @@ const computeRms = (pcmData) => {
 };
 
 export const useVoiceToGemini = (options = {}) => {
-    const { onConversationUpdate } = options;
+    const { onConversationUpdate, onSessionClosed } = options;
     const [isRecording, setIsRecording] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -124,6 +124,16 @@ export const useVoiceToGemini = (options = {}) => {
             user: { text: '', emittedAt: 0 },
             assistant: { text: '', emittedAt: 0 }
         };
+    };
+
+    const notifySessionClosed = (details) => {
+        if (typeof onSessionClosed === 'function') {
+            try {
+                onSessionClosed(details);
+            } catch (callbackError) {
+                console.warn('onSessionClosed callback threw:', callbackError);
+            }
+        }
     };
 
     const emitConversationUpdate = (role, text) => {
@@ -622,6 +632,10 @@ export const useVoiceToGemini = (options = {}) => {
                 console.error('WebSocket error:', error);
                 setIsError(true);
                 setIsLoading(false);
+                notifySessionClosed({
+                    reason: 'websocket_error',
+                    error,
+                });
             };
 
             socketRef.current.onclose = (event) => {
@@ -659,11 +673,20 @@ export const useVoiceToGemini = (options = {}) => {
                 setIsLoading(false);
                 setIsRecording(false);
                 setIsPlaying(false);
+                notifySessionClosed({
+                    reason: 'websocket_closed',
+                    code: event.code,
+                    message: event.reason,
+                });
             };
         } catch (error) {
             console.error('Error starting recording:', error);
             setIsError(true);
             setIsLoading(false);
+            notifySessionClosed({
+                reason: 'start_failed',
+                error,
+            });
         }
     };
 
@@ -768,6 +791,12 @@ export const useVoiceToGemini = (options = {}) => {
                             playbackGainRef.current = null;
                         }
                         playbackStateRef.current = { nextStartTime: 0, activeSources: 0 };
+                        notifySessionClosed({
+                            reason: 'websocket_closed',
+                            code: event.code,
+                            message: event.reason,
+                            source: 'test-audio',
+                        });
                     };
 
                     socketRef.current.onmessage = async (event) => {
@@ -867,6 +896,10 @@ export const useVoiceToGemini = (options = {}) => {
             console.error('Error sending test audio:', error);
             setIsError(true);
             setIsLoading(false);
+            notifySessionClosed({
+                reason: 'test_audio_failed',
+                error,
+            });
         }
     };
 

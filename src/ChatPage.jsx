@@ -4,7 +4,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 import { useAuth } from './contexts/AuthContext'
 import { useLanguage } from './contexts/LanguageContext'
 import { recordDailyActivity } from './lib/activityService'
-import { createChatSession, saveMessage, getChatSession } from './lib/chatHistoryService'
+import { createChatSession, createVoiceSession, finalizeSession, saveMessage, getChatSession } from './lib/chatHistoryService'
 import { analyzeMoodShift } from './lib/memoryAnalyzer'
 import { upsertMoodMemory } from './lib/memoryService'
 import { useVoiceToGemini } from './useVoiceToGemini'
@@ -43,6 +43,11 @@ function ChatPage() {
   const pendingAnalysisRef = useRef(null)
   const lastAnalyzedUserMessageRef = useRef(null)
   const voiceTranscriptRef = useRef([])
+  const voiceSessionRef = useRef(null)
+  const voiceMessageCacheRef = useRef({
+    user: new Set(),
+    assistant: new Set(),
+  })
 
   useEffect(() => {
     if (!hasStartedChat) {
@@ -140,10 +145,52 @@ function ChatPage() {
       const snapshot = voiceTranscriptRef.current.slice()
       Promise.resolve().then(() => triggerMoodAnalysis(snapshot, 'voice'))
     }
+
+    const sessionId = voiceSessionRef.current
+    const normalizedContent = message.content.trim()
+
+    if (
+      sessionId &&
+      normalizedContent &&
+      (message.role === 'user' || message.role === 'assistant')
+    ) {
+      const cacheForRole = voiceMessageCacheRef.current[message.role] || new Set()
+
+      if (!cacheForRole.has(normalizedContent)) {
+        cacheForRole.add(normalizedContent)
+        voiceMessageCacheRef.current[message.role] = cacheForRole
+
+        saveMessage(sessionId, message.role, normalizedContent, {
+          occurredAt: new Date().toISOString(),
+        }).catch(error => {
+          console.warn('Failed to persist voice message:', error)
+        })
+      }
+    }
   }, [triggerMoodAnalysis])
 
+  const handleVoiceSessionClosed = useCallback((details) => {
+    if (!voiceSessionRef.current) {
+      return
+    }
+
+    const sessionId = voiceSessionRef.current
+    voiceSessionRef.current = null
+    voiceMessageCacheRef.current = {
+      user: new Set(),
+      assistant: new Set(),
+    }
+
+    const endedAt = details?.endedAt || new Date().toISOString()
+
+    finalizeSession(sessionId, endedAt).catch(error => {
+      console.warn('Failed to finalize voice session:', error)
+    })
+  }, [])
+
   const { isRecording, isPlaying, isLoading: isVoiceLoading, isError, startRecording, stopRecording, sendTestAudio } = useVoiceToGemini({
-    onConversationUpdate: handleVoiceConversationUpdate
+    onConversationUpdate: handleVoiceConversationUpdate,
+    onSessionClosed: handleVoiceSessionClosed,
   })
 
   useEffect(() => {
@@ -164,6 +211,11 @@ function ChatPage() {
   useEffect(() => {
     voiceTranscriptRef.current = []
     lastAnalyzedUserMessageRef.current = null
+    voiceSessionRef.current = null
+    voiceMessageCacheRef.current = {
+      user: new Set(),
+      assistant: new Set(),
+    }
   }, [currentSessionId, user])
 
   // Load existing session if sessionId is provided
@@ -365,11 +417,50 @@ function ChatPage() {
     setIsSettingsPopupVisible(false)
   }
 
-  const handleVoiceButtonClick = () => {
+  const handleVoiceButtonClick = async () => {
     if (isRecording) {
       stopRecording()
+      return
+    }
+
+    let voiceSessionCreated = false
+
+    if (user?.id) {
+      const startedAt = new Date().toISOString()
+      try {
+        const { session, error } = await createVoiceSession(user.id, startedAt)
+
+        if (error) {
+          console.error('Error creating voice session:', error)
+        } else if (session) {
+          voiceSessionRef.current = session.id
+          voiceMessageCacheRef.current = {
+            user: new Set(),
+            assistant: new Set(),
+          }
+          voiceSessionCreated = true
+          recordDailyActivity(user.id).catch(activityError =>
+            console.warn('Failed to record daily activity for voice session:', activityError),
+          )
+        }
+      } catch (error) {
+        console.error('Unexpected error creating voice session:', error)
+      }
     } else {
-      startRecording()
+      voiceSessionRef.current = null
+      voiceMessageCacheRef.current = {
+        user: new Set(),
+        assistant: new Set(),
+      }
+    }
+
+    await startRecording()
+
+    if (!voiceSessionCreated) {
+      voiceMessageCacheRef.current = {
+        user: new Set(),
+        assistant: new Set(),
+      }
     }
   }
 

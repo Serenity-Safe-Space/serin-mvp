@@ -5,35 +5,48 @@ import { supabase } from './supabase'
  * @param {string} firstMessage - The first user message
  * @returns {string} - Generated title
  */
-const generateSessionTitle = (firstMessage) => {
+const generateSessionTitle = (firstMessage, fallback = 'New Chat') => {
   if (!firstMessage || firstMessage.trim().length === 0) {
-    return "New Chat"
+    return fallback
   }
-  
+
   const title = firstMessage.trim()
-  return title.length > 50 ? title.substring(0, 47) + "..." : title
+  return title.length > 50 ? `${title.substring(0, 47)}...` : title
 }
 
 /**
  * Creates a new chat session
  * @param {string} userId - The user's ID
  * @param {string} firstMessage - The first user message to generate title
- * @returns {Promise<{session: object, error?: string}>}
+ * @param {object} options - Additional options
+ * @param {'text'|'voice'} [options.channel='text'] - Channel used for the session
+ * @param {string} [options.titleFallback='New Chat'] - Title to use if firstMessage is empty
+ * @param {string} [options.startedAt] - Optional ISO timestamp for session start
+ * @returns {Promise<{session: object|null, error?: string}>}
  */
-export const createChatSession = async (userId, firstMessage = "") => {
+export const createChatSession = async (userId, firstMessage = '', options = {}) => {
+  const { channel = 'text', titleFallback = 'New Chat', startedAt } = options
+
   if (!userId) {
     return { session: null, error: 'User ID is required' }
   }
 
   try {
-    const title = generateSessionTitle(firstMessage)
-    
+    const title = generateSessionTitle(firstMessage, titleFallback)
+
+    const payload = {
+      user_id: userId,
+      title,
+      channel,
+    }
+
+    if (startedAt) {
+      payload.started_at = startedAt
+    }
+
     const { data, error } = await supabase
       .from('chat_sessions')
-      .insert({
-        user_id: userId,
-        title: title
-      })
+      .insert(payload)
       .select()
       .single()
 
@@ -54,9 +67,17 @@ export const createChatSession = async (userId, firstMessage = "") => {
  * @param {string} sessionId - The session ID
  * @param {string} role - 'user' or 'assistant'
  * @param {string} content - The message content
- * @returns {Promise<{message: object, error?: string}>}
+ * @param {object} options - Additional options
+ * @param {string} [options.occurredAt] - ISO timestamp to persist as created_at
+ * @param {boolean} [options.updateSessionActivity=true] - Whether to touch session's ended_at
+ * @returns {Promise<{message: object|null, error?: string}>}
  */
-export const saveMessage = async (sessionId, role, content) => {
+export const saveMessage = async (sessionId, role, content, options = {}) => {
+  const {
+    occurredAt,
+    updateSessionActivity = true,
+  } = options
+
   if (!sessionId || !role || !content) {
     return { message: null, error: 'Session ID, role, and content are required' }
   }
@@ -66,13 +87,19 @@ export const saveMessage = async (sessionId, role, content) => {
   }
 
   try {
+    const insertPayload = {
+      session_id: sessionId,
+      role,
+      content,
+    }
+
+    if (occurredAt) {
+      insertPayload.created_at = occurredAt
+    }
+
     const { data, error } = await supabase
       .from('chat_messages')
-      .insert({
-        session_id: sessionId,
-        role: role,
-        content: content
-      })
+      .insert(insertPayload)
       .select()
       .single()
 
@@ -81,10 +108,67 @@ export const saveMessage = async (sessionId, role, content) => {
       return { message: null, error: error.message }
     }
 
+    if (updateSessionActivity) {
+      const effectiveTimestamp = occurredAt ?? data?.created_at
+      if (effectiveTimestamp) {
+        const { error: sessionError } = await supabase
+          .from('chat_sessions')
+          .update({ ended_at: effectiveTimestamp })
+          .eq('id', sessionId)
+
+        if (sessionError) {
+          console.warn('Failed to update session activity timestamp:', sessionError)
+        }
+      }
+    }
+
     return { message: data }
   } catch (error) {
     console.error('Error in saveMessage:', error)
     return { message: null, error: error.message }
+  }
+}
+
+/**
+ * Creates a dedicated voice session.
+ * @param {string} userId - The user's ID
+ * @param {string} [startedAt] - ISO timestamp (defaults to now)
+ * @returns {Promise<{session: object|null, error?: string}>}
+ */
+export const createVoiceSession = async (userId, startedAt) => {
+  return createChatSession(userId, 'Voice Session', {
+    channel: 'voice',
+    titleFallback: 'Voice Session',
+    startedAt,
+  })
+}
+
+/**
+ * Marks a session as finished at a specific timestamp.
+ * @param {string} sessionId - The session ID
+ * @param {string} [endedAt] - ISO timestamp (defaults to now)
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export const finalizeSession = async (sessionId, endedAt = new Date().toISOString()) => {
+  if (!sessionId) {
+    return { success: false, error: 'Session ID is required' }
+  }
+
+  try {
+    const { error } = await supabase
+      .from('chat_sessions')
+      .update({ ended_at: endedAt })
+      .eq('id', sessionId)
+
+    if (error) {
+      console.error('Error finalizing session:', error)
+      return { success: false, error: error.message }
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error('Error in finalizeSession:', error)
+    return { success: false, error: error.message }
   }
 }
 
@@ -101,7 +185,7 @@ export const getUserChatSessions = async (userId) => {
   try {
     const { data, error } = await supabase
       .from('chat_sessions')
-      .select('id, title, created_at, updated_at')
+      .select('id, title, channel, started_at, ended_at, created_at, updated_at')
       .eq('user_id', userId)
       .order('updated_at', { ascending: false })
 
@@ -132,7 +216,7 @@ export const getChatSession = async (sessionId, userId) => {
     // Get session details first
     const { data: sessionData, error: sessionError } = await supabase
       .from('chat_sessions')
-      .select('id, title, created_at, updated_at')
+      .select('id, title, channel, started_at, ended_at, created_at, updated_at')
       .eq('id', sessionId)
       .eq('user_id', userId)
       .single()
