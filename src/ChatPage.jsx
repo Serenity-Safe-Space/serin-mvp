@@ -192,6 +192,7 @@ function ChatPage() {
     onConversationUpdate: handleVoiceConversationUpdate,
     onSessionClosed: handleVoiceSessionClosed,
   })
+  const isVoiceActive = isRecording || isPlaying
 
   useEffect(() => {
     // Focus input field when component mounts
@@ -636,7 +637,7 @@ function ChatPage() {
         <div className="chat-input-section">
           <div className="input-container">
             <button
-              className={`input-icon voice-icon ${isRecording ? 'recording' : ''}`}
+              className={`input-icon voice-icon ${isVoiceActive ? 'voice-active' : ''}`}
               onClick={handleVoiceButtonClick}
               disabled={isVoiceLoading}
             >

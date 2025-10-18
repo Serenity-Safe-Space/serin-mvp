@@ -200,20 +200,43 @@
   height: 36px;
 }
 
-.voice-icon.recording {
-  animation: pulse 1.5s infinite;
-  background: rgba(255, 122, 114, 0.2);
+.voice-icon.voice-active {
+  animation: micPulse 1.2s ease-in-out infinite;
+  background: rgba(255, 235, 91, 0.95);
+  box-shadow:
+    0 0 0 0 rgba(255, 235, 91, 0.7),
+    0 0 20px rgba(255, 235, 91, 0.6),
+    0 0 40px rgba(122, 98, 179, 0.4);
 }
 
-@keyframes pulse {
+@keyframes micPulse {
   0% {
-    box-shadow: 0 0 0 0 rgba(255, 122, 114, 0.5);
+    transform: scale(1);
+    box-shadow:
+      0 0 0 0 rgba(255, 235, 91, 0.7),
+      0 0 20px rgba(255, 235, 91, 0.6),
+      0 0 40px rgba(122, 98, 179, 0.4);
   }
-  70% {
-    box-shadow: 0 0 0 10px rgba(255, 122, 114, 0);
+  50% {
+    transform: scale(1.15);
+    box-shadow:
+      0 0 0 25px rgba(255, 235, 91, 0),
+      0 0 35px rgba(255, 235, 91, 0.8),
+      0 0 60px rgba(122, 98, 179, 0.6);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(255, 122, 114, 0);
+    transform: scale(1);
+    box-shadow:
+      0 0 0 0 rgba(255, 235, 91, 0.7),
+      0 0 20px rgba(255, 235, 91, 0.6),
+      0 0 40px rgba(122, 98, 179, 0.4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-icon.voice-active {
+    animation: none;
+    box-shadow: none;
   }
 }
 
