@@ -42,6 +42,21 @@
   display: flex;
   align-items: center;
   gap: 16px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.admin-dashboard__brand:focus-visible {
+  outline: 2px solid rgba(255, 235, 91, 0.7);
+  outline-offset: 4px;
+}
+
+.admin-dashboard__brand:hover {
+  transform: translateY(-1px);
+  opacity: 0.95;
 }
 
 .admin-dashboard__logo {
@@ -111,13 +126,32 @@
 }
 
 .admin-dashboard__stats-meta {
-  display: grid;
-  grid-template-columns: repeat(4, auto);
-  gap: 12px;
-  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 32px;
+  align-items: flex-start;
   font-size: 13px;
   color: rgba(245, 233, 255, 0.75);
-  text-align: right;
+}
+
+.admin-dashboard__stat {
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-dashboard__stat-label {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 12px;
+  color: rgba(245, 233, 255, 0.6);
+}
+
+.admin-dashboard__stat-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #F5E9FF;
 }
 
 .admin-dashboard__cards {
@@ -313,8 +347,14 @@
   }
 
   .admin-dashboard__stats-meta {
-    grid-template-columns: repeat(2, auto);
-    gap: 8px 16px;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 12px 20px;
+  }
+
+  .admin-dashboard__stat {
+    flex: 1 1 180px;
+    min-width: 0;
   }
 }
 
@@ -337,6 +377,16 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
+  }
+
+  .admin-dashboard__stats-meta {
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .admin-dashboard__stat {
+    flex: 1 1 auto;
   }
 
   .admin-dashboard__table {

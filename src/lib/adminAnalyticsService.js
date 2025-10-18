@@ -120,6 +120,7 @@ export const fetchAdminUserFeatureAnalytics = async () => {
       averageConfidence,
       lastSeen,
       lastSeenRelative: formattedLastSeen,
+      displayName: fullName,
       status: normalizedStatus,
       initials: initials || 'S',
       avatarColor,

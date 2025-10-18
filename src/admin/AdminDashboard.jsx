@@ -1,14 +1,17 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { fetchAdminUserFeatureAnalytics } from '../lib/adminAnalyticsService'
 import './AdminDashboard.css'
 
 const AdminDashboard = () => {
+  const navigate = useNavigate()
   const [totalUsersState, setTotalUsersState] = useState({ status: 'loading', value: null })
   const [activeUsersState, setActiveUsersState] = useState({ status: 'loading', value: null })
   const [avgDailyUsersState, setAvgDailyUsersState] = useState({ status: 'loading', value: null })
   const [avgSessionDurationState, setAvgSessionDurationState] = useState({ status: 'loading', value: null })
   const [userTableState, setUserTableState] = useState({ status: 'idle', rows: [], error: null })
+  const [overviewMeta, setOverviewMeta] = useState({ activeSessions: '...', lastSeenDisplay: '...' })
 
   useEffect(() => {
     const fetchTotalUsers = async () => {
@@ -130,6 +133,36 @@ const AdminDashboard = () => {
     }
   }, [])
 
+  useEffect(() => {
+    if (userTableState.status !== 'success' || userTableState.rows.length === 0) {
+      setOverviewMeta({
+        activeSessions: '0',
+        lastSeenDisplay: 'No activity yet',
+      })
+      return
+    }
+
+    const rows = userTableState.rows
+    const activeSessions = rows.filter(row => row.status === 'Active').length
+
+    const sortedByLastSeen = rows
+      .map(row => ({
+        ...row,
+        lastSeenTs: row.lastSeen ? new Date(row.lastSeen).valueOf() : null,
+      }))
+      .filter(row => typeof row.lastSeenTs === 'number' && !Number.isNaN(row.lastSeenTs))
+      .sort((a, b) => b.lastSeenTs - a.lastSeenTs)
+
+    const latest = sortedByLastSeen[0]
+
+    setOverviewMeta({
+      activeSessions: activeSessions.toLocaleString(),
+      lastSeenDisplay: latest
+        ? `${latest.lastSeenRelative}${latest.displayName ? ` (${latest.displayName})` : ''}`
+        : 'No activity yet',
+    })
+  }, [userTableState])
+
   const overviewCards = useMemo(() => {
     const formatCount = (state, decimals = 0) => {
       if (state.status === 'loading') return '...'
@@ -158,29 +191,37 @@ const AdminDashboard = () => {
     ]
   }, [totalUsersState, activeUsersState, avgDailyUsersState, avgSessionDurationState])
 
+  const handleNavigateHome = useCallback(() => {
+    navigate('/')
+  }, [navigate])
+
   return (
     <div className="admin-dashboard">
       <div className="admin-dashboard__glow" />
       <div className="admin-dashboard__container">
         <header className="admin-dashboard__header">
-          <div className="admin-dashboard__brand">
+          <button type="button" className="admin-dashboard__brand" onClick={handleNavigateHome}>
             <div className="admin-dashboard__logo">
               <span role="img" aria-label="Serin llama">
                 🦙
               </span>
             </div>
             <h1 className="admin-dashboard__title">Serin</h1>
-          </div>
+          </button>
         </header>
 
         <section className="admin-dashboard__overview">
           <div className="admin-dashboard__overview-header">
             <h2>Overview</h2>
             <div className="admin-dashboard__stats-meta">
-              <span>Active Sessions</span>
-              <span>15</span>
-              <span>Last seen</span>
-              <span>15 min. ago</span>
+              <div className="admin-dashboard__stat">
+                <span className="admin-dashboard__stat-label">Active Sessions</span>
+                <span className="admin-dashboard__stat-value">{overviewMeta.activeSessions}</span>
+              </div>
+              <div className="admin-dashboard__stat">
+                <span className="admin-dashboard__stat-label">Last Seen User</span>
+                <span className="admin-dashboard__stat-value">{overviewMeta.lastSeenDisplay}</span>
+              </div>
             </div>
           </div>
           <div className="admin-dashboard__cards">
@@ -197,9 +238,6 @@ const AdminDashboard = () => {
         <section className="admin-dashboard__feature-analytics">
           <div className="admin-dashboard__section-heading">
             <h2>Feature Analytics</h2>
-            <button className="admin-dashboard__pill admin-dashboard__pill--slim">
-              Export
-            </button>
           </div>
 
           <div className="admin-dashboard__table-wrapper">
