@@ -1,47 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { fetchAdminUserFeatureAnalytics } from '../lib/adminAnalyticsService'
 import './AdminDashboard.css'
-
-const users = [
-  {
-    name: 'Sample User A',
-    email: 'placeholder-a@serin.dev',
-    summary: '— Filler summary for layout testing —',
-    lastSeen: '?? min. ago',
-    status: 'Mock',
-    avatarColor: '#F29A9A',
-  },
-  {
-    name: 'Sample User B',
-    email: 'placeholder-b@serin.dev',
-    summary: '— Demo copy, not real data —',
-    lastSeen: '?? min. ago',
-    status: 'Mock',
-    avatarColor: '#F5C26B',
-  },
-  {
-    name: 'Sample User C',
-    email: 'placeholder-c@serin.dev',
-    summary: '— Replace once analytics wired —',
-    lastSeen: '?? min. ago',
-    status: 'Mock',
-    avatarColor: '#9CC8FF',
-  },
-  {
-    name: 'Sample User D',
-    email: 'placeholder-d@serin.dev',
-    summary: '— Placeholder row —',
-    lastSeen: '?? min. ago',
-    status: 'Mock',
-    avatarColor: '#8CD9C8',
-  },
-]
 
 const AdminDashboard = () => {
   const [totalUsersState, setTotalUsersState] = useState({ status: 'loading', value: null })
   const [activeUsersState, setActiveUsersState] = useState({ status: 'loading', value: null })
   const [avgDailyUsersState, setAvgDailyUsersState] = useState({ status: 'loading', value: null })
   const [avgSessionDurationState, setAvgSessionDurationState] = useState({ status: 'loading', value: null })
+  const [userTableState, setUserTableState] = useState({ status: 'idle', rows: [], error: null })
 
   useEffect(() => {
     const fetchTotalUsers = async () => {
@@ -135,6 +102,34 @@ const AdminDashboard = () => {
     fetchAvgSessionDuration()
   }, [])
 
+  useEffect(() => {
+    let isCancelled = false
+    const loadUsers = async () => {
+      setUserTableState(prev => ({ ...prev, status: 'loading', error: null }))
+      try {
+        const rows = await fetchAdminUserFeatureAnalytics()
+        if (!isCancelled) {
+          setUserTableState({ status: 'success', rows, error: null })
+        }
+      } catch (error) {
+        console.warn('Failed to fetch admin users list:', error)
+        if (!isCancelled) {
+          setUserTableState({
+            status: 'error',
+            rows: [],
+            error: error?.message || 'Failed to load users',
+          })
+        }
+      }
+    }
+
+    loadUsers()
+
+    return () => {
+      isCancelled = true
+    }
+  }, [])
+
   const overviewCards = useMemo(() => {
     const formatCount = (state, decimals = 0) => {
       if (state.status === 'loading') return '...'
@@ -201,7 +196,7 @@ const AdminDashboard = () => {
 
         <section className="admin-dashboard__feature-analytics">
           <div className="admin-dashboard__section-heading">
-            <h2>Feature Analytics (Mock Data)</h2>
+            <h2>Feature Analytics</h2>
             <button className="admin-dashboard__pill admin-dashboard__pill--slim">
               Export
             </button>
@@ -214,38 +209,75 @@ const AdminDashboard = () => {
                   <th>Name</th>
                   <th>Email</th>
                   <th>Summary</th>
+                  <th>Messages Sent</th>
+                  <th>Average Mood</th>
                   <th>Last Seen</th>
                   <th>Status</th>
                 </tr>
               </thead>
               <tbody>
-                {users.map(user => (
-                  <tr key={user.email}>
-                    <td>
-                      <div className="admin-dashboard__user">
-                        <div
-                          className="admin-dashboard__avatar"
-                          style={{ backgroundColor: user.avatarColor }}
-                        >
-                          {user.name.charAt(0)}
-                        </div>
-                        <div className="admin-dashboard__user-info">
-                          <span className="admin-dashboard__user-name">
-                            {user.name}
-                          </span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="admin-dashboard__email">{user.email}</td>
-                    <td>{user.summary}</td>
-                    <td>{user.lastSeen}</td>
-                    <td>
-                      <span className="admin-dashboard__status-badge">
-                        {user.status}
-                      </span>
+                {userTableState.status === 'loading' && (
+                  <tr>
+                    <td colSpan={7} className="admin-dashboard__table-placeholder">
+                      Loading user analytics…
                     </td>
                   </tr>
-                ))}
+                )}
+                {userTableState.status === 'error' && (
+                  <tr>
+                    <td colSpan={7} className="admin-dashboard__table-placeholder admin-dashboard__table-placeholder--error">
+                      {userTableState.error}
+                    </td>
+                  </tr>
+                )}
+                {userTableState.status === 'success' && userTableState.rows.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="admin-dashboard__table-placeholder">
+                      No users found yet.
+                    </td>
+                  </tr>
+                )}
+                {userTableState.status === 'success' &&
+                  userTableState.rows.map(user => (
+                    <tr key={user.userId || user.email}>
+                      <td>
+                        <div className="admin-dashboard__user">
+                          <div
+                            className="admin-dashboard__avatar"
+                            style={{ backgroundColor: user.avatarColor }}
+                          >
+                            {user.initials}
+                          </div>
+                          <div className="admin-dashboard__user-info">
+                            <span className="admin-dashboard__user-name">
+                              {user.fullName}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="admin-dashboard__email">{user.email}</td>
+                      <td>{user.summary}</td>
+                      <td>{user.messagesSent.toLocaleString()}</td>
+                      <td>
+                        <div className="admin-dashboard__mood">
+                          <span className="admin-dashboard__mood-label">{user.moodLabel}</span>
+                          {typeof user.averageConfidence === 'number' && (
+                            <span className="admin-dashboard__mood-score">
+                              {Math.round(user.averageConfidence * 100)}%
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td>{user.lastSeenRelative}</td>
+                      <td>
+                        <span
+                          className={`admin-dashboard__status-badge admin-dashboard__status-badge--${user.status === 'Active' ? 'active' : 'inactive'}`}
+                        >
+                          {user.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>
