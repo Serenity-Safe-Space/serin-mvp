@@ -151,6 +151,19 @@
   border-color: var(--profile-color-secondary-text, #B5A8D6);
 }
 
+.profile-action--admin {
+  background: rgba(255, 235, 91, 0.18);
+  color: var(--profile-color-accent, #FFEB5B);
+  border: 2px solid rgba(255, 235, 91, 0.5);
+  margin-bottom: 20px;
+}
+
+.profile-action--admin:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 235, 91, 0.28);
+  border-color: rgba(255, 235, 91, 0.7);
+}
+
 .privacy-footer {
   text-align: center;
   font-size: 14px;

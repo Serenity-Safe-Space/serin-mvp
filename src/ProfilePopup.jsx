@@ -5,8 +5,8 @@ import { getCurrentStreak } from './lib/activityService'
 import { SERIN_COLORS } from './utils/serinColors'
 import './ProfilePopup.css'
 
-function ProfilePopup({ isVisible, onClose, onSignInClick, onChatHistoryClick, onSettingsClick }) {
-  const { user } = useAuth()
+function ProfilePopup({ isVisible, onClose, onSignInClick, onChatHistoryClick, onSettingsClick, onAdminDashboardClick }) {
+  const { user, adminRole } = useAuth()
   const [currentStreak, setCurrentStreak] = useState(0)
   const [loadingActivity, setLoadingActivity] = useState(false)
   const { t } = useLanguage()
@@ -87,6 +87,15 @@ function ProfilePopup({ isVisible, onClose, onSignInClick, onChatHistoryClick, o
               <button className="profile-action profile-action--secondary" onClick={onSettingsClick}>
                 {t('profile.settings')}
               </button>
+
+              {adminRole?.isAdmin && (
+                <button
+                  className="profile-action profile-action--admin"
+                  onClick={() => onAdminDashboardClick?.()}
+                >
+                  Admin Dashboard
+                </button>
+              )}
 
               <div className="privacy-footer">{t('profile.privacy')}</div>
             </>

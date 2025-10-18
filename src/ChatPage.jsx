@@ -417,6 +417,11 @@ function ChatPage() {
     setIsSettingsPopupVisible(false)
   }
 
+  const handleAdminDashboardLink = () => {
+    setIsProfilePopupVisible(false)
+    navigate('/admin')
+  }
+
   const handleVoiceButtonClick = async () => {
     if (isRecording) {
       stopRecording()
@@ -476,9 +481,6 @@ function ChatPage() {
     setShowTestPanel(!showTestPanel)
   }
 
-  const handleAdminDashboardClick = () => {
-    navigate('/admin')
-  }
 
   return (
     <div className="chat-page">
@@ -501,23 +503,6 @@ function ChatPage() {
               zIndex: 1000,
             }}
           >
-            <button
-              onClick={handleAdminDashboardClick}
-              style={{
-                background: '#FFEB5B',
-                color: '#3C2A73',
-                border: 'none',
-                borderRadius: '10px',
-                padding: '8px 14px',
-                fontSize: '12px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                fontFamily: 'Hangyaboly, sans-serif',
-                boxShadow: '0 6px 18px rgba(255, 235, 91, 0.35)',
-              }}
-            >
-              Admin Dashboard
-            </button>
             <button
               className="test-panel-toggle"
               onClick={toggleTestPanel}
@@ -716,6 +701,7 @@ function ChatPage() {
         onSignInClick={handleSignInClick}
         onChatHistoryClick={handleChatHistoryClick}
         onSettingsClick={handleSettingsClick}
+        onAdminDashboardClick={handleAdminDashboardLink}
       />
 
       <ChatHistoryPopup 

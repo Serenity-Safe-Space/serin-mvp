@@ -38,6 +38,32 @@
   margin-bottom: 40px;
 }
 
+.admin-dashboard__role-badge {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgba(255, 235, 91, 0.18);
+  color: #FFEB5B;
+  text-transform: uppercase;
+}
+
+.admin-dashboard__role-badge--viewer {
+  background: rgba(156, 200, 255, 0.18);
+  color: #A9D4FF;
+}
+
+.admin-dashboard__role-badge--admin {
+  background: rgba(255, 235, 91, 0.18);
+  color: #FFEB5B;
+}
+
+.admin-dashboard__role-badge--super_admin {
+  background: rgba(140, 217, 200, 0.25);
+  color: #8CD9C8;
+}
+
 .admin-dashboard__brand {
   display: flex;
   align-items: center;

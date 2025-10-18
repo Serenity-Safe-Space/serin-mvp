@@ -1,6 +1,7 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { recordDailyActivity } from '../lib/activityService'
+import { fetchCurrentAdminRole, clearAdminRoleCache } from '../lib/adminRoleService'
 
 const AuthContext = createContext({})
 
@@ -15,6 +16,21 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [roleLoading, setRoleLoading] = useState(true)
+  const [adminRole, setAdminRole] = useState(clearAdminRoleCache())
+
+  const refreshAdminRole = useCallback(async (currentUser) => {
+    if (!currentUser) {
+      setAdminRole(clearAdminRoleCache())
+      setRoleLoading(false)
+      return
+    }
+
+    setRoleLoading(true)
+    const role = await fetchCurrentAdminRole()
+    setAdminRole(role)
+    setRoleLoading(false)
+  }, [])
 
   useEffect(() => {
     // Get initial session
@@ -23,7 +39,9 @@ export const AuthProvider = ({ children }) => {
       if (error) {
         console.error('Error getting session:', error.message)
       } else {
-        setUser(session?.user ?? null)
+        const initialUser = session?.user ?? null
+        setUser(initialUser)
+        await refreshAdminRole(initialUser)
       }
       setLoading(false)
     }
@@ -36,6 +54,7 @@ export const AuthProvider = ({ children }) => {
         const authedUser = session?.user ?? null
         setUser(authedUser)
         setLoading(false)
+        refreshAdminRole(authedUser)
 
         if (authedUser && event === 'SIGNED_IN') {
           recordDailyActivity(authedUser.id).catch(error =>
@@ -46,7 +65,7 @@ export const AuthProvider = ({ children }) => {
     )
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [refreshAdminRole])
 
   const signUp = async (email, password) => {
     setLoading(true)
@@ -103,6 +122,8 @@ export const AuthProvider = ({ children }) => {
     try {
       const { error } = await supabase.auth.signOut()
       if (error) throw error
+      setAdminRole(clearAdminRoleCache())
+      setRoleLoading(false)
       return { error: null }
     } catch (error) {
       return { error }
@@ -153,6 +174,9 @@ export const AuthProvider = ({ children }) => {
   const value = {
     user,
     loading,
+    roleLoading,
+    adminRole,
+    refreshAdminRole,
     signUp,
     signIn,
     signInWithGoogle,

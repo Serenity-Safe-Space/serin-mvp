@@ -2,16 +2,30 @@ import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { fetchAdminUserFeatureAnalytics } from '../lib/adminAnalyticsService'
+import { useAuth } from '../contexts/AuthContext'
 import './AdminDashboard.css'
 
 const AdminDashboard = () => {
   const navigate = useNavigate()
+  const { adminRole, roleLoading } = useAuth()
   const [totalUsersState, setTotalUsersState] = useState({ status: 'loading', value: null })
   const [activeUsersState, setActiveUsersState] = useState({ status: 'loading', value: null })
   const [avgDailyUsersState, setAvgDailyUsersState] = useState({ status: 'loading', value: null })
   const [avgSessionDurationState, setAvgSessionDurationState] = useState({ status: 'loading', value: null })
   const [userTableState, setUserTableState] = useState({ status: 'idle', rows: [], error: null })
   const [overviewMeta, setOverviewMeta] = useState({ activeSessions: '...', lastSeenDisplay: '...' })
+
+  const roleLabel = useMemo(() => {
+    switch (adminRole.role) {
+      case 'super_admin':
+        return 'Super Admin'
+      case 'admin':
+        return 'Admin'
+      case 'viewer':
+      default:
+        return 'Viewer'
+    }
+  }, [adminRole.role])
 
   useEffect(() => {
     const fetchTotalUsers = async () => {
@@ -208,6 +222,11 @@ const AdminDashboard = () => {
             </div>
             <h1 className="admin-dashboard__title">Serin</h1>
           </button>
+          {!roleLoading && (
+            <span className={`admin-dashboard__role-badge admin-dashboard__role-badge--${adminRole.role}`}>
+              {roleLabel}
+            </span>
+          )}
         </header>
 
         <section className="admin-dashboard__overview">
