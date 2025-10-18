@@ -170,6 +170,21 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  const updateUserProfile = async (metadata) => {
+    try {
+      const { data, error } = await supabase.auth.updateUser({ data: metadata })
+      if (error) throw error
+
+      if (data?.user) {
+        setUser(data.user)
+      }
+
+      return { data, error: null }
+    } catch (error) {
+      return { data: null, error }
+    }
+  }
+
 
   const value = {
     user,
@@ -177,6 +192,7 @@ export const AuthProvider = ({ children }) => {
     roleLoading,
     adminRole,
     refreshAdminRole,
+    updateUserProfile,
     signUp,
     signIn,
     signInWithGoogle,

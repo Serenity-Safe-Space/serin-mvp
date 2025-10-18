@@ -1,13 +1,79 @@
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext'
 import { useLanguage } from './contexts/LanguageContext'
 import { SERIN_COLORS } from './utils/serinColors'
 import './SettingsPopup.css'
 
+const sanitizeDisplayName = (value = '') => value.replace(/\s+/g, ' ').trim()
+
+const createEmojiRegex = () => {
+  try {
+    return new RegExp('\\p{Extended_Pictographic}', 'u')
+  } catch (error) {
+    return null
+  }
+}
+
+const EMOJI_REGEX = createEmojiRegex()
+const SURROGATE_PAIR_EMOJI_REGEX = /[\uD83C-\uDBFF][\uDC00-\uDFFF]/
+
+const containsEmoji = (value = '') => {
+  if (!value) return false
+  if (EMOJI_REGEX) {
+    return EMOJI_REGEX.test(value)
+  }
+  return SURROGATE_PAIR_EMOJI_REGEX.test(value)
+}
+
+const getAvatarInitial = (name, email) => {
+  const sanitizedName = sanitizeDisplayName(name)
+  if (sanitizedName) {
+    return sanitizedName.charAt(0).toUpperCase()
+  }
+
+  const fallback = (email ?? '').trim()
+  if (fallback) {
+    return fallback.charAt(0).toUpperCase()
+  }
+
+  return '?'
+}
+
+const getValidationMessage = (value, t) => {
+  const sanitized = sanitizeDisplayName(value)
+
+  if (!sanitized || sanitized.length < 2 || sanitized.length > 60) {
+    return t('settings.displayNameErrorLength')
+  }
+
+  if (containsEmoji(sanitized)) {
+    return t('settings.displayNameErrorEmoji')
+  }
+
+  return ''
+}
+
 function SettingsPopup({ isVisible, onClose }) {
   const navigate = useNavigate()
-  const { signOut } = useAuth()
+  const { signOut, updateUserProfile, user } = useAuth()
   const { language, setLanguage, t } = useLanguage()
+  const [displayName, setDisplayName] = useState('')
+  const [initialName, setInitialName] = useState('')
+  const [error, setError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+
+  useEffect(() => {
+    if (isVisible) {
+      const currentName = user?.user_metadata?.full_name ?? ''
+      setDisplayName(currentName)
+      setInitialName(currentName)
+      setError('')
+      setSuccessMessage('')
+      setIsSaving(false)
+    }
+  }, [isVisible, user])
 
   if (!isVisible) return null
 
@@ -38,6 +104,77 @@ function SettingsPopup({ isVisible, onClose }) {
     console.info('Delete account flow not implemented yet.')
   }
 
+  const handleDisplayNameChange = (event) => {
+    setDisplayName(event.target.value)
+    if (error) {
+      setError('')
+    }
+    if (successMessage) {
+      setSuccessMessage('')
+    }
+  }
+
+  const handleDisplayNameBlur = () => {
+    const sanitized = sanitizeDisplayName(displayName)
+    setDisplayName(sanitized)
+    const validationMessage = getValidationMessage(sanitized, t)
+    setError(validationMessage)
+  }
+
+  const handleProfileSubmit = async (event) => {
+    event.preventDefault()
+
+    if (!user) {
+      return
+    }
+
+    const sanitized = sanitizeDisplayName(displayName)
+    const validationMessage = getValidationMessage(sanitized, t)
+
+    if (validationMessage) {
+      setDisplayName(sanitized)
+      setError(validationMessage)
+      setSuccessMessage('')
+      return
+    }
+
+    const sanitizedInitialName = sanitizeDisplayName(initialName)
+    if (sanitized === sanitizedInitialName) {
+      setDisplayName(sanitized)
+      setError('')
+      return
+    }
+
+    setIsSaving(true)
+
+    try {
+      const { error: updateError } = await updateUserProfile({ full_name: sanitized })
+      if (updateError) {
+        setError(t('settings.displayNameErrorGeneric'))
+        setSuccessMessage('')
+        return
+      }
+
+      setInitialName(sanitized)
+      setDisplayName(sanitized)
+      setError('')
+      setSuccessMessage(t('settings.displayNameSuccess'))
+    } catch (caughtError) {
+      console.error('Failed to update profile name:', caughtError)
+      setError(t('settings.displayNameErrorGeneric'))
+      setSuccessMessage('')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const currentValidationMessage = getValidationMessage(displayName, t)
+  const sanitizedCurrentName = sanitizeDisplayName(displayName)
+  const sanitizedInitialName = sanitizeDisplayName(initialName)
+  const isDirty = sanitizedCurrentName !== sanitizedInitialName
+  const canSaveName = Boolean(user) && isDirty && !currentValidationMessage && !isSaving
+  const avatarInitial = getAvatarInitial(displayName || initialName, user?.email)
+
   return (
     <div className="settings-popup-overlay" onClick={onClose}>
       <div
@@ -61,6 +198,53 @@ function SettingsPopup({ isVisible, onClose }) {
         </div>
 
         <div className="settings-popup-content">
+          {user && (
+            <form className="settings-profile-card" onSubmit={handleProfileSubmit}>
+              <div className="settings-profile-header">
+                <div className="settings-profile-avatar" aria-hidden="true">
+                  <span>{avatarInitial}</span>
+                </div>
+                <div className="settings-profile-meta">
+                  <span className="settings-profile-label">{t('settings.profileLabel')}</span>
+                  <span className="settings-profile-email">{user.email}</span>
+                </div>
+              </div>
+
+              <label className="settings-field">
+                <span className="settings-field-label">{t('settings.displayName')}</span>
+                <input
+                  type="text"
+                  value={displayName}
+                  onChange={handleDisplayNameChange}
+                  onBlur={handleDisplayNameBlur}
+                  maxLength={60}
+                  autoComplete="name"
+                  placeholder={t('settings.displayNamePlaceholder')}
+                  className={`settings-field-input${error ? ' has-error' : ''}`}
+                />
+              </label>
+
+              <p className={`settings-field-helper${error ? ' is-error' : ''}`}>
+                {error || t('settings.displayNameHelper')}
+              </p>
+
+              <div className="settings-profile-actions">
+                {successMessage && (
+                  <span className="settings-profile-status" role="status">
+                    {successMessage}
+                  </span>
+                )}
+                <button
+                  type="submit"
+                  className="settings-profile-save"
+                  disabled={!canSaveName}
+                >
+                  {isSaving ? t('settings.displayNameSaving') : t('settings.displayNameSave')}
+                </button>
+              </div>
+            </form>
+          )}
+
           <div className="settings-heading">
             <span className="settings-heading-icon" aria-hidden="true">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
