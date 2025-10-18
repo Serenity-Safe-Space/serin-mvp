@@ -401,18 +401,18 @@ export const useVoiceToGemini = (options = {}) => {
                 console.log('WebSocket connection established');
 
                 const setupMessage = {
-                            setup: {
-                                model: 'models/gemini-2.5-flash-preview-native-audio-dialog',
-                                generationConfig: {
-                                    responseModalities: ['AUDIO'],
-                                    speechConfig: {
-                                        voiceConfig: {
-                                            prebuiltVoiceConfig: {
-                                                voiceName: 'Orus'
-                                            }
-                                        }
+                    setup: {
+                        model: 'models/gemini-2.5-flash-native-audio-preview-09-2025',
+                        generationConfig: {
+                            responseModalities: ['AUDIO'],
+                            speechConfig: {
+                                voiceConfig: {
+                                    prebuiltVoiceConfig: {
+                                        voiceName: 'Orus'
                                     }
-                                },
+                                }
+                            }
+                        },
                         systemInstruction: {
                             parts: [
                                 {
@@ -728,7 +728,7 @@ export const useVoiceToGemini = (options = {}) => {
 
                         const setupMessage = {
                             setup: {
-                                model: 'models/gemini-2.5-flash-preview-native-audio-dialog',
+                                model: 'models/gemini-2.5-flash-native-audio-preview-09-2025',
                                 generationConfig: {
                                     responseModalities: ['AUDIO'],
                                     speechConfig: {
