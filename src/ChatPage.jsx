@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { useAuth } from './contexts/AuthContext'
 import { useLanguage } from './contexts/LanguageContext'
+import { useLastChat } from './contexts/LastChatContext'
 import { recordDailyActivity } from './lib/activityService'
 import { createChatSession, createVoiceSession, finalizeSession, saveMessage, getChatSession } from './lib/chatHistoryService'
 import { analyzeMoodShift } from './lib/memoryAnalyzer'
@@ -22,7 +23,9 @@ function ChatPage() {
   const { user } = useAuth()
   const { sessionId } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const { t } = useLanguage()
+  const { lastChat, rememberChat, clearLastChat } = useLastChat()
   const [currentMessage, setCurrentMessage] = useState(() => t('chat.initialGreeting'))
   const [inputValue, setInputValue] = useState('')
   const [chatHistory, setChatHistory] = useState([])
@@ -48,6 +51,7 @@ function ChatPage() {
     user: new Set(),
     assistant: new Set(),
   })
+  const skipRestoreRef = useRef(false)
 
   useEffect(() => {
     if (!hasStartedChat) {
@@ -165,9 +169,13 @@ function ChatPage() {
         }).catch(error => {
           console.warn('Failed to persist voice message:', error)
         })
+
+        if (userRef.current?.id) {
+          rememberChat(sessionId, { userId: userRef.current.id })
+        }
       }
     }
-  }, [triggerMoodAnalysis])
+  }, [triggerMoodAnalysis, rememberChat])
 
   const handleVoiceSessionClosed = useCallback((details) => {
     if (!voiceSessionRef.current) {
@@ -202,6 +210,13 @@ function ChatPage() {
   }, [])
 
   useEffect(() => {
+    if (location.state?.skipLastChatRestore) {
+      skipRestoreRef.current = true
+      navigate(location.pathname, { replace: true, state: null })
+    }
+  }, [location, navigate])
+
+  useEffect(() => {
     sessionIdRef.current = currentSessionId
   }, [currentSessionId])
 
@@ -219,6 +234,35 @@ function ChatPage() {
     }
   }, [currentSessionId, user])
 
+  useEffect(() => {
+    if (sessionId) {
+      skipRestoreRef.current = false
+      return
+    }
+
+    if (skipRestoreRef.current) {
+      return
+    }
+
+    if (!user?.id || !lastChat?.sessionId) {
+      return
+    }
+
+    if (lastChat.userId !== user.id) {
+      return
+    }
+
+    skipRestoreRef.current = true
+    navigate(`/chat/${lastChat.sessionId}`, { replace: true, state: { restoredFromLastChat: true } })
+  }, [sessionId, user, lastChat, navigate])
+
+  useEffect(() => {
+    if (!currentSessionId || !user?.id) {
+      return
+    }
+    rememberChat(currentSessionId, { userId: user.id })
+  }, [currentSessionId, user, rememberChat])
+
   // Load existing session if sessionId is provided
   useEffect(() => {
     const loadSession = async () => {
@@ -230,7 +274,10 @@ function ChatPage() {
           if (error || !session) {
             console.error('Error loading session:', error)
             // Redirect to home if session not found
-            navigate('/', { replace: true })
+            if (lastChat?.sessionId === sessionId) {
+              clearLastChat()
+            }
+            navigate('/', { replace: true, state: { skipLastChatRestore: true } })
             return
           }
 
@@ -260,6 +307,9 @@ function ChatPage() {
           setIsLoadingSession(false)
         }
       } else if (!sessionId) {
+        if (skipRestoreRef.current && lastChat?.sessionId && user?.id === lastChat.userId) {
+          return
+        }
         // Reset state for new chat
         setChatHistory([])
         setCurrentSessionId(null)
@@ -269,7 +319,7 @@ function ChatPage() {
     }
 
     loadSession()
-  }, [sessionId, user, navigate])
+  }, [sessionId, user, navigate, lastChat, clearLastChat])
 
   // Load test audio files in development mode
   useEffect(() => {
@@ -322,6 +372,10 @@ function ChatPage() {
 
       if (sessionIdToUse) {
         sessionIdRef.current = sessionIdToUse
+
+        if (user?.id) {
+          rememberChat(sessionIdToUse, { userId: user.id })
+        }
       }
 
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" })
@@ -409,6 +463,20 @@ function ChatPage() {
 
   const handleCloseChatHistory = () => {
     setIsChatHistoryPopupVisible(false)
+  }
+
+  const handleStartNewChat = () => {
+    clearLastChat()
+    skipRestoreRef.current = true
+    setIsChatHistoryPopupVisible(false)
+    setIsProfilePopupVisible(false)
+    setChatHistory([])
+    setCurrentSessionId(null)
+    setHasStartedChat(false)
+    setIsFirstMessage(true)
+    setCurrentMessage(t('chat.initialGreeting'))
+    setInputValue('')
+    navigate('/', { replace: true, state: { skipLastChatRestore: true } })
   }
 
   const handleSelectChatHistory = (selectedSessionId) => {
@@ -719,6 +787,7 @@ function ChatPage() {
         isVisible={isChatHistoryPopupVisible}
         onClose={handleCloseChatHistory}
         onSelectChat={handleSelectChatHistory}
+        onStartNewChat={handleStartNewChat}
         activeSessionId={currentSessionId}
       />
 

@@ -80,7 +80,7 @@ const normalizeMessages = (messages = [], initialGreetings = []) => {
   return normalized.map(({ __orderIndex, ...message }) => message)
 }
 
-function ChatHistoryPopup({ isVisible, onClose, onSelectChat, activeSessionId = null }) {
+function ChatHistoryPopup({ isVisible, onClose, onSelectChat, onStartNewChat, activeSessionId = null }) {
   const { user } = useAuth()
   const { t, language } = useLanguage()
   const [chatSessions, setChatSessions] = useState([])
@@ -330,6 +330,12 @@ function ChatHistoryPopup({ isVisible, onClose, onSelectChat, activeSessionId = 
     setShowDeleteConfirm(true)
   }
 
+  const handleStartNewChat = () => {
+    if (typeof onStartNewChat === 'function') {
+      onStartNewChat()
+    }
+  }
+
   const handleCancelDelete = () => {
     if (isDeleting) return
     setShowDeleteConfirm(false)
@@ -436,6 +442,15 @@ function ChatHistoryPopup({ isVisible, onClose, onSelectChat, activeSessionId = 
                 )
               })}
             </div>
+
+            <button
+              type="button"
+              className="chat-history-new-chat"
+              onClick={handleStartNewChat}
+              disabled={showDeleteConfirm}
+            >
+              {t('chatHistory.startNew')}
+            </button>
 
             <button
               type="button"

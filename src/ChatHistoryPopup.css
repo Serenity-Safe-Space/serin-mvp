@@ -203,6 +203,31 @@
   align-self: center;
 }
 
+.chat-history-new-chat {
+  background: var(--chat-history-outline, #FFEB5B);
+  color: var(--chat-history-surface, #281E4F);
+  border: none;
+  border-radius: 999px;
+  padding: 14px 24px;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: 'Hangyaboly', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  align-self: center;
+}
+
+.chat-history-new-chat:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(255, 235, 91, 0.35);
+  filter: brightness(1.05);
+}
+
+.chat-history-new-chat:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
 .chat-history-delete:disabled {
   opacity: 0.6;
   cursor: default;
