@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useAuth } from './AuthContext'
 
 const STORAGE_KEY = 'serin:last-chat'
-const DEFAULT_TTL_MS = 12 * 60 * 60 * 1000 // 12 hours
+export const DEFAULT_LAST_CHAT_TTL_MS = 60 * 60 * 1000 // 60 minutes
 
 const LastChatContext = createContext({
   lastChat: null,
@@ -67,7 +67,7 @@ const clearStoredChat = () => {
   }
 }
 
-export const LastChatProvider = ({ children, ttlMs = DEFAULT_TTL_MS }) => {
+export const LastChatProvider = ({ children, ttlMs = DEFAULT_LAST_CHAT_TTL_MS }) => {
   const { user } = useAuth()
   const [lastChat, setLastChat] = useState(null)
   const ttlRef = useRef(ttlMs)

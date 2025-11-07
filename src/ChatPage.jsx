@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { useAuth } from './contexts/AuthContext'
 import { useLanguage } from './contexts/LanguageContext'
-import { useLastChat } from './contexts/LastChatContext'
+import { useLastChat, DEFAULT_LAST_CHAT_TTL_MS } from './contexts/LastChatContext'
 import { recordDailyActivity } from './lib/activityService'
 import { createChatSession, createVoiceSession, finalizeSession, saveMessage, getChatSession } from './lib/chatHistoryService'
 import { analyzeMoodShift } from './lib/memoryAnalyzer'
@@ -18,6 +18,7 @@ import SettingsPopup from './SettingsPopup'
 import './ChatPage.css'
 
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY)
+const SESSION_INACTIVITY_THRESHOLD_MS = DEFAULT_LAST_CHAT_TTL_MS
 
 function ChatPage() {
   const { user } = useAuth()
@@ -52,6 +53,7 @@ function ChatPage() {
     assistant: new Set(),
   })
   const skipRestoreRef = useRef(false)
+  const lastInteractionRef = useRef(null)
 
   useEffect(() => {
     if (!hasStartedChat) {
@@ -131,6 +133,37 @@ function ChatPage() {
       }
     })
   }, [])
+
+  const ensureFreshSession = useCallback(async (referenceTimestampMs) => {
+    const nowMs = typeof referenceTimestampMs === 'number' ? referenceTimestampMs : Date.now()
+    const activeSessionId = sessionIdRef.current
+    const lastInteractionMs = lastInteractionRef.current
+
+    if (!activeSessionId || !lastInteractionMs) {
+      lastInteractionRef.current = nowMs
+      return false
+    }
+
+    if ((nowMs - lastInteractionMs) < SESSION_INACTIVITY_THRESHOLD_MS) {
+      return false
+    }
+
+    try {
+      await finalizeSession(activeSessionId, new Date(lastInteractionMs).toISOString())
+    } catch (error) {
+      console.warn('Failed to finalize stale session:', error)
+    }
+
+    clearLastChat()
+    setCurrentSessionId(null)
+    sessionIdRef.current = null
+    setChatHistory([])
+    setHasStartedChat(false)
+    setIsFirstMessage(true)
+    setCurrentMessage(t('chat.initialGreeting'))
+    lastInteractionRef.current = nowMs
+    return true
+  }, [clearLastChat, t])
 
   const handleVoiceConversationUpdate = useCallback((message) => {
     if (!message || typeof message.content !== 'string') {
@@ -291,6 +324,15 @@ function ChatPage() {
           setCurrentSessionId(session.id)
           setHasStartedChat(formattedHistory.length > 0)
           setIsFirstMessage(formattedHistory.length === 0)
+
+          const lastMessageRecord = messages[messages.length - 1]
+          const fallbackTimestamp = lastMessageRecord?.created_at || session.ended_at || session.updated_at || session.created_at || null
+          if (fallbackTimestamp) {
+            const parsed = new Date(fallbackTimestamp).getTime()
+            lastInteractionRef.current = Number.isNaN(parsed) ? null : parsed
+          } else {
+            lastInteractionRef.current = null
+          }
           
           // Set current message to last assistant message or default
           const lastAssistantMessage = formattedHistory
@@ -315,6 +357,7 @@ function ChatPage() {
         setCurrentSessionId(null)
         setHasStartedChat(false)
         setIsFirstMessage(true)
+        lastInteractionRef.current = null
       }
     }
 
@@ -348,16 +391,18 @@ function ChatPage() {
 
     const userMessage = inputValue.trim()
     const userMessageTimestamp = new Date()
+    const sessionWasReset = await ensureFreshSession(userMessageTimestamp.getTime())
     setInputValue('')
     setCurrentMessage(userMessage)
     setHasStartedChat(true)
     setIsLoading(true)
+    lastInteractionRef.current = userMessageTimestamp.getTime()
 
     try {
-      let sessionIdToUse = currentSessionId
+      let sessionIdToUse = sessionIdRef.current
       
       // Create new session if this is the first message and user is logged in
-      if (!sessionIdToUse && user && isFirstMessage) {
+      if (!sessionIdToUse && user && (isFirstMessage || sessionWasReset)) {
         const { session, error } = await createChatSession(user.id, userMessage)
         if (error) {
           console.error('Error creating session:', error)
@@ -379,8 +424,8 @@ function ChatPage() {
       }
 
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" })
-      
-      const prompt = getSerinPrompt(chatHistory, userMessage)
+      const historyForPrompt = sessionWasReset ? [] : chatHistory
+      const prompt = getSerinPrompt(historyForPrompt, userMessage)
       const result = await model.generateContent(prompt)
       const response = result.response.text()
       let assistantMessageTimestamp = new Date()
@@ -389,12 +434,12 @@ function ChatPage() {
         assistantMessageTimestamp = new Date(userMessageTimestamp.getTime() + 1)
       }
       
-      if (isFirstMessage) {
+      if (isFirstMessage || sessionWasReset) {
         setIsFirstMessage(false)
       }
 
       const newHistory = [
-        ...chatHistory,
+        ...historyForPrompt,
         { role: 'user', content: userMessage },
         { role: 'assistant', content: response }
       ]
@@ -402,6 +447,7 @@ function ChatPage() {
       setChatHistory(newHistory)
       setCurrentMessage(response)
       Promise.resolve().then(() => triggerMoodAnalysis(newHistory, 'text'))
+      lastInteractionRef.current = assistantMessageTimestamp.getTime()
 
       // Save messages to database if user is logged in and we have a session
       if (user && sessionIdToUse) {
@@ -476,6 +522,7 @@ function ChatPage() {
     setIsFirstMessage(true)
     setCurrentMessage(t('chat.initialGreeting'))
     setInputValue('')
+    lastInteractionRef.current = null
     navigate('/', { replace: true, state: { skipLastChatRestore: true } })
   }
 
