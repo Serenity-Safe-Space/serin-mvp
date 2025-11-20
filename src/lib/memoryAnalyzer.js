@@ -13,7 +13,7 @@ const getModel = () => {
   if (!model) {
     const client = new GoogleGenerativeAI(apiKey)
     model = client.getGenerativeModel({
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-2.5-flash',
       generationConfig: {
         responseMimeType: 'application/json',
         maxOutputTokens: 200

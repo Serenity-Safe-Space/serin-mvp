@@ -423,7 +423,7 @@ function ChatPage() {
         }
       }
 
-      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" })
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
       const historyForPrompt = sessionWasReset ? [] : chatHistory
       const prompt = getSerinPrompt(historyForPrompt, userMessage)
       const result = await model.generateContent(prompt)
