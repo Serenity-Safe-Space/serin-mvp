@@ -7,10 +7,17 @@
   font-family: 'Hangyaboly', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
 
-.profile-icon {
+.chat-top-controls {
   position: absolute;
   top: 20px;
   right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  z-index: 5;
+}
+
+.profile-icon {
   cursor: pointer;
   padding: 12px;
   border-radius: 50%;
@@ -29,6 +36,63 @@
 
 .profile-icon svg path {
   fill: #3C2A73;
+}
+
+.chat-model-selector,
+.chat-model-indicator {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #FFFFFF;
+  font-size: 13px;
+  font-family: 'Hangyaboly', sans-serif;
+}
+
+.chat-model-selector__label,
+.chat-model-indicator__label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.8;
+}
+
+.chat-model-selector__input {
+  border: none;
+  border-radius: 12px;
+  padding: 8px 10px;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  color: #3C2A73;
+}
+
+.chat-model-selector__input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.chat-model-indicator__value {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.chat-model-selector__lock-pill {
+  margin-left: 6px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.2);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.chat-model-selector__lock-note {
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.3;
+  opacity: 0.8;
 }
 
 .chat-header {

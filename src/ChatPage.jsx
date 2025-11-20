@@ -1,23 +1,24 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
-import { GoogleGenerativeAI } from '@google/generative-ai'
 import { useAuth } from './contexts/AuthContext'
 import { useLanguage } from './contexts/LanguageContext'
 import { useLastChat, DEFAULT_LAST_CHAT_TTL_MS } from './contexts/LastChatContext'
+import { useModelPreference } from './contexts/ModelPreferenceContext'
 import { recordDailyActivity } from './lib/activityService'
 import { createChatSession, createVoiceSession, finalizeSession, saveMessage, getChatSession } from './lib/chatHistoryService'
 import { analyzeMoodShift } from './lib/memoryAnalyzer'
 import { upsertMoodMemory } from './lib/memoryService'
+import { generateTextResponse } from './lib/aiModelClient'
+import { rememberSessionModel, getSessionModel, clearSessionModel } from './lib/sessionModelStorage'
 import { useVoiceToGemini } from './useVoiceToGemini'
-import { getSerinPrompt } from './utils/serinPrompt'
 import { SERIN_COLORS } from './utils/serinColors'
 import ProfilePopup from './ProfilePopup'
 import ChatHistoryPopup from './ChatHistoryPopup'
 import SignInModal from './SignInModal'
 import SettingsPopup from './SettingsPopup'
+import ModelSelector from './ModelSelector'
 import './ChatPage.css'
 
-const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY)
 const SESSION_INACTIVITY_THRESHOLD_MS = DEFAULT_LAST_CHAT_TTL_MS
 
 function ChatPage() {
@@ -27,6 +28,12 @@ function ChatPage() {
   const location = useLocation()
   const { t } = useLanguage()
   const { lastChat, rememberChat, clearLastChat } = useLastChat()
+  const {
+    currentModel,
+    availableModels,
+    canEdit,
+    setModel: setPreferredModel,
+  } = useModelPreference()
   const [currentMessage, setCurrentMessage] = useState(() => t('chat.initialGreeting'))
   const [inputValue, setInputValue] = useState('')
   const [chatHistory, setChatHistory] = useState([])
@@ -41,6 +48,8 @@ function ChatPage() {
   const [isSettingsPopupVisible, setIsSettingsPopupVisible] = useState(false)
   const [testAudioFiles, setTestAudioFiles] = useState([])
   const [showTestPanel, setShowTestPanel] = useState(false)
+  const [activeModel, setActiveModel] = useState(currentModel)
+  const [isModelLocked, setIsModelLocked] = useState(false)
   const inputRef = useRef(null)
   const sessionIdRef = useRef(currentSessionId)
   const userRef = useRef(user)
@@ -54,6 +63,32 @@ function ChatPage() {
   })
   const skipRestoreRef = useRef(false)
   const lastInteractionRef = useRef(null)
+
+  const unlockModelSelection = useCallback(() => {
+    setIsModelLocked(false)
+    setActiveModel(currentModel)
+  }, [currentModel])
+
+  const lockSessionModel = useCallback((sessionIdentifier) => {
+    if (!sessionIdentifier) {
+      return
+    }
+
+    const storedModel = getSessionModel(sessionIdentifier)
+    const modelToApply = storedModel || currentModel
+    setActiveModel(modelToApply)
+    setIsModelLocked(true)
+
+    if (!storedModel) {
+      rememberSessionModel(sessionIdentifier, modelToApply)
+    }
+  }, [currentModel])
+
+  useEffect(() => {
+    if (!isModelLocked) {
+      setActiveModel(currentModel)
+    }
+  }, [currentModel, isModelLocked])
 
   useEffect(() => {
     if (!hasStartedChat) {
@@ -155,6 +190,9 @@ function ChatPage() {
     }
 
     clearLastChat()
+    if (activeSessionId) {
+      clearSessionModel(activeSessionId)
+    }
     setCurrentSessionId(null)
     sessionIdRef.current = null
     setChatHistory([])
@@ -162,8 +200,9 @@ function ChatPage() {
     setIsFirstMessage(true)
     setCurrentMessage(t('chat.initialGreeting'))
     lastInteractionRef.current = nowMs
+    unlockModelSelection()
     return true
-  }, [clearLastChat, t])
+  }, [clearLastChat, t, unlockModelSelection])
 
   const handleVoiceConversationUpdate = useCallback((message) => {
     if (!message || typeof message.content !== 'string') {
@@ -324,6 +363,7 @@ function ChatPage() {
           setCurrentSessionId(session.id)
           setHasStartedChat(formattedHistory.length > 0)
           setIsFirstMessage(formattedHistory.length === 0)
+          lockSessionModel(session.id)
 
           const lastMessageRecord = messages[messages.length - 1]
           const fallbackTimestamp = lastMessageRecord?.created_at || session.ended_at || session.updated_at || session.created_at || null
@@ -358,11 +398,12 @@ function ChatPage() {
         setHasStartedChat(false)
         setIsFirstMessage(true)
         lastInteractionRef.current = null
+        unlockModelSelection()
       }
     }
 
     loadSession()
-  }, [sessionId, user, navigate, lastChat, clearLastChat])
+  }, [sessionId, user, navigate, lastChat, clearLastChat, lockSessionModel, unlockModelSelection])
 
   // Load test audio files in development mode
   useEffect(() => {
@@ -400,6 +441,12 @@ function ChatPage() {
 
     try {
       let sessionIdToUse = sessionIdRef.current
+      const modelForMessage = isModelLocked ? (activeModel || currentModel) : currentModel
+
+      if (!isModelLocked) {
+        setActiveModel(modelForMessage)
+        setIsModelLocked(true)
+      }
       
       // Create new session if this is the first message and user is logged in
       if (!sessionIdToUse && user && (isFirstMessage || sessionWasReset)) {
@@ -410,6 +457,7 @@ function ChatPage() {
           sessionIdToUse = session.id
           setCurrentSessionId(session.id)
           sessionIdRef.current = session.id
+          rememberSessionModel(session.id, modelForMessage)
           // Update URL to include session ID
           navigate(`/chat/${session.id}`, { replace: true })
         }
@@ -423,11 +471,19 @@ function ChatPage() {
         }
       }
 
-      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
       const historyForPrompt = sessionWasReset ? [] : chatHistory
-      const prompt = getSerinPrompt(historyForPrompt, userMessage)
-      const result = await model.generateContent(prompt)
-      const response = result.response.text()
+      const responseResult = await generateTextResponse({
+        modelId: modelForMessage,
+        history: historyForPrompt,
+        userMessage,
+      })
+      const responseText = responseResult?.text?.trim()
+
+      if (!responseText) {
+        throw new Error('The selected model did not return any text.')
+      }
+
+      const response = responseText
       let assistantMessageTimestamp = new Date()
 
       if (assistantMessageTimestamp <= userMessageTimestamp) {
@@ -466,8 +522,11 @@ function ChatPage() {
         )
       }
     } catch (error) {
-      console.error('Error calling Gemini API:', error)
-      setCurrentMessage(t('chat.connectionError'))
+      console.error('Error generating AI response:', error)
+      const friendlyMessage = typeof error?.message === 'string' && error.message.trim().length > 0
+        ? error.message
+        : t('chat.connectionError')
+      setCurrentMessage(friendlyMessage)
     } finally {
       setIsLoading(false)
       // Focus the input field after response
@@ -512,6 +571,9 @@ function ChatPage() {
   }
 
   const handleStartNewChat = () => {
+    if (sessionIdRef.current) {
+      clearSessionModel(sessionIdRef.current)
+    }
     clearLastChat()
     skipRestoreRef.current = true
     setIsChatHistoryPopupVisible(false)
@@ -523,6 +585,7 @@ function ChatPage() {
     setCurrentMessage(t('chat.initialGreeting'))
     setInputValue('')
     lastInteractionRef.current = null
+    unlockModelSelection()
     navigate('/', { replace: true, state: { skipLastChatRestore: true } })
   }
 
@@ -610,10 +673,21 @@ function ChatPage() {
 
   return (
     <div className="chat-page">
-      <div className="profile-icon" onClick={handleProfileClick}>
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="#3C2A73"/>
-        </svg>
+      <div className="chat-top-controls">
+        <div className="profile-icon" onClick={handleProfileClick}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="#3C2A73"/>
+          </svg>
+        </div>
+        {canEdit && (
+          <ModelSelector
+            value={isModelLocked ? (activeModel || currentModel) : currentModel}
+            availableModels={availableModels}
+            disabled={isLoading}
+            isLocked={isModelLocked}
+            onChange={setPreferredModel}
+          />
+        )}
       </div>
 
       {/* Development Test Audio Panel */}
