@@ -4,7 +4,6 @@ const TEXT_MODELS = [
     label: 'Gemini 2.5 Flash',
     provider: 'google',
     apiName: 'gemini-2.5-flash',
-    envKey: 'VITE_GEMINI_API_KEY',
     description: 'Balanced for fast reasoning and low latency across most prompts.',
   },
   {
@@ -12,7 +11,6 @@ const TEXT_MODELS = [
     label: 'GPT-4.1',
     provider: 'openai',
     apiName: 'gpt-4.1',
-    envKey: 'VITE_OPENAI_API_KEY',
     description: 'Most capable GPT-4.1 model with high reasoning depth.',
   },
   {
@@ -20,18 +18,13 @@ const TEXT_MODELS = [
     label: 'GPT-4.1 Mini',
     provider: 'openai',
     apiName: 'gpt-4.1-mini',
-    envKey: 'VITE_OPENAI_API_KEY',
     description: 'Cost effective GPT-4.1 variant tuned for speed.',
   },
 ]
 
 const envHasValue = (key) => {
-  if (!key || typeof key !== 'string') {
-    return true
-  }
-
-  const value = import.meta.env?.[key]
-  return typeof value === 'string' && value.trim().length > 0
+  // Keys are now managed on the server
+  return true
 }
 
 export const getModelById = (modelId) => {

@@ -1,28 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai'
 import { buildMoodShiftPrompt } from '../utils/memoryPrompts'
-
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY
-let model = null
-
-const getModel = () => {
-  if (!apiKey) {
-    console.error('VITE_GEMINI_API_KEY is missing; cannot analyze mood shifts.')
-    return null
-  }
-
-  if (!model) {
-    const client = new GoogleGenerativeAI(apiKey)
-    model = client.getGenerativeModel({
-      model: 'gemini-2.5-flash',
-      generationConfig: {
-        responseMimeType: 'application/json',
-        maxOutputTokens: 200
-      }
-    })
-  }
-
-  return model
-}
 
 const parseAnalysis = (rawText) => {
   if (!rawText) {
@@ -62,18 +38,31 @@ export const analyzeMoodShift = async (messages) => {
   }
 
   try {
-    const moodModel = getModel()
-    if (!moodModel) {
-      return null
-    }
-
     const prompt = buildMoodShiftPrompt(messages)
     if (!prompt) {
       return null
     }
 
-    const result = await moodModel.generateContent(prompt)
-    const text = result?.response?.text?.()
+    // Use the secure backend API
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        provider: 'google',
+        model: 'gemini-2.5-flash',
+        prompt: prompt
+      }),
+    })
+
+    if (!response.ok) {
+      console.error('Mood analysis API failed:', response.status)
+      return null
+    }
+
+    const data = await response.json()
+    const text = data.text
 
     return parseAnalysis(text)
   } catch (error) {
