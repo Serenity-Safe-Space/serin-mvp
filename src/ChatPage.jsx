@@ -342,7 +342,7 @@ function ChatPage() {
         setIsLoadingSession(true)
         try {
           const { session, messages, error } = await getChatSession(sessionId, user.id)
-          
+
           if (error || !session) {
             console.error('Error loading session:', error)
             // Redirect to home if session not found
@@ -358,7 +358,7 @@ function ChatPage() {
             role: msg.role,
             content: msg.content
           }))
-          
+
           setChatHistory(formattedHistory)
           setCurrentSessionId(session.id)
           setHasStartedChat(formattedHistory.length > 0)
@@ -373,12 +373,12 @@ function ChatPage() {
           } else {
             lastInteractionRef.current = null
           }
-          
+
           // Set current message to last assistant message or default
           const lastAssistantMessage = formattedHistory
             .filter(msg => msg.role === 'assistant')
             .pop()
-          
+
           if (lastAssistantMessage) {
             setCurrentMessage(lastAssistantMessage.content)
           }
@@ -389,9 +389,6 @@ function ChatPage() {
           setIsLoadingSession(false)
         }
       } else if (!sessionId) {
-        if (skipRestoreRef.current && lastChat?.sessionId && user?.id === lastChat.userId) {
-          return
-        }
         // Reset state for new chat
         setChatHistory([])
         setCurrentSessionId(null)
@@ -425,7 +422,7 @@ function ChatPage() {
 
     // Record daily activity for chat interaction
     if (user) {
-      recordDailyActivity(user.id).catch(error => 
+      recordDailyActivity(user.id).catch(error =>
         console.warn('Failed to record daily activity:', error)
       )
     }
@@ -447,7 +444,7 @@ function ChatPage() {
         setActiveModel(modelForMessage)
         setIsModelLocked(true)
       }
-      
+
       // Create new session if this is the first message and user is logged in
       if (!sessionIdToUse && user && (isFirstMessage || sessionWasReset)) {
         const { session, error } = await createChatSession(user.id, userMessage)
@@ -489,7 +486,7 @@ function ChatPage() {
       if (assistantMessageTimestamp <= userMessageTimestamp) {
         assistantMessageTimestamp = new Date(userMessageTimestamp.getTime() + 1)
       }
-      
+
       if (isFirstMessage || sessionWasReset) {
         setIsFirstMessage(false)
       }
@@ -510,14 +507,14 @@ function ChatPage() {
         // Save user message
         saveMessage(sessionIdToUse, 'user', userMessage, {
           occurredAt: userMessageTimestamp.toISOString(),
-        }).catch(error => 
+        }).catch(error =>
           console.warn('Failed to save user message:', error)
         )
-        
+
         // Save assistant message
         saveMessage(sessionIdToUse, 'assistant', response, {
           occurredAt: assistantMessageTimestamp.toISOString(),
-        }).catch(error => 
+        }).catch(error =>
           console.warn('Failed to save assistant message:', error)
         )
       }
@@ -592,7 +589,7 @@ function ChatPage() {
   const handleSelectChatHistory = (selectedSessionId) => {
     setIsChatHistoryPopupVisible(false)
     setIsProfilePopupVisible(false)
-    
+
     // Navigate to the selected session
     navigate(`/chat/${selectedSessionId}`)
   }
@@ -676,7 +673,7 @@ function ChatPage() {
       <div className="chat-top-controls">
         <div className="profile-icon" onClick={handleProfileClick}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="#3C2A73"/>
+            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="#3C2A73" />
           </svg>
         </div>
         {canEdit && (
@@ -787,7 +784,7 @@ function ChatPage() {
           )}
         </div>
       )}
-      
+
       <div className="chat-content">
         <div className="character-container">
           <div className="character-circle">
@@ -884,19 +881,19 @@ function ChatPage() {
               disabled={isLoading || !inputValue.trim()}
             >
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="#2D1F5C"/>
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="#2D1F5C" />
               </svg>
             </button>
           </div>
-          
+
           <div className="privacy-notice">
             <Link to="/privacy" className="privacy-link">{t('chat.privacyLink')}</Link>
           </div>
         </div>
       </div>
 
-      <ProfilePopup 
-        isVisible={isProfilePopupVisible} 
+      <ProfilePopup
+        isVisible={isProfilePopupVisible}
         onClose={handleClosePopup}
         onSignInClick={handleSignInClick}
         onChatHistoryClick={handleChatHistoryClick}
@@ -904,7 +901,7 @@ function ChatPage() {
         onAdminDashboardClick={handleAdminDashboardLink}
       />
 
-      <ChatHistoryPopup 
+      <ChatHistoryPopup
         isVisible={isChatHistoryPopupVisible}
         onClose={handleCloseChatHistory}
         onSelectChat={handleSelectChatHistory}
@@ -912,12 +909,12 @@ function ChatPage() {
         activeSessionId={currentSessionId}
       />
 
-      <SignInModal 
+      <SignInModal
         isVisible={isSignInModalVisible}
         onClose={handleCloseSignInModal}
       />
 
-      <SettingsPopup 
+      <SettingsPopup
         isVisible={isSettingsPopupVisible}
         onClose={handleCloseSettings}
       />
