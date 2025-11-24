@@ -35,6 +35,8 @@ export const getModelById = (modelId) => {
 export const isModelAvailable = (modelId) => {
   const model = getModelById(modelId)
   if (!model) return false
+  // Only allow Google models for now
+  if (model.provider !== 'google') return false
   return envHasValue(model.envKey)
 }
 
@@ -53,10 +55,12 @@ export const getDefaultTextModelId = () => {
 }
 
 export const listTextModels = () => {
-  return TEXT_MODELS.map((model) => ({
-    ...model,
-    available: isModelAvailable(model.id),
-  }))
+  return TEXT_MODELS
+    .filter(model => model.provider === 'google')
+    .map((model) => ({
+      ...model,
+      available: isModelAvailable(model.id),
+    }))
 }
 
 export const getModelLabel = (modelId) => {
