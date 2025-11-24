@@ -15,7 +15,7 @@ function App() {
         <LastChatProvider>
           <Router>
             <Routes>
-              <Route path="/" element={<ChatPage key="new-chat" />} />
+              <Route path="/" element={<ChatPage />} />
               <Route path="/chat/:sessionId" element={<ChatPage />} />
               <Route
                 path="/admin"

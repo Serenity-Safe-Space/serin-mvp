@@ -63,6 +63,8 @@ function ChatPage() {
   })
   const skipRestoreRef = useRef(false)
   const lastInteractionRef = useRef(null)
+  const isNavigatingToNewSessionRef = useRef(false)
+  const hasStartedChatRef = useRef(hasStartedChat)
 
   const unlockModelSelection = useCallback(() => {
     setIsModelLocked(false)
@@ -91,6 +93,7 @@ function ChatPage() {
   }, [currentModel, isModelLocked])
 
   useEffect(() => {
+    hasStartedChatRef.current = hasStartedChat
     if (!hasStartedChat) {
       setCurrentMessage(t('chat.initialGreeting'))
     }
@@ -309,6 +312,11 @@ function ChatPage() {
   // Load existing session if sessionId is provided
   useEffect(() => {
     const loadSession = async () => {
+      if (isNavigatingToNewSessionRef.current) {
+        isNavigatingToNewSessionRef.current = false
+        return
+      }
+
       if (sessionId && user) {
         setIsLoadingSession(true)
         try {
@@ -359,7 +367,7 @@ function ChatPage() {
         } finally {
           setIsLoadingSession(false)
         }
-      } else if (!sessionId) {
+      } else if (!sessionId && !hasStartedChatRef.current) {
         // Reset state for new chat
         setChatHistory([])
         setCurrentSessionId(null)
@@ -427,6 +435,7 @@ function ChatPage() {
           sessionIdRef.current = session.id
           rememberSessionModel(session.id, modelForMessage)
           // Update URL to include session ID
+          isNavigatingToNewSessionRef.current = true
           navigate(`/chat/${session.id}`, { replace: true })
         }
       }
