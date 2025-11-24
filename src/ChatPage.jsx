@@ -282,13 +282,6 @@ function ChatPage() {
   }, [])
 
   useEffect(() => {
-    if (location.state?.skipLastChatRestore) {
-      skipRestoreRef.current = true
-      navigate(location.pathname, { replace: true, state: null })
-    }
-  }, [location, navigate])
-
-  useEffect(() => {
     sessionIdRef.current = currentSessionId
   }, [currentSessionId])
 
@@ -305,28 +298,6 @@ function ChatPage() {
       assistant: new Set(),
     }
   }, [currentSessionId, user])
-
-  useEffect(() => {
-    if (sessionId) {
-      skipRestoreRef.current = false
-      return
-    }
-
-    if (skipRestoreRef.current) {
-      return
-    }
-
-    if (!user?.id || !lastChat?.sessionId) {
-      return
-    }
-
-    if (lastChat.userId !== user.id) {
-      return
-    }
-
-    skipRestoreRef.current = true
-    navigate(`/chat/${lastChat.sessionId}`, { replace: true, state: { restoredFromLastChat: true } })
-  }, [sessionId, user, lastChat, navigate])
 
   useEffect(() => {
     if (!currentSessionId || !user?.id) {
@@ -465,6 +436,13 @@ function ChatPage() {
 
         if (user?.id) {
           rememberChat(sessionIdToUse, { userId: user.id })
+
+          // Save user message immediately
+          saveMessage(sessionIdToUse, 'user', userMessage, {
+            occurredAt: userMessageTimestamp.toISOString(),
+          }).catch(error =>
+            console.warn('Failed to save user message:', error)
+          )
         }
       }
 
@@ -502,16 +480,8 @@ function ChatPage() {
       Promise.resolve().then(() => triggerMoodAnalysis(newHistory, 'text'))
       lastInteractionRef.current = assistantMessageTimestamp.getTime()
 
-      // Save messages to database if user is logged in and we have a session
+      // Save assistant message to database if user is logged in and we have a session
       if (user && sessionIdToUse) {
-        // Save user message
-        saveMessage(sessionIdToUse, 'user', userMessage, {
-          occurredAt: userMessageTimestamp.toISOString(),
-        }).catch(error =>
-          console.warn('Failed to save user message:', error)
-        )
-
-        // Save assistant message
         saveMessage(sessionIdToUse, 'assistant', response, {
           occurredAt: assistantMessageTimestamp.toISOString(),
         }).catch(error =>
@@ -571,7 +541,7 @@ function ChatPage() {
     if (sessionIdRef.current) {
       clearSessionModel(sessionIdRef.current)
     }
-    clearLastChat()
+    // Don't clear last chat here, so we can offer to resume it
     skipRestoreRef.current = true
     setIsChatHistoryPopupVisible(false)
     setIsProfilePopupVisible(false)
@@ -667,10 +637,39 @@ function ChatPage() {
     setShowTestPanel(!showTestPanel)
   }
 
+  const handleLastChatClick = () => {
+    if (lastChat?.sessionId) {
+      navigate(`/chat/${lastChat.sessionId}`)
+    }
+  }
+
 
   return (
     <div className="chat-page">
       <div className="chat-top-controls">
+        {sessionId ? (
+          <button
+            className="new-chat-button"
+            onClick={handleStartNewChat}
+            title={t('chat.newChat')}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="currentColor" />
+            </svg>
+            <span>{t('chat.newChat')}</span>
+          </button>
+        ) : lastChat?.sessionId ? (
+          <button
+            className="new-chat-button"
+            onClick={handleLastChatClick}
+            title={t('chat.lastChat')}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z" fill="currentColor" />
+            </svg>
+            <span>{t('chat.lastChat') || 'Resume Last Chat'}</span>
+          </button>
+        ) : null}
         <div className="profile-icon" onClick={handleProfileClick}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="#3C2A73" />
@@ -688,102 +687,104 @@ function ChatPage() {
       </div>
 
       {/* Development Test Audio Panel */}
-      {import.meta.env.DEV && (
-        <div className="test-audio-panel">
-          <div
-            style={{
-              position: 'fixed',
-              top: '20px',
-              right: '20px',
-              display: 'flex',
-              gap: '12px',
-              zIndex: 1000,
-            }}
-          >
-            <button
-              className="test-panel-toggle"
-              onClick={toggleTestPanel}
-              style={{
-                background: '#FFEB5B',
-                color: '#3C2A73',
-                border: 'none',
-                borderRadius: '10px',
-                padding: '8px 12px',
-                fontSize: '12px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                fontFamily: 'Hangyaboly, sans-serif',
-                boxShadow: '0 6px 18px rgba(255, 235, 91, 0.35)',
-              }}
-            >
-              {showTestPanel ? t('chat.devPanel.hide') : t('chat.devPanel.show')}
-            </button>
-          </div>
-
-          {showTestPanel && (
+      {
+        import.meta.env.DEV && (
+          <div className="test-audio-panel">
             <div
-              className="test-audio-files"
               style={{
                 position: 'fixed',
-                top: '60px',
+                top: '20px',
                 right: '20px',
-                background: 'rgba(255, 255, 255, 0.95)',
-                border: '2px solid #3C2A73',
-                borderRadius: '12px',
-                padding: '16px',
-                maxWidth: '200px',
+                display: 'flex',
+                gap: '12px',
                 zIndex: 1000,
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
               }}
             >
-              <h3 style={{
-                margin: '0 0 12px 0',
-                fontSize: '14px',
-                color: '#3C2A73',
-                fontFamily: 'Hangyaboly, sans-serif'
-              }}>
-                {t('chat.devPanel.title')}
-              </h3>
-              {testAudioFiles.length > 0 ? (
-                testAudioFiles.map((file, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleTestAudioClick(file.filename)}
-                    disabled={isVoiceLoading}
+              <button
+                className="test-panel-toggle"
+                onClick={toggleTestPanel}
+                style={{
+                  background: '#FFEB5B',
+                  color: '#3C2A73',
+                  border: 'none',
+                  borderRadius: '10px',
+                  padding: '8px 12px',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  fontFamily: 'Hangyaboly, sans-serif',
+                  boxShadow: '0 6px 18px rgba(255, 235, 91, 0.35)',
+                }}
+              >
+                {showTestPanel ? t('chat.devPanel.hide') : t('chat.devPanel.show')}
+              </button>
+            </div>
+
+            {showTestPanel && (
+              <div
+                className="test-audio-files"
+                style={{
+                  position: 'fixed',
+                  top: '60px',
+                  right: '20px',
+                  background: 'rgba(255, 255, 255, 0.95)',
+                  border: '2px solid #3C2A73',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  maxWidth: '200px',
+                  zIndex: 1000,
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
+                }}
+              >
+                <h3 style={{
+                  margin: '0 0 12px 0',
+                  fontSize: '14px',
+                  color: '#3C2A73',
+                  fontFamily: 'Hangyaboly, sans-serif'
+                }}>
+                  {t('chat.devPanel.title')}
+                </h3>
+                {testAudioFiles.length > 0 ? (
+                  testAudioFiles.map((file, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleTestAudioClick(file.filename)}
+                      disabled={isVoiceLoading}
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        margin: '4px 0',
+                        padding: '8px 12px',
+                        background: isVoiceLoading ? '#ccc' : '#FFEB5B',
+                        color: '#3C2A73',
+                        border: 'none',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        cursor: isVoiceLoading ? 'not-allowed' : 'pointer',
+                        fontFamily: 'Hangyaboly, sans-serif'
+                      }}
+                    >
+                      {file.name}
+                    </button>
+                  ))
+                ) : (
+                  <p
                     style={{
-                      display: 'block',
-                      width: '100%',
-                      margin: '4px 0',
-                      padding: '8px 12px',
-                      background: isVoiceLoading ? '#ccc' : '#FFEB5B',
-                      color: '#3C2A73',
-                      border: 'none',
-                      borderRadius: '6px',
+                      margin: 0,
                       fontSize: '12px',
-                      cursor: isVoiceLoading ? 'not-allowed' : 'pointer',
-                      fontFamily: 'Hangyaboly, sans-serif'
+                      color: '#666',
+                      fontStyle: 'italic'
                     }}
                   >
-                    {file.name}
-                  </button>
-                ))
-              ) : (
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: '12px',
-                    color: '#666',
-                    fontStyle: 'italic'
-                  }}
-                >
-                  {t('chat.devPanel.empty')}<br />
-                  {t('chat.devPanel.hint')}
-                </p>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+                    {t('chat.devPanel.empty')}<br />
+                    {t('chat.devPanel.hint')}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )
+      }
 
       <div className="chat-content">
         <div className="character-container">
@@ -918,7 +919,7 @@ function ChatPage() {
         isVisible={isSettingsPopupVisible}
         onClose={handleCloseSettings}
       />
-    </div>
+    </div >
   )
 }
 

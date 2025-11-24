@@ -43,6 +43,8 @@ export const translations = {
         empty: 'No test audio files found.',
         hint: 'Add files to /public/test-audio/',
       },
+      newChat: 'New Chat',
+      lastChat: 'Resume Last Chat',
     },
     profile: {
       encouragement: 'Keep going, {{name}}, you got this',
@@ -207,6 +209,8 @@ export const translations = {
         empty: 'Aucun fichier audio de test trouvé.',
         hint: 'Ajoute des fichiers dans /public/test-audio/',
       },
+      newChat: 'Nouvelle conversation',
+      lastChat: 'Reprendre la dernière conversation',
     },
     profile: {
       encouragement: 'Continue, {{name}}, tu peux le faire',
