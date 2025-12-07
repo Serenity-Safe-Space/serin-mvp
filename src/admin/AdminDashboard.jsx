@@ -12,6 +12,14 @@ const AdminDashboard = () => {
   const [activeUsersState, setActiveUsersState] = useState({ status: 'loading', value: null })
   const [avgDailyUsersState, setAvgDailyUsersState] = useState({ status: 'loading', value: null })
   const [avgSessionDurationState, setAvgSessionDurationState] = useState({ status: 'loading', value: null })
+
+  // Anonymous Stats
+  const [viewMode, setViewMode] = useState('loggedin')
+  const [anonTotalUsersState, setAnonTotalUsersState] = useState({ status: 'idle', value: null })
+  const [anonActiveUsersState, setAnonActiveUsersState] = useState({ status: 'idle', value: null })
+  const [anonAvgDailyUsersState, setAnonAvgDailyUsersState] = useState({ status: 'idle', value: null })
+  const [anonAvgSessionDurationState, setAnonAvgSessionDurationState] = useState({ status: 'idle', value: null })
+
   const [userTableState, setUserTableState] = useState({ status: 'idle', rows: [], error: null })
   const [overviewMeta, setOverviewMeta] = useState({ activeSessions: '...', lastSeenDisplay: '...' })
 
@@ -119,6 +127,61 @@ const AdminDashboard = () => {
     fetchAvgSessionDuration()
   }, [])
 
+  // Fetch Anonymous Stats
+  useEffect(() => {
+    if (viewMode !== 'anonymous') return
+
+    const fetchAnonStats = async () => {
+      // Total Anonymous Users
+      try {
+        setAnonTotalUsersState(prev => ({ ...prev, status: 'loading' }))
+        const { data, error } = await supabase.rpc('admin_anonymous_total_users')
+        if (error) throw error
+        setAnonTotalUsersState({ status: 'success', value: Number(data) })
+      } catch (err) {
+        console.warn('Failed to fetch anon total users:', err)
+        setAnonTotalUsersState({ status: 'error', value: null })
+      }
+
+      // Active Anonymous Users
+      try {
+        setAnonActiveUsersState(prev => ({ ...prev, status: 'loading' }))
+        const { data, error } = await supabase.rpc('admin_anonymous_active_users')
+        if (error) throw error
+        setAnonActiveUsersState({ status: 'success', value: Number(data) })
+      } catch (err) {
+        console.warn('Failed to fetch anon active users:', err)
+        setAnonActiveUsersState({ status: 'error', value: null })
+      }
+
+      // Avg Daily Anonymous Users
+      try {
+        setAnonAvgDailyUsersState(prev => ({ ...prev, status: 'loading' }))
+        const { data, error } = await supabase.rpc('admin_anonymous_avg_daily_users')
+        if (error) throw error
+        setAnonAvgDailyUsersState({ status: 'success', value: Number(data) })
+      } catch (err) {
+        console.warn('Failed to fetch anon avg daily users:', err)
+        setAnonAvgDailyUsersState({ status: 'error', value: null })
+      }
+
+      // Avg Session Duration
+      try {
+        setAnonAvgSessionDurationState(prev => ({ ...prev, status: 'loading' }))
+        const { data, error } = await supabase.rpc('admin_anonymous_avg_session_duration')
+        if (error) throw error
+        setAnonAvgSessionDurationState({ status: 'success', value: Number(data) })
+      } catch (err) {
+        console.warn('Failed to fetch anon avg session duration:', err)
+        setAnonAvgSessionDurationState({ status: 'error', value: null })
+      }
+    }
+
+    if (anonTotalUsersState.status === 'idle') {
+      fetchAnonStats()
+    }
+  }, [viewMode, anonTotalUsersState.status])
+
   useEffect(() => {
     let isCancelled = false
     const loadUsers = async () => {
@@ -194,18 +257,44 @@ const AdminDashboard = () => {
       }
     }
 
+    const isAnonymous = viewMode === 'anonymous'
+
     return [
-      buildCard('Total Users', totalUsersState, (val) => val.toLocaleString(), 'All Time'),
-      buildCard('Active Users', activeUsersState, (val) => val.toLocaleString(), 'Past 7 Days'),
-      buildCard('Avg Daily', avgDailyUsersState, (val) => val.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }), 'Unique / Day (7d Avg)'),
-      buildCard('Avg Session', avgSessionDurationState, (val) => {
-        const roundedSeconds = Math.max(0, Math.round(val))
-        const minutes = Math.floor(roundedSeconds / 60)
-        const seconds = roundedSeconds % 60
-        return `${minutes}m ${seconds.toString().padStart(2, '0')}s`
-      }, 'Duration (7d Avg)'),
+      buildCard(
+        isAnonymous ? 'Total Visitors' : 'Total Users',
+        isAnonymous ? anonTotalUsersState : totalUsersState,
+        (val) => val.toLocaleString(),
+        'All Time'
+      ),
+      buildCard(
+        isAnonymous ? 'Active Visitors' : 'Active Users',
+        isAnonymous ? anonActiveUsersState : activeUsersState,
+        (val) => val.toLocaleString(),
+        'Past 7 Days'
+      ),
+      buildCard(
+        'Avg Daily',
+        isAnonymous ? anonAvgDailyUsersState : avgDailyUsersState,
+        (val) => val.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
+        'Unique / Day (7d Avg)'
+      ),
+      buildCard(
+        'Avg Session',
+        isAnonymous ? anonAvgSessionDurationState : avgSessionDurationState,
+        (val) => {
+          const roundedSeconds = Math.max(0, Math.round(val))
+          const minutes = Math.floor(roundedSeconds / 60)
+          const seconds = roundedSeconds % 60
+          return `${minutes}m ${seconds.toString().padStart(2, '0')}s`
+        },
+        'Duration (7d Avg)'
+      ),
     ]
-  }, [totalUsersState, activeUsersState, avgDailyUsersState, avgSessionDurationState])
+  }, [
+    viewMode,
+    totalUsersState, activeUsersState, avgDailyUsersState, avgSessionDurationState,
+    anonTotalUsersState, anonActiveUsersState, anonAvgDailyUsersState, anonAvgSessionDurationState
+  ])
 
   const handleNavigateHome = useCallback(() => {
     navigate('/')
@@ -238,7 +327,23 @@ const AdminDashboard = () => {
 
         <section className="admin-dashboard__overview">
           <div className="admin-dashboard__overview-header">
-            <h2>Overview</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <h2>Overview</h2>
+              <div className="admin-dashboard__view-toggle">
+                <button
+                  className={`admin-dashboard__toggle-btn ${viewMode === 'loggedin' ? 'active' : ''}`}
+                  onClick={() => setViewMode('loggedin')}
+                >
+                  Logged In
+                </button>
+                <button
+                  className={`admin-dashboard__toggle-btn ${viewMode === 'anonymous' ? 'active' : ''}`}
+                  onClick={() => setViewMode('anonymous')}
+                >
+                  Anonymous
+                </button>
+              </div>
+            </div>
             <div className="admin-dashboard__stats-meta">
               <div className="admin-dashboard__stat">
                 <span className="admin-dashboard__stat-label">Active Sessions</span>
@@ -271,88 +376,98 @@ const AdminDashboard = () => {
 
         <section className="admin-dashboard__feature-analytics">
           <div className="admin-dashboard__section-heading">
-            <h2>Feature Analytics</h2>
+            <h2>{viewMode === 'anonymous' ? 'Anonymous Activity' : 'Feature Analytics'}</h2>
           </div>
 
-          <div className="admin-dashboard__table-wrapper">
-            <table className="admin-dashboard__table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Summary</th>
-                  <th>Messages Sent</th>
-                  <th>Average Mood</th>
-                  <th>Last Seen</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {userTableState.status === 'loading' && (
+          {viewMode === 'anonymous' ? (
+            <div className="admin-dashboard__table-wrapper">
+              <div className="admin-dashboard__table-placeholder">
+                Detailed session logs for anonymous users are not currently displayed in this view.
+                <br />
+                Focus on the overview metrics above for anonymous usage trends.
+              </div>
+            </div>
+          ) : (
+            <div className="admin-dashboard__table-wrapper">
+              <table className="admin-dashboard__table">
+                <thead>
                   <tr>
-                    <td colSpan={7} className="admin-dashboard__table-placeholder">
-                      Loading user analytics…
-                    </td>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Summary</th>
+                    <th>Messages Sent</th>
+                    <th>Average Mood</th>
+                    <th>Last Seen</th>
+                    <th>Status</th>
                   </tr>
-                )}
-                {userTableState.status === 'error' && (
-                  <tr>
-                    <td colSpan={7} className="admin-dashboard__table-placeholder admin-dashboard__table-placeholder--error">
-                      {userTableState.error}
-                    </td>
-                  </tr>
-                )}
-                {userTableState.status === 'success' && userTableState.rows.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="admin-dashboard__table-placeholder">
-                      No users found yet.
-                    </td>
-                  </tr>
-                )}
-                {userTableState.status === 'success' &&
-                  userTableState.rows.map(user => (
-                    <tr key={user.userId || user.email}>
-                      <td>
-                        <div className="admin-dashboard__user">
-                          <div
-                            className="admin-dashboard__avatar"
-                            style={{ backgroundColor: user.avatarColor }}
-                          >
-                            {user.initials}
-                          </div>
-                          <div className="admin-dashboard__user-info">
-                            <span className="admin-dashboard__user-name">
-                              {user.fullName}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="admin-dashboard__email">{user.email}</td>
-                      <td>{user.summary}</td>
-                      <td>{user.messagesSent.toLocaleString()}</td>
-                      <td>
-                        <div className="admin-dashboard__mood">
-                          <span className="admin-dashboard__mood-label">{user.moodLabel}</span>
-                          {typeof user.averageConfidence === 'number' && (
-                            <span className="admin-dashboard__mood-score">
-                              {Math.round(user.averageConfidence * 100)}%
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td>{user.lastSeenRelative}</td>
-                      <td>
-                        <span
-                          className={`admin-dashboard__status-badge admin-dashboard__status-badge--${user.status === 'Active' ? 'active' : 'inactive'}`}
-                        >
-                          {user.status}
-                        </span>
+                </thead>
+                <tbody>
+                  {userTableState.status === 'loading' && (
+                    <tr>
+                      <td colSpan={7} className="admin-dashboard__table-placeholder">
+                        Loading user analytics…
                       </td>
                     </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
+                  )}
+                  {userTableState.status === 'error' && (
+                    <tr>
+                      <td colSpan={7} className="admin-dashboard__table-placeholder admin-dashboard__table-placeholder--error">
+                        {userTableState.error}
+                      </td>
+                    </tr>
+                  )}
+                  {userTableState.status === 'success' && userTableState.rows.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="admin-dashboard__table-placeholder">
+                        No users found yet.
+                      </td>
+                    </tr>
+                  )}
+                  {userTableState.status === 'success' &&
+                    userTableState.rows.map(user => (
+                      <tr key={user.userId || user.email}>
+                        <td>
+                          <div className="admin-dashboard__user">
+                            <div
+                              className="admin-dashboard__avatar"
+                              style={{ backgroundColor: user.avatarColor }}
+                            >
+                              {user.initials}
+                            </div>
+                            <div className="admin-dashboard__user-info">
+                              <span className="admin-dashboard__user-name">
+                                {user.fullName}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="admin-dashboard__email">{user.email}</td>
+                        <td>{user.summary}</td>
+                        <td>{user.messagesSent.toLocaleString()}</td>
+                        <td>
+                          <div className="admin-dashboard__mood">
+                            <span className="admin-dashboard__mood-label">{user.moodLabel}</span>
+                            {typeof user.averageConfidence === 'number' && (
+                              <span className="admin-dashboard__mood-score">
+                                {Math.round(user.averageConfidence * 100)}%
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td>{user.lastSeenRelative}</td>
+                        <td>
+                          <span
+                            className={`admin-dashboard__status-badge admin-dashboard__status-badge--${user.status === 'Active' ? 'active' : 'inactive'}`}
+                          >
+                            {user.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </section>
       </div>
     </div>

@@ -11,6 +11,7 @@ import { upsertMoodMemory } from './lib/memoryService'
 import { generateTextResponse } from './lib/aiModelClient'
 import { rememberSessionModel, getSessionModel, clearSessionModel } from './lib/sessionModelStorage'
 import { useVoiceToGemini } from './useVoiceToGemini'
+import { trackAnonymousEvent } from './lib/anonymousAnalyticsService'
 import { SERIN_COLORS } from './utils/serinColors'
 import ProfilePopup from './ProfilePopup'
 import ChatHistoryPopup from './ChatHistoryPopup'
@@ -65,6 +66,7 @@ function ChatPage() {
   const lastInteractionRef = useRef(null)
   const isNavigatingToNewSessionRef = useRef(false)
   const hasStartedChatRef = useRef(hasStartedChat)
+  const anonymousSessionIdRef = useRef(null)
 
   const unlockModelSelection = useCallback(() => {
     setIsModelLocked(false)
@@ -174,7 +176,7 @@ function ChatPage() {
 
   const ensureFreshSession = useCallback(async (referenceTimestampMs) => {
     const nowMs = typeof referenceTimestampMs === 'number' ? referenceTimestampMs : Date.now()
-    const activeSessionId = sessionIdRef.current
+    const activeSessionId = sessionIdRef.current || anonymousSessionIdRef.current
     const lastInteractionMs = lastInteractionRef.current
 
     if (!activeSessionId || !lastInteractionMs) {
@@ -187,17 +189,22 @@ function ChatPage() {
     }
 
     try {
-      await finalizeSession(activeSessionId, new Date(lastInteractionMs).toISOString())
+      if (sessionIdRef.current) {
+        await finalizeSession(sessionIdRef.current, new Date(lastInteractionMs).toISOString())
+      } else if (anonymousSessionIdRef.current) {
+        trackAnonymousEvent(anonymousSessionIdRef.current, 'session_end', { reason: 'timeout' }).catch(() => { })
+      }
     } catch (error) {
       console.warn('Failed to finalize stale session:', error)
     }
 
     clearLastChat()
-    if (activeSessionId) {
-      clearSessionModel(activeSessionId)
+    if (sessionIdRef.current) {
+      clearSessionModel(sessionIdRef.current)
     }
     setCurrentSessionId(null)
     sessionIdRef.current = null
+    anonymousSessionIdRef.current = null
     setChatHistory([])
     setHasStartedChat(false)
     setIsFirstMessage(true)
@@ -453,6 +460,13 @@ function ChatPage() {
             console.warn('Failed to save user message:', error)
           )
         }
+      } else if (!user) {
+        // Anonymous user tracking
+        if (!anonymousSessionIdRef.current) {
+          anonymousSessionIdRef.current = crypto.randomUUID()
+          trackAnonymousEvent(anonymousSessionIdRef.current, 'session_start')
+        }
+        trackAnonymousEvent(anonymousSessionIdRef.current, 'message_sent')
       }
 
       const historyForPrompt = sessionWasReset ? [] : chatHistory
