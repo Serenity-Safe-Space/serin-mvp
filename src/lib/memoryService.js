@@ -60,3 +60,34 @@ export const upsertMoodMemory = async ({
     return { memory: null, error: error.message }
   }
 }
+
+/**
+ * Gets mood memories for a user, optionally limited by time for free users
+ * @param {string} userId
+ * @param {boolean} isPremium
+ */
+export const getMoodMemories = async (userId, isPremium) => {
+  if (!userId) return { memories: [], error: 'UserId required' }
+
+  try {
+    let query = supabase
+      .from('user_mood_memories')
+      .select('*')
+      .eq('user_id', userId)
+      .order('last_refreshed_at', { ascending: false })
+
+    if (!isPremium) {
+      const sevenDaysAgo = new Date()
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+      query = query.gte('first_detected_at', sevenDaysAgo.toISOString())
+    }
+
+    const { data, error } = await query
+
+    if (error) throw error
+    return { memories: data || [], error: null }
+  } catch (error) {
+    console.error('Error fetching mood memories:', error)
+    return { memories: [], error: error.message }
+  }
+}
