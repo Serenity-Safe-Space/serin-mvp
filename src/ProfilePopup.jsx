@@ -3,6 +3,7 @@ import { useAuth } from './contexts/AuthContext'
 import { useLanguage } from './contexts/LanguageContext'
 import { getCurrentStreak } from './lib/activityService'
 import { SERIN_COLORS } from './utils/serinColors'
+import CoinBalance from './components/CoinBalance'
 import './ProfilePopup.css'
 
 function ProfilePopup({ isVisible, onClose, onSignInClick, onChatHistoryClick, onSettingsClick, onAdminDashboardClick }) {
@@ -59,7 +60,7 @@ function ProfilePopup({ isVisible, onClose, onSignInClick, onChatHistoryClick, o
         <div className="profile-popup-header">
           <button className="profile-popup-close" onClick={onClose}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
         </div>
@@ -78,6 +79,10 @@ function ProfilePopup({ isVisible, onClose, onSignInClick, onChatHistoryClick, o
                 </span>
                 <span className="profile-streak-value">{streakValue}</span>
                 <span className="profile-streak-label">{t('profile.streakLabel')}</span>
+              </div>
+
+              <div className="profile-coins-wrapper">
+                <CoinBalance size="medium" />
               </div>
 
               <button className="profile-action profile-action--primary" onClick={onChatHistoryClick}>
