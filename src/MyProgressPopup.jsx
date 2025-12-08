@@ -4,6 +4,7 @@ import { useAuth } from './contexts/AuthContext'
 import { useLanguage } from './contexts/LanguageContext'
 import { getCoinTransactions, spendCoinsForPremium } from './lib/coinService'
 import ProgressCircle from './components/ProgressCircle'
+import CelebrationModal from './components/CelebrationModal'
 import './MyProgressPopup.css'
 
 const MyProgressPopup = ({ isVisible, onClose }) => {
@@ -13,11 +14,13 @@ const MyProgressPopup = ({ isVisible, onClose }) => {
     const [todaysActions, setTodaysActions] = useState(new Set())
     const [purchasing, setPurchasing] = useState(false)
     const [dailyEarnings, setDailyEarnings] = useState(0)
+    const [showCelebration, setShowCelebration] = useState(false)
+    const [celebrationMessage, setCelebrationMessage] = useState('')
 
     // Define rewards locally for now (could be config later)
     const REWARDS = {
-        open_app: 1,
-        daily_checkin: 2,
+        open_app: 2,
+        daily_checkin: 3,
         // Future: invite_friend: 5, etc.
     }
 
@@ -80,7 +83,8 @@ const MyProgressPopup = ({ isVisible, onClose }) => {
             const result = await spendCoinsForPremium(user.id, days, cost)
             if (result.success) {
                 await refreshPremium()
-                alert(`🎉 Success! You got ${days} day${days > 1 ? 's' : ''} of Premium!`)
+                setCelebrationMessage(`You got ${days} day${days > 1 ? 's' : ''} of Premium!`)
+                setShowCelebration(true)
             } else {
                 alert('Transaction failed.')
             }
@@ -181,6 +185,11 @@ const MyProgressPopup = ({ isVisible, onClose }) => {
                     </div>
                 </div>
             </div>
+            <CelebrationModal
+                isVisible={showCelebration}
+                onClose={() => setShowCelebration(false)}
+                message={celebrationMessage}
+            />
         </div>
     )
 }

@@ -1,0 +1,94 @@
+.celebration-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(45, 31, 92, 0.85);
+    /* Deep purple overlay */
+    backdrop-filter: blur(5px);
+    animation: fadeIn 0.3s ease-out;
+}
+
+.celebration-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.celebration-content {
+    position: relative;
+    background: white;
+    padding: 40px;
+    border-radius: 24px;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    max-width: 90%;
+    width: 400px;
+    border: 4px solid #FFEB5B;
+    z-index: 10;
+}
+
+.celebration-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+    animation: bounce 1s infinite alternate;
+}
+
+.celebration-title {
+    font-family: 'Hangyaboly', sans-serif;
+    font-size: 32px;
+    color: #3C2A73;
+    margin: 0 0 10px 0;
+}
+
+.celebration-message {
+    font-family: 'Hangyaboly', sans-serif;
+    font-size: 18px;
+    color: #666;
+    line-height: 1.5;
+    margin: 0;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes bounce {
+    from {
+        transform: translateY(0);
+    }
+
+    to {
+        transform: translateY(-10px);
+    }
+}
+
+.animate-pop-in {
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8) translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}

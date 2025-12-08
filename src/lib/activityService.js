@@ -33,9 +33,9 @@ export const recordDailyActivity = async (userId) => {
       return { success: false, error: error.message }
     }
 
-    // Try to award daily activity coins (2 coins). Backend handles daily limit/duplicate safeguards.
+    // Try to award daily activity coins (3 coins). Backend handles daily limit/duplicate safeguards.
     // We call this even if upsert was just an "update" because the backend fn checks "coins given today" separately.
-    await awardCoins(userId, 'daily_checkin', 2)
+    await awardCoins(userId, 'daily_checkin', 3)
 
     return { success: true }
   } catch (error) {

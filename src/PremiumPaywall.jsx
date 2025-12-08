@@ -4,6 +4,7 @@ import { spendCoinsForPremium } from './lib/coinService'
 import { useAuth } from './contexts/AuthContext'
 import { useLanguage } from './contexts/LanguageContext'
 import CoinBalance from './components/CoinBalance'
+import CelebrationModal from './components/CelebrationModal'
 import './PremiumPaywall.css'
 
 const PremiumPaywall = ({ isVisible, onClose }) => {
@@ -12,6 +13,8 @@ const PremiumPaywall = ({ isVisible, onClose }) => {
     const { t } = useLanguage()
     const [purchasing, setPurchasing] = useState(false)
     const [successMessage, setSuccessMessage] = useState(null)
+    const [showCelebration, setShowCelebration] = useState(false)
+    const [celebrationMessage, setCelebrationMessage] = useState('')
 
     if (!isVisible) return null
 
@@ -34,13 +37,17 @@ const PremiumPaywall = ({ isVisible, onClose }) => {
                 await refreshPremium()
 
                 // 3. Show success UI
-                setSuccessMessage(`Success! +${days} days added.`)
+                setCelebrationMessage(`${days} days added to your plan!`)
+                setShowCelebration(true)
 
-                // 4. Close after delay
+                // 4. Close after delay (CelebrationModal handles its own dismiss, but we need to close Paywall)
+                // We'll let the user see the celebration, then they can close, or we close paywall underlyingly.
+                // Actually, let's close the paywall immediately so the celebration is on top of whatever was behind.
+                // OR keep paywall open until celebration done.
+                // Better: CelebrationModal is ON TOP. When it closes, we can close Paywall too.
                 setTimeout(() => {
-                    setSuccessMessage(null)
                     onClose()
-                }, 2000)
+                }, 3500) // Slightly shorter than celebration auto-dismiss (4000)
             } else {
                 alert('Transaction failed. Please try again.')
             }
@@ -135,6 +142,11 @@ const PremiumPaywall = ({ isVisible, onClose }) => {
                     </>
                 )}
             </div>
+            <CelebrationModal
+                isVisible={showCelebration}
+                onClose={() => setShowCelebration(false)}
+                message={celebrationMessage}
+            />
         </div>
     )
 }
