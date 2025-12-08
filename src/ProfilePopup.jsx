@@ -6,7 +6,10 @@ import { SERIN_COLORS } from './utils/serinColors'
 import CoinBalance from './components/CoinBalance'
 import './ProfilePopup.css'
 
-function ProfilePopup({ isVisible, onClose, onSignInClick, onChatHistoryClick, onSettingsClick, onAdminDashboardClick }) {
+function ProfilePopup({ isVisible, onClose, onSignInClick, onChatHistoryClick, onSettingsClick,
+  onAdminDashboardClick,
+  onProgressClick
+}) {
   const { user, adminRole } = useAuth()
   const [currentStreak, setCurrentStreak] = useState(0)
   const [loadingActivity, setLoadingActivity] = useState(false)
@@ -92,6 +95,20 @@ function ProfilePopup({ isVisible, onClose, onSignInClick, onChatHistoryClick, o
               <button className="profile-action profile-action--secondary" onClick={onSettingsClick}>
                 {t('profile.settings')}
               </button>
+
+              {user && (
+                <button
+                  className="profile-action profile-action--secondary"
+                  onClick={onProgressClick}
+                >
+                  <div className="menu-icon-wrapper progress-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                      <path d="M12 20V10M18 20V4M6 20v-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                  <span>{t('profile.myProgress') || 'My Progress'}</span>
+                </button>
+              )}
 
               {adminRole?.isAdmin && (
                 <button

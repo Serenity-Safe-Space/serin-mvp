@@ -16,6 +16,7 @@ import { trackAnonymousEvent } from './lib/anonymousAnalyticsService'
 import { SERIN_COLORS } from './utils/serinColors'
 import { useAppOpenReward } from './hooks/useAppOpenReward'
 import PremiumBanner from './components/PremiumBanner'
+import MyProgressPopup from './MyProgressPopup'
 import ProfilePopup from './ProfilePopup'
 import PremiumPaywall from './PremiumPaywall'
 import ChatHistoryPopup from './ChatHistoryPopup'
@@ -50,6 +51,7 @@ function ChatPage() {
   const [isFirstMessage, setIsFirstMessage] = useState(true)
   const [hasStartedChat, setHasStartedChat] = useState(false)
   const [isProfilePopupVisible, setIsProfilePopupVisible] = useState(false)
+  const [isProgressPopupVisible, setIsProgressPopupVisible] = useState(false)
   const [isPaywallVisible, setIsPaywallVisible] = useState(false)
   const [isChatHistoryPopupVisible, setIsChatHistoryPopupVisible] = useState(false)
   const [isSignInModalVisible, setIsSignInModalVisible] = useState(false)
@@ -630,6 +632,11 @@ function ChatPage() {
     setIsPaywallVisible(true)
   }
 
+  const handleOpenProgress = () => {
+    setIsProfilePopupVisible(false)
+    setIsProgressPopupVisible(true)
+  }
+
   const handleVoiceButtonClick = async () => {
     if (isRecording) {
       stopRecording()
@@ -960,6 +967,12 @@ function ChatPage() {
         onChatHistoryClick={handleChatHistoryClick}
         onSettingsClick={handleSettingsClick}
         onAdminDashboardClick={handleAdminDashboardLink}
+        onProgressClick={handleOpenProgress}
+      />
+
+      <MyProgressPopup
+        isVisible={isProgressPopupVisible}
+        onClose={() => setIsProgressPopupVisible(false)}
       />
 
       <PremiumPaywall

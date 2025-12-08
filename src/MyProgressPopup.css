@@ -1,0 +1,189 @@
+.progress-popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeEnter 0.2s ease-out;
+}
+
+.progress-popup-content {
+    background: white;
+    /* Fallback */
+    background: linear-gradient(135deg, #2A1F45 0%, #1A1230 100%);
+    width: 100%;
+    max-width: 450px;
+    border-radius: 24px;
+    position: relative;
+    padding: 32px;
+    color: white;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+    font-family: 'Hangyaboly', sans-serif;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.progress-popup-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.progress-popup-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.progress-popup-header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.progress-popup-header h2 {
+    font-size: 24px;
+    margin: 0;
+    background: linear-gradient(to right, #FFEB5B, #FFA726);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 900;
+}
+
+.progress-popup-header p {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.6);
+    margin: 4px 0 0 0;
+}
+
+.progress-overview {
+    margin-bottom: 32px;
+}
+
+.progress-section {
+    margin-bottom: 32px;
+}
+
+.progress-section h3 {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0 0 16px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.earning-actions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.earning-action-item {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.earning-action-item.completed {
+    background: rgba(255, 235, 91, 0.05);
+    border-color: rgba(255, 235, 91, 0.2);
+}
+
+.action-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.action-title {
+    font-weight: bold;
+    font-size: 14px;
+    color: white;
+}
+
+.action-reward {
+    font-size: 12px;
+    color: #FFEB5B;
+    font-weight: 600;
+}
+
+.action-status {
+    display: flex;
+    align-items: center;
+}
+
+.status-icon {
+    font-size: 20px;
+}
+
+.section-redeem .coin-redemption-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.redeem-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 12px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: white;
+}
+
+.redeem-btn:hover:not(:disabled) {
+    background: rgba(255, 235, 91, 0.1);
+    border-color: rgba(255, 235, 91, 0.4);
+    transform: translateY(-2px);
+}
+
+.redeem-btn.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.redeem-days {
+    font-weight: 800;
+    font-size: 14px;
+}
+
+.redeem-cost {
+    font-size: 12px;
+    color: #FFEB5B;
+    font-weight: 600;
+}
+
+@keyframes fadeEnter {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
