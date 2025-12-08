@@ -54,9 +54,9 @@ const getValidationMessage = (value, t) => {
   return ''
 }
 
-function SettingsPopup({ isVisible, onClose }) {
+const SettingsPopup = ({ isVisible, onClose, onOpenPaywall }) => {
   const navigate = useNavigate()
-  const { signOut, updateUserProfile, user } = useAuth()
+  const { signOut, updateUserProfile, user, currentModel } = useAuth()
   const { language, setLanguage, t } = useLanguage()
   const [displayName, setDisplayName] = useState('')
   const [initialName, setInitialName] = useState('')
@@ -197,7 +197,16 @@ function SettingsPopup({ isVisible, onClose }) {
           </button>
         </div>
 
-        <div className="settings-popup-content">
+        <div className="settings-content">
+          <button className="premium-upsell-btn" onClick={onOpenPaywall}>
+            <span className="icon">💎</span>
+            <div className="text-content">
+              <span className="title">Serin Premium</span>
+              <span className="subtitle">Unlock all features</span>
+            </div>
+            <span className="arrow">→</span>
+          </button>
+
           {user && (
             <form className="settings-profile-card" onSubmit={handleProfileSubmit}>
               <div className="settings-profile-header">
@@ -245,19 +254,12 @@ function SettingsPopup({ isVisible, onClose }) {
             </form>
           )}
 
-          <div className="settings-heading">
-            <span className="settings-heading-icon" aria-hidden="true">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" fill="currentColor" />
-                <path
-                  d="M20.74 13.05c.04-.35.06-.7.06-1.05 0-.35-.02-.7-.06-1.05l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a8.02 8.02 0 0 0-1.82-1.05l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54a7.97 7.97 0 0 0-1.82 1.05l-2.39-.96a.5.5 0 0 0-.6.22L1.1 8.73a.5.5 0 0 0 .12.64l2.03 1.58c-.04.34-.06.69-.06 1.05 0 .36.02.7.06 1.05L1.22 14.63a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.56.45 1.17.82 1.82 1.12l.36 2.54a.5.5 0 0 0 .5.42h3.84a.5.5 0 0 0 .5-.42l.36-2.54c.65-.3 1.26-.67 1.82-1.12l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58z"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </span>
-            <h2 className="settings-title">{t('settings.title')}</h2>
+          <h2 className="settings-main-title">{t('settings.title')}</h2>
+
+          <div className="settings-section">
+            <h3>{t('settings.modelSelection')}</h3>
+            {/* Model selection content will go here */}
+            <p>Current Model: {currentModel}</p>
           </div>
 
           <div className="settings-panel">

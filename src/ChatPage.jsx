@@ -15,6 +15,7 @@ import { trackAnonymousEvent } from './lib/anonymousAnalyticsService'
 import { SERIN_COLORS } from './utils/serinColors'
 import { useAppOpenReward } from './hooks/useAppOpenReward'
 import ProfilePopup from './ProfilePopup'
+import PremiumPaywall from './PremiumPaywall'
 import ChatHistoryPopup from './ChatHistoryPopup'
 import SignInModal from './SignInModal'
 import SettingsPopup from './SettingsPopup'
@@ -46,6 +47,7 @@ function ChatPage() {
   const [isFirstMessage, setIsFirstMessage] = useState(true)
   const [hasStartedChat, setHasStartedChat] = useState(false)
   const [isProfilePopupVisible, setIsProfilePopupVisible] = useState(false)
+  const [isPaywallVisible, setIsPaywallVisible] = useState(false)
   const [isChatHistoryPopupVisible, setIsChatHistoryPopupVisible] = useState(false)
   const [isSignInModalVisible, setIsSignInModalVisible] = useState(false)
   const [isSettingsPopupVisible, setIsSettingsPopupVisible] = useState(false)
@@ -603,6 +605,12 @@ function ChatPage() {
     navigate('/admin')
   }
 
+  const handleOpenPaywall = () => {
+    setIsSettingsPopupVisible(false)
+    setIsProfilePopupVisible(false)
+    setIsPaywallVisible(true)
+  }
+
   const handleVoiceButtonClick = async () => {
     if (isRecording) {
       stopRecording()
@@ -927,6 +935,11 @@ function ChatPage() {
         onAdminDashboardClick={handleAdminDashboardLink}
       />
 
+      <PremiumPaywall
+        isVisible={isPaywallVisible}
+        onClose={() => setIsPaywallVisible(false)}
+      />
+
       <ChatHistoryPopup
         isVisible={isChatHistoryPopupVisible}
         onClose={handleCloseChatHistory}
@@ -943,6 +956,7 @@ function ChatPage() {
       <SettingsPopup
         isVisible={isSettingsPopupVisible}
         onClose={handleCloseSettings}
+        onOpenPaywall={handleOpenPaywall}
       />
     </div >
   )

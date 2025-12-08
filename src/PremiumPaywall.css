@@ -1,0 +1,295 @@
+.paywall-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeEnter 0.2s ease-out;
+}
+
+.paywall-content {
+    background: white;
+    /* Fallback */
+    background: linear-gradient(135deg, #2A1F45 0%, #1A1230 100%);
+    width: 100%;
+    max-width: 800px;
+    border-radius: 24px;
+    position: relative;
+    padding: 40px;
+    color: white;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+    font-family: 'Hangyaboly', sans-serif;
+}
+
+.paywall-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.paywall-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.paywall-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.paywall-header h2 {
+    font-size: 32px;
+    margin: 0 0 10px 0;
+    background: linear-gradient(to right, #FFEB5B, #FFA726);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 900;
+}
+
+.paywall-header p {
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+}
+
+.paywall-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+.paywall-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+}
+
+.card-header {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.card-header h3 {
+    margin: 0 0 10px 0;
+    font-size: 20px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Plan Card Specifics */
+.price-tag {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 2px;
+}
+
+.price-tag .currency {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.price-tag .amount {
+    font-size: 48px;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.price-tag .period {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.benefits-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 24px 0;
+    text-align: left;
+    flex-grow: 1;
+}
+
+.benefits-list li {
+    margin-bottom: 12px;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.plan-cta-btn {
+    background: white;
+    color: #2A1F45;
+    border: none;
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    font-weight: 900;
+    font-size: 16px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.plan-cta-btn:hover {
+    transform: scale(1.02);
+}
+
+/* Coins Card Specifics */
+.current-balance {
+    background: rgba(0, 0, 0, 0.3);
+    display: inline-flex;
+    padding: 6px 12px;
+    border-radius: 20px;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.coin-options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex-grow: 1;
+}
+
+.coin-option-btn {
+    background: rgba(255, 235, 91, 0.1);
+    /* Tinted yellow */
+    border: 1px solid rgba(255, 235, 91, 0.3);
+    color: #FFEB5B;
+    padding: 12px 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s;
+}
+
+.coin-option-btn:hover:not(:disabled) {
+    background: rgba(255, 235, 91, 0.2);
+    transform: translateX(4px);
+}
+
+.coin-option-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(1);
+}
+
+.coin-option-details {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.coin-option-duration {
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.coin-option-label {
+    font-size: 12px;
+    background: #FFEB5B;
+    color: #2A1F45;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-top: 4px;
+    font-weight: 900;
+}
+
+.coin-option-cost {
+    font-size: 20px;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.plan-subtext {
+    text-align: center;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.4);
+    margin-top: 16px;
+}
+
+.paywall-success {
+    text-align: center;
+    padding: 60px 20px;
+    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.success-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+    display: block;
+}
+
+@keyframes titleGradient {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+@keyframes fadeEnter {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes popIn {
+    from {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@media (max-width: 768px) {
+    .paywall-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .paywall-content {
+        padding: 24px;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+}

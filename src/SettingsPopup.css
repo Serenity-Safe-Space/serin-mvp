@@ -6,7 +6,56 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 20px;
+  padding: 24px;
+}
+
+.premium-upsell-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #FFEB5B 0%, #FFA726 100%);
+  border: none;
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  margin-bottom: 24px;
+  transition: transform 0.2s;
+  box-shadow: 0 4px 12px rgba(255, 235, 91, 0.2);
+}
+
+.premium-upsell-btn:hover {
+  transform: translateY(-2px);
+}
+
+.premium-upsell-btn .icon {
+  font-size: 24px;
+}
+
+.premium-upsell-btn .text-content {
+  flex-grow: 1;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+}
+
+.premium-upsell-btn .title {
+  color: #2A1F45;
+  font-weight: 900;
+  font-size: 18px;
+  font-family: 'Hangyaboly', sans-serif;
+}
+
+.premium-upsell-btn .subtitle {
+  color: rgba(42, 31, 69, 0.7);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.premium-upsell-btn .arrow {
+  color: #2A1F45;
+  font-weight: bold;
+  font-size: 20px;
 }
 
 .settings-popup {
@@ -25,6 +74,7 @@
     opacity: 0;
     transform: translateY(-20px) scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
