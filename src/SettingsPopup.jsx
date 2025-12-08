@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext'
 import { useLanguage } from './contexts/LanguageContext'
+import { usePremium } from './contexts/PremiumContext'
 import { SERIN_COLORS } from './utils/serinColors'
 import './SettingsPopup.css'
 
@@ -58,6 +59,7 @@ const SettingsPopup = ({ isVisible, onClose, onOpenPaywall }) => {
   const navigate = useNavigate()
   const { signOut, updateUserProfile, user, currentModel } = useAuth()
   const { language, setLanguage, t } = useLanguage()
+  const { isPremium, premiumEndsAt } = usePremium()
   const [displayName, setDisplayName] = useState('')
   const [initialName, setInitialName] = useState('')
   const [error, setError] = useState('')
@@ -198,14 +200,26 @@ const SettingsPopup = ({ isVisible, onClose, onOpenPaywall }) => {
         </div>
 
         <div className="settings-content">
-          <button className="premium-upsell-btn" onClick={onOpenPaywall}>
-            <span className="icon">💎</span>
-            <div className="text-content">
-              <span className="title">Serin Premium</span>
-              <span className="subtitle">Unlock all features</span>
+          {!isPremium ? (
+            <button className="premium-upsell-btn" onClick={onOpenPaywall}>
+              <span className="icon">💎</span>
+              <div className="text-content">
+                <span className="title">Serin Premium</span>
+                <span className="subtitle">Unlock all features</span>
+              </div>
+              <span className="arrow">→</span>
+            </button>
+          ) : (
+            <div className="premium-active-badge">
+              <span className="icon">✨</span>
+              <div className="text-content">
+                <span className="title">Premium Active</span>
+                <span className="subtitle">
+                  Expires: {premiumEndsAt ? new Date(premiumEndsAt).toLocaleDateString() : 'Never'}
+                </span>
+              </div>
             </div>
-            <span className="arrow">→</span>
-          </button>
+          )}
 
           {user && (
             <form className="settings-profile-card" onSubmit={handleProfileSubmit}>
@@ -214,7 +228,14 @@ const SettingsPopup = ({ isVisible, onClose, onOpenPaywall }) => {
                   <span>{avatarInitial}</span>
                 </div>
                 <div className="settings-profile-meta">
-                  <span className="settings-profile-label">{t('settings.profileLabel')}</span>
+                  <div className="settings-profile-top">
+                    <span className="settings-profile-label">{t('settings.profileLabel')}</span>
+                    {isPremium ? (
+                      <span className="status-pill status-pill--premium">Premium</span>
+                    ) : (
+                      <span className="status-pill status-pill--free">Free</span>
+                    )}
+                  </div>
                   <span className="settings-profile-email">{user.email}</span>
                 </div>
               </div>

@@ -1,0 +1,82 @@
+.premium-banner {
+    background: linear-gradient(90deg, #4A3B78 0%, #36285A 100%);
+    border-bottom: 1px solid rgba(255, 235, 91, 0.3);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    animation: slideDown 0.3s ease-out;
+    font-family: 'Hangyaboly', sans-serif;
+    z-index: 90;
+    /* Below top bars but visible */
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.premium-banner-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.premium-banner-icon {
+    font-size: 16px;
+}
+
+.premium-banner-text {
+    color: #FFEB5B;
+    /* Gold text */
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.premium-banner-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.premium-banner-btn {
+    background: rgba(255, 235, 91, 0.2);
+    color: #FFEB5B;
+    border: 1px solid rgba(255, 235, 91, 0.4);
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.premium-banner-btn:hover {
+    background: #FFEB5B;
+    color: #2A1F45;
+}
+
+.premium-banner-dismiss {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.premium-banner-dismiss:hover {
+    color: white;
+}

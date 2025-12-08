@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext'
 import { useLanguage } from './contexts/LanguageContext'
+import { usePremium } from './contexts/PremiumContext'
 import { useLastChat, DEFAULT_LAST_CHAT_TTL_MS } from './contexts/LastChatContext'
 import { useModelPreference } from './contexts/ModelPreferenceContext'
 import { recordDailyActivity } from './lib/activityService'
@@ -14,6 +15,7 @@ import { useVoiceToGemini } from './useVoiceToGemini'
 import { trackAnonymousEvent } from './lib/anonymousAnalyticsService'
 import { SERIN_COLORS } from './utils/serinColors'
 import { useAppOpenReward } from './hooks/useAppOpenReward'
+import PremiumBanner from './components/PremiumBanner'
 import ProfilePopup from './ProfilePopup'
 import PremiumPaywall from './PremiumPaywall'
 import ChatHistoryPopup from './ChatHistoryPopup'
@@ -30,6 +32,7 @@ function ChatPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { t } = useLanguage()
+  const { isPremium, premiumEndsAt } = usePremium()
   const { lastChat, rememberChat, clearLastChat } = useLastChat()
   const {
     currentModel,
@@ -53,6 +56,7 @@ function ChatPage() {
   const [isSettingsPopupVisible, setIsSettingsPopupVisible] = useState(false)
   const [testAudioFiles, setTestAudioFiles] = useState([])
   const [showTestPanel, setShowTestPanel] = useState(false)
+  const [showExpirationBanner, setShowExpirationBanner] = useState(false)
   const [activeModel, setActiveModel] = useState(currentModel)
   const [isModelLocked, setIsModelLocked] = useState(false)
   const inputRef = useRef(null)
@@ -91,6 +95,21 @@ function ChatPage() {
       rememberSessionModel(sessionIdentifier, modelToApply)
     }
   }, [currentModel])
+
+  useEffect(() => {
+    // Check if premium expired recently (e.g. within last 7 days)
+    if (!isPremium && premiumEndsAt) {
+      const end = new Date(premiumEndsAt)
+      const now = new Date()
+      // If expired in the past and not more than 7 days ago
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+      if (end < now && end > sevenDaysAgo) {
+        setShowExpirationBanner(true)
+      }
+    } else {
+      setShowExpirationBanner(false)
+    }
+  }, [isPremium, premiumEndsAt])
 
   useEffect(() => {
     if (!isModelLocked) {
@@ -718,6 +737,14 @@ function ChatPage() {
           />
         )}
       </div>
+
+      {showExpirationBanner && (
+        <PremiumBanner
+          message="Your Premium access has ended."
+          onAction={() => setIsPaywallVisible(true)}
+          onDismiss={() => setShowExpirationBanner(false)}
+        />
+      )}
 
       {/* Development Test Audio Panel */}
       {

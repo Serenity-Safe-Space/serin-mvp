@@ -108,22 +108,90 @@
 .settings-popup-content {
   display: flex;
   flex-direction: column;
-  gap: 28px;
 }
 
+/* Profile Card */
 .settings-profile-card {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  border-radius: 24px;
-  background: rgba(40, 30, 79, 0.38);
-  padding: 20px 24px 24px;
+  background: white;
+  /* Fallback */
+  background: var(--settings-color-surface-light, rgba(255, 255, 255, 0.05));
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 32px;
+  border: 1px solid var(--settings-color-divider);
 }
 
 .settings-profile-header {
   display: flex;
   align-items: center;
   gap: 16px;
+  margin-bottom: 24px;
+}
+
+.settings-profile-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.settings-profile-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.status-pill {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.status-pill--free {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.status-pill--premium {
+  background: #FFEB5B;
+  color: #2A1F45;
+}
+
+.premium-active-badge {
+  width: 100%;
+  background: rgba(255, 235, 91, 0.1);
+  border: 1px solid rgba(255, 235, 91, 0.3);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.premium-active-badge .icon {
+  font-size: 24px;
+}
+
+.premium-active-badge .text-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.premium-active-badge .title {
+  color: #FFEB5B;
+  font-weight: 900;
+  font-size: 16px;
+  font-family: 'Hangyaboly', sans-serif;
+}
+
+.premium-active-badge .subtitle {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
 }
 
 .settings-profile-avatar {
