@@ -81,7 +81,7 @@ export const getCurrentStreak = async (userId) => {
       return Math.round((parseDate(newer) - parseDate(older)) / 86400000)
     }
 
-    const today = new Date().toISOString().split('T')[0]
+    const today = new Date().toLocaleDateString('en-CA') // YYYY-MM-DD local time
     const mostRecent = activityDates[0]
     const daysSinceMostRecent = diffInDays(today, mostRecent)
 
