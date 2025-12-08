@@ -13,6 +13,8 @@ import { rememberSessionModel, getSessionModel, clearSessionModel } from './lib/
 import { useVoiceToGemini } from './useVoiceToGemini'
 import { trackAnonymousEvent } from './lib/anonymousAnalyticsService'
 import { SERIN_COLORS } from './utils/serinColors'
+import { useActivityTracker } from './hooks/useActivityTracker'
+import { useAppOpenReward } from './hooks/useAppOpenReward'
 import ProfilePopup from './ProfilePopup'
 import ChatHistoryPopup from './ChatHistoryPopup'
 import SignInModal from './SignInModal'
@@ -35,6 +37,8 @@ function ChatPage() {
     canEdit,
     setModel: setPreferredModel,
   } = useModelPreference()
+  useActivityTracker()
+  useAppOpenReward()
   const [currentMessage, setCurrentMessage] = useState(() => t('chat.initialGreeting'))
   const [inputValue, setInputValue] = useState('')
   const [chatHistory, setChatHistory] = useState([])

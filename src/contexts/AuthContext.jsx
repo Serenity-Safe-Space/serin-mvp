@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { recordDailyActivity } from '../lib/activityService'
+import { awardCoins } from '../lib/coinService'
 import { fetchCurrentAdminRole, clearAdminRoleCache } from '../lib/adminRoleService'
 
 const AuthContext = createContext({})
@@ -77,10 +78,15 @@ export const AuthProvider = ({ children }) => {
 
       if (error) throw error
 
-      // Record daily activity for successful sign-up with immediate session
+      // Record daily activity and award sign-up coins (10 coins)
       if (data.user && data.session) {
+        // Record activity
         recordDailyActivity(data.user.id).catch(error =>
           console.warn('Failed to record daily activity:', error)
+        )
+        // Award sign-up bonus
+        awardCoins(data.user.id, 'account_create', 10).catch(error =>
+          console.warn('Failed to award sign-up coins:', error)
         )
       }
 

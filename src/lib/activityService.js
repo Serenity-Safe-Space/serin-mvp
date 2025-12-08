@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { awardCoins } from './coinService'
 
 /**
  * Records daily activity for a user (once per day maximum)
@@ -12,18 +13,18 @@ export const recordDailyActivity = async (userId) => {
 
   try {
     const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD format
-    
+
     // Use UPSERT to avoid duplicates - if user already has activity for today, do nothing
     const { error } = await supabase
       .from('user_activity')
       .upsert(
-        { 
-          user_id: userId, 
-          activity_date: today 
+        {
+          user_id: userId,
+          activity_date: today
         },
-        { 
+        {
           onConflict: 'user_id,activity_date',
-          ignoreDuplicates: true 
+          ignoreDuplicates: true
         }
       )
 
@@ -31,6 +32,10 @@ export const recordDailyActivity = async (userId) => {
       console.error('Error recording daily activity:', error)
       return { success: false, error: error.message }
     }
+
+    // Try to award daily activity coins (2 coins). Backend handles daily limit/duplicate safeguards.
+    // We call this even if upsert was just an "update" because the backend fn checks "coins given today" separately.
+    await awardCoins(userId, 'daily_checkin', 2)
 
     return { success: true }
   } catch (error) {
