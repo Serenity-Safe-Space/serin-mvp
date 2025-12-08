@@ -47,13 +47,15 @@ export const getCoinTransactions = async (userId, limit = 50) => {
  * @param {string} userId 
  * @param {string} type - 'daily_checkin', 'share_link', etc.
  * @param {number} amount 
+ * @param {object} metadata - Optional metadata (e.g., local_date)
  */
-export const awardCoins = async (userId, type, amount) => {
+export const awardCoins = async (userId, type, amount, metadata = {}) => {
     try {
         const { data, error } = await supabase.rpc('award_coins', {
             p_user_id: userId,
             p_type: type,
-            p_amount: amount
+            p_amount: amount,
+            p_metadata: metadata
         })
 
         if (error) throw error

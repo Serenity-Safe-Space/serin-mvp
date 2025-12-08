@@ -12,7 +12,7 @@ export const recordDailyActivity = async (userId) => {
   }
 
   try {
-    const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD format
+    const today = new Date().toLocaleDateString('en-CA') // YYYY-MM-DD local time
 
     // Use UPSERT to avoid duplicates - if user already has activity for today, do nothing
     const { error } = await supabase
@@ -35,7 +35,7 @@ export const recordDailyActivity = async (userId) => {
 
     // Try to award daily activity coins (3 coins). Backend handles daily limit/duplicate safeguards.
     // We call this even if upsert was just an "update" because the backend fn checks "coins given today" separately.
-    await awardCoins(userId, 'daily_checkin', 3)
+    await awardCoins(userId, 'daily_checkin', 3, { local_date: today })
 
     return { success: true }
   } catch (error) {

@@ -18,7 +18,8 @@ export const useAppOpenReward = () => {
             try {
                 // Award 2 coins for opening app. 
                 // Backend 'award_coins' function handles the daily duplicate check.
-                await awardCoins(user.id, 'open_app', 2)
+                const localDate = new Date().toLocaleDateString('en-CA') // YYYY-MM-DD in local time
+                await awardCoins(user.id, 'open_app', 2, { local_date: localDate })
             } catch (error) {
                 console.warn('Failed to trigger app open reward:', error)
             }
