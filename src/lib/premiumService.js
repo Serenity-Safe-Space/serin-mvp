@@ -23,12 +23,12 @@ export const getPremiumStatus = async (userId) => {
             .eq('status', 'active')
             .order('created_at', { ascending: false })
             .limit(1)
-            .single()
+            .maybeSingle()
 
         // It's okay if no subscription implementation detail found, just use profile flags logic
-        if (subError && subError.code !== 'PGRST116') {
-            console.warn('Error fetching subscription details:', subError)
-        }
+        // if (subError && subError.code !== 'PGRST116') {
+        //     console.warn('Error fetching subscription details:', subError)
+        // }
 
         return {
             isActive: profile?.premium_active || false,

@@ -15,12 +15,10 @@ export const useAppOpenReward = () => {
 
         const triggerReward = async () => {
             attemptedRef.current = true
-            console.log('useAppOpenReward: Triggering reward for user', user.id)
             try {
                 // Award 1 coin for opening app. 
                 // Backend 'award_coins' function handles the daily duplicate check.
-                const result = await awardCoins(user.id, 'open_app', 1)
-                console.log('useAppOpenReward: Result', result)
+                await awardCoins(user.id, 'open_app', 1)
             } catch (error) {
                 console.warn('Failed to trigger app open reward:', error)
             }
