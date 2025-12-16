@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from './contexts/AuthContext'
 import { useLanguage } from './contexts/LanguageContext'
+import { usePremium } from './contexts/PremiumContext'
 import { getCurrentStreak } from './lib/activityService'
 import { SERIN_COLORS } from './utils/serinColors'
-import CoinBalance from './components/CoinBalance'
 import './ProfilePopup.css'
 
 function ProfilePopup({ isVisible, onClose, onSignInClick, onChatHistoryClick, onSettingsClick,
@@ -11,6 +11,7 @@ function ProfilePopup({ isVisible, onClose, onSignInClick, onChatHistoryClick, o
   onProgressClick
 }) {
   const { user, adminRole } = useAuth()
+  const { coinBalance, loading: loadingCoins } = usePremium()
   const [currentStreak, setCurrentStreak] = useState(0)
   const [loadingActivity, setLoadingActivity] = useState(false)
   const { t } = useLanguage()
@@ -61,8 +62,8 @@ function ProfilePopup({ isVisible, onClose, onSignInClick, onChatHistoryClick, o
         }}
       >
         <div className="profile-popup-header">
-          <button className="profile-popup-close" onClick={onClose}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <button className="profile-popup-close" onClick={onClose} aria-label="Close menu">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
@@ -71,53 +72,49 @@ function ProfilePopup({ isVisible, onClose, onSignInClick, onChatHistoryClick, o
         <div className="profile-popup-content">
           {user ? (
             <>
-              <h3 className="profile-encouragement">
-                {t('profile.encouragement', { name: firstName })}
-                <span aria-hidden="true">✨</span>
-              </h3>
+              <h2 className="profile-title">
+                Your Progress
+              </h2>
 
-              <div className="profile-streak" role="status" aria-live="polite">
-                <span className="profile-streak-icon" role="img" aria-label="llama">
-                  🦙
-                </span>
-                <span className="profile-streak-value">{streakValue}</span>
-                <span className="profile-streak-label">{t('profile.streakLabel')}</span>
+              <div className="profile-coin-section">
+                <div className="profile-coin-icon-large">
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="10" fill="currentColor" className="coin-bg" />
+                    <path d="M12 6C13.6569 6 15 7.34315 15 9C15 10.6569 13.6569 12 12 12C10.3431 12 9 10.6569 9 9C9 7.34315 10.3431 6 12 6Z" fill="#B8860B" />
+                    <path d="M12 18C14.2091 18 16 16.2091 16 14V13H8V14C8 16.2091 9.79086 18 12 18Z" fill="#B8860B" />
+                  </svg>
+                </div>
+                <div className="profile-coin-text">
+                  {loadingCoins ? '...' : coinBalance} coins earnt!
+                </div>
+                {onProgressClick && (
+                  <button className="earn-coin-btn" onClick={onProgressClick}>
+                    Earn more coin
+                  </button>
+                )}
               </div>
 
-              <div className="profile-coins-wrapper">
-                <CoinBalance size="medium" />
+              <div className="profile-links-container">
+                <button className="profile-link" onClick={onChatHistoryClick}>
+                  <span>{t('profile.chatHistory')}</span>
+                  <span className="profile-link-arrow">&gt;</span>
+                </button>
+
+                <button className="profile-link" onClick={onSettingsClick}>
+                  <span>{t('profile.settings')}</span>
+                  <span className="profile-link-arrow">&gt;</span>
+                </button>
+
+                {adminRole?.isAdmin && (
+                  <button
+                    className="profile-link profile-link--admin"
+                    onClick={() => onAdminDashboardClick?.()}
+                  >
+                    <span>Admin Dashboard</span>
+                    <span className="profile-link-arrow">&gt;</span>
+                  </button>
+                )}
               </div>
-
-              <button className="profile-action profile-action--primary" onClick={onChatHistoryClick}>
-                {t('profile.chatHistory')}
-              </button>
-
-              <button className="profile-action profile-action--secondary" onClick={onSettingsClick}>
-                {t('profile.settings')}
-              </button>
-
-              {user && (
-                <button
-                  className="profile-action profile-action--secondary"
-                  onClick={onProgressClick}
-                >
-                  <div className="menu-icon-wrapper progress-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                      <path d="M12 20V10M18 20V4M6 20v-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-                  <span>{t('profile.myProgress') || 'My Progress'}</span>
-                </button>
-              )}
-
-              {adminRole?.isAdmin && (
-                <button
-                  className="profile-action profile-action--admin"
-                  onClick={() => onAdminDashboardClick?.()}
-                >
-                  Admin Dashboard
-                </button>
-              )}
 
               <div className="privacy-footer">{t('profile.privacy')}</div>
             </>
@@ -134,6 +131,7 @@ function ProfilePopup({ isVisible, onClose, onSignInClick, onChatHistoryClick, o
               <button className="sign-in-btn" onClick={onSignInClick}>
                 {t('profile.signIn')}
               </button>
+              <div className="privacy-footer" style={{ marginTop: 'auto' }}>{t('profile.privacy')}</div>
             </div>
           )}
         </div>
