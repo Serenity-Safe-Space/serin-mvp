@@ -17,25 +17,30 @@
   z-index: 5;
 }
 
-.profile-icon {
+.chat-sidebar-trigger {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 8px;
   cursor: pointer;
-  padding: 12px;
-  border-radius: 50%;
-  background: #FFFFFF;
-  transition: background-color 0.2s ease;
-  width: 48px;
-  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  z-index: 20;
 }
 
-.profile-icon:hover {
-  background-color: #f5f5f5;
+.chat-sidebar-trigger:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
 }
 
-.profile-icon svg path {
-  fill: #3C2A73;
+.chat-sidebar-trigger:active {
+  transform: scale(0.95);
 }
 
 .chat-model-selector,
@@ -355,9 +360,12 @@
     top: auto;
     right: auto;
     width: 100%;
-    justify-content: space-between;
+    justify-content: flex-end;
+    /* Push items to right to avoid sidebar trigger */
     margin-bottom: 20px;
-    padding: 0;
+    padding: 0 0 0 48px;
+    /* Make space for left sidebar trigger */
+    gap: 12px;
   }
 
   .new-chat-button span,

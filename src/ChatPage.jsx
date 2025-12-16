@@ -717,6 +717,11 @@ function ChatPage() {
 
   return (
     <div className="chat-page">
+      <button className="chat-sidebar-trigger" onClick={handleProfileClick} aria-label="Open Menu">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 12h18M3 6h18M3 18h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
       <div className="chat-top-controls">
         {sessionId ? (
           <button
@@ -741,11 +746,7 @@ function ChatPage() {
             <span>{t('chat.lastChat') || 'Resume Last Chat'}</span>
           </button>
         ) : null}
-        <div className="profile-icon" onClick={handleProfileClick}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="#3C2A73" />
-          </svg>
-        </div>
+
         {canEdit && (
           <ModelSelector
             value={isModelLocked ? (activeModel || currentModel) : currentModel}
