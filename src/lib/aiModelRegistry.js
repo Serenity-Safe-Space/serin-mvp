@@ -7,6 +7,13 @@ const TEXT_MODELS = [
     description: 'Balanced for fast reasoning and low latency across most prompts.',
   },
   {
+    id: 'gemini-3-flash-preview',
+    label: 'Gemini 3 Flash',
+    provider: 'google',
+    apiName: 'gemini-3-flash-preview',
+    description: 'Next-generation high-speed model with enhanced reasoning.',
+  },
+  {
     id: 'gpt-4.1',
     label: 'GPT-4.1',
     provider: 'openai',
