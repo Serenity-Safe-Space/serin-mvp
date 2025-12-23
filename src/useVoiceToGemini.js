@@ -377,13 +377,27 @@ export const useVoiceToGemini = (options = {}) => {
         }
     };
 
-    const getWebSocketUrl = () => {
-        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-        if (!apiKey) {
-            throw new Error('VITE_GEMINI_API_KEY is not configured');
-        }
+    const getWebSocketUrl = async () => {
+        // SECURITY FIX: Fetch WebSocket URL from backend to keep API key server-side
+        try {
+            const response = await fetch('/api/get-voice-url', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
 
-        return `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=${apiKey}`;
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `Failed to get voice URL: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data.url;
+        } catch (error) {
+            console.error('Error fetching WebSocket URL:', error);
+            throw new Error('Unable to initialize voice chat. Please try again.');
+        }
     };
 
     const startRecording = async () => {
@@ -404,7 +418,7 @@ export const useVoiceToGemini = (options = {}) => {
             resetVadState();
             resetConversationBuffers();
 
-            const websocketUrl = getWebSocketUrl();
+            const websocketUrl = await getWebSocketUrl();
             socketRef.current = new WebSocket(websocketUrl);
 
             socketRef.current.onopen = () => {
@@ -742,7 +756,7 @@ export const useVoiceToGemini = (options = {}) => {
             resetConversationBuffers();
 
             if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {
-                const websocketUrl = getWebSocketUrl();
+                const websocketUrl = await getWebSocketUrl();
                 socketRef.current = new WebSocket(websocketUrl);
 
                 await new Promise((resolve, reject) => {
