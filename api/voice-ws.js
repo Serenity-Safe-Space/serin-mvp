@@ -23,7 +23,8 @@ export const config = {
 const GEMINI_WS_URL_BASE = 'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent';
 
 export default async function handler(req, res) {
-    const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+    // SECURITY: Only use server-side env var - NEVER use VITE_ prefix for API keys
+    const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
         res.status(500).json({ error: 'Gemini API key not configured on server' });

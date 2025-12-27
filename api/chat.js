@@ -14,7 +14,8 @@ export default async function handler(req) {
         const { provider, model, messages, prompt } = await req.json();
 
         if (provider === 'openai') {
-            const apiKey = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY;
+            // SECURITY: Only use server-side env var - NEVER use VITE_ prefix for API keys
+            const apiKey = process.env.OPENAI_API_KEY;
             if (!apiKey) {
                 return new Response(JSON.stringify({ error: 'OpenAI API key not configured on server' }), { status: 500 });
             }
@@ -33,7 +34,8 @@ export default async function handler(req) {
             });
 
         } else if (provider === 'google') {
-            const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+            // SECURITY: Only use server-side env var - NEVER use VITE_ prefix for API keys
+            const apiKey = process.env.GEMINI_API_KEY;
             if (!apiKey) {
                 return new Response(JSON.stringify({ error: 'Gemini API key not configured on server' }), { status: 500 });
             }

@@ -26,14 +26,20 @@
 Go to your Vercel project → Settings → Environment Variables and add:
 
 ```env
-VITE_SUPABASE_URL=https://fwdqzokivltyttgzqlee.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_G26ieuxoVrASg3zH-JAo5A_ohry7J-5
-VITE_GEMINI_API_KEY=AIzaSyAX0eJBOBUBFSsZruH41Ym-uLrKjzS5iEs
+# Get these values from your Supabase project settings
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=your-supabase-publishable-key
+
+# IMPORTANT: API keys should NOT have the VITE_ prefix!
+# Server-side only - these stay secure and are never exposed to the browser
+GEMINI_API_KEY=your-gemini-api-key
+OPENAI_API_KEY=your-openai-api-key
 ```
 
-**Important:** 
+**Important:**
 - Set Environment to **Production**, **Preview**, and **Development**
-- All variables must be prefixed with `VITE_` to be accessible in the browser
+- Only `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` should have the `VITE_` prefix (these are safe for client-side)
+- `GEMINI_API_KEY` and `OPENAI_API_KEY` must NOT have the `VITE_` prefix to keep them secure on the server
 
 ### 3. Supabase Configuration Updates
 
