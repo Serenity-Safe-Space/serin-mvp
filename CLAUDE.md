@@ -112,9 +112,23 @@ public/
 5. **Admin routes protected by `RequireAdmin`** - Checks `adminRole.isAdmin`
 
 ### Known Security Considerations
-- `/api/get-voice-url` returns WebSocket URL with embedded API key (acknowledged temporary solution)
-- API endpoints lack user authentication (TODO in code comments)
-- Consider implementing rate limiting on all API endpoints
+- `/api/get-voice-url` returns WebSocket URL with embedded API key (mitigated with rate limiting and origin checks)
+- API key restrictions MUST be configured in Google Cloud Console (see below)
+
+### Google Cloud API Key Security (REQUIRED)
+
+To protect the Gemini API key, configure these restrictions in Google Cloud Console:
+
+1. **Go to** APIs & Services → Credentials
+2. **Edit** your Gemini API key
+3. **API restrictions**: Select "Restrict key" → Choose only "Generative Language API"
+4. **Set quotas**: APIs & Services → Quotas → Set daily limits for Generative Language API
+5. **Enable monitoring**: Set up billing alerts and usage notifications
+
+The voice endpoint (`/api/get-voice-url`) also enforces:
+- Origin validation (only allows requests from your domains)
+- Per-IP rate limiting (10 requests/minute)
+- Usage logging for monitoring
 
 ## Supabase Patterns
 
