@@ -22,7 +22,8 @@ export default async function handler(req) {
         return new Response('Expected WebSocket', { status: 426 });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+    // SECURITY: Only use server-side env var - NEVER use VITE_ prefix for API keys
+    const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
         return new Response('Gemini API key not configured on server', { status: 500 });

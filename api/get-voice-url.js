@@ -69,7 +69,8 @@ export default async function handler(req) {
         );
     }
 
-    const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+    // SECURITY: Only use server-side env var - NEVER use VITE_ prefix for API keys
+    const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
         return new Response(
