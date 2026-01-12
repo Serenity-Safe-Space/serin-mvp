@@ -96,7 +96,7 @@
 }
 
 .streak-title {
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
   font-size: 24px;
   color: #FFFFFF;
   margin: 0;
@@ -113,7 +113,7 @@
 }
 
 .streak-number {
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
   font-size: 72px;
   font-weight: bold;
   color: #3C2A73;
@@ -121,7 +121,7 @@
 }
 
 .streak-label {
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
   font-size: 16px;
   color: #FF6B35;
   font-weight: 600;
@@ -159,7 +159,7 @@
 }
 
 .calendar-month {
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
   font-size: 16px;
   color: #FFFFFF;
 }
@@ -172,7 +172,7 @@
 }
 
 .calendar-header {
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
   font-size: 12px;
   color: rgba(255, 255, 255, 0.6);
   text-align: center;
@@ -191,7 +191,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
   font-size: 14px;
   color: rgba(255, 255, 255, 0.7);
 }
@@ -243,14 +243,14 @@
 }
 
 .stat-number {
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
   font-size: 20px;
   font-weight: bold;
   color: #FFFFFF;
 }
 
 .stat-label {
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
   font-size: 12px;
   color: rgba(255, 255, 255, 0.6);
 }

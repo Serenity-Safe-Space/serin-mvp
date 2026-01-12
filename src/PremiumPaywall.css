@@ -27,7 +27,7 @@
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     border: 1px solid rgba(255, 255, 255, 0.1);
     overflow: hidden;
-    font-family: 'Hangyaboly', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
 }
 
 .paywall-close {

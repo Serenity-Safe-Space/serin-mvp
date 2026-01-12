@@ -51,7 +51,7 @@
   color: #FFFFFF;
   margin: 0 0 12px 0;
   line-height: 1.2;
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
   text-align: center;
 }
 
@@ -60,7 +60,7 @@
   font-weight: 500;
   color: rgba(255, 255, 255, 0.8);
   margin: 0;
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
   text-align: center;
 }
 
@@ -105,7 +105,7 @@
   color: rgba(255, 255, 255, 0.6);
   cursor: pointer;
   transition: all 0.2s ease;
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
 }
 
 .toggle-btn.active {
@@ -203,7 +203,7 @@
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
@@ -269,7 +269,7 @@
   font-size: 14px;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.9);
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
 }
 
 .form-group input {
@@ -280,7 +280,7 @@
   transition: all 0.2s ease;
   background: white;
   color: #2D1F5C;
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
 }
 
 .form-group input:focus {
@@ -305,7 +305,7 @@
   border-radius: 12px;
   font-size: 14px;
   border: 1px solid rgba(254, 202, 202, 0.3);
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
 }
 
 .success-message {
@@ -315,7 +315,7 @@
   border-radius: 12px;
   font-size: 14px;
   border: 1px solid rgba(187, 247, 208, 0.3);
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
 }
 
 .signin-submit {
@@ -329,7 +329,7 @@
   font-weight: 900;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
 }
 
 .signin-submit:hover:not(:disabled) {
@@ -356,7 +356,7 @@
   margin-top: 16px;
   margin-bottom: 0;
   line-height: 1.5;
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
 }
 
 .forgot-password-link {
@@ -368,7 +368,7 @@
   cursor: pointer;
   padding: 0;
   align-self: flex-end;
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
   text-decoration: underline;
 }
 
@@ -390,7 +390,7 @@
   cursor: pointer;
   padding: 8px 0;
   margin-bottom: 32px;
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
   text-decoration: underline;
 }
 

@@ -2,7 +2,7 @@
   min-height: 100vh;
   background: #ffffff;
   padding: 40px 20px;
-  font-family: 'Hangyaboly', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
 }
 
 .privacy-content {
@@ -24,7 +24,7 @@
   font-size: 16px;
   padding: 12px 0;
   transition: all 0.2s ease;
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
   align-self: flex-start;
 }
 
@@ -51,7 +51,7 @@
   color: #6B1FAD;
   margin: 0;
   line-height: 1.1;
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
 }
 
 .privacy-title-underline {
@@ -71,7 +71,7 @@
   color: #6B1FAD;
   margin: 0 0 24px 0;
   line-height: 1.6;
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
 }
 
 .privacy-text p:last-child {

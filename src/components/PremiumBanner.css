@@ -7,7 +7,7 @@
     justify-content: space-between;
     width: 100%;
     animation: slideDown 0.3s ease-out;
-    font-family: 'Hangyaboly', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
     z-index: 90;
     /* Below top bars but visible */
 }

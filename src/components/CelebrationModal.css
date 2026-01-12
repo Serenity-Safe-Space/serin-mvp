@@ -43,14 +43,14 @@
 }
 
 .celebration-title {
-    font-family: 'Hangyaboly', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
     font-size: 32px;
     color: #3C2A73;
     margin: 0 0 10px 0;
 }
 
 .celebration-message {
-    font-family: 'Hangyaboly', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
     font-size: 18px;
     color: #666;
     line-height: 1.5;
