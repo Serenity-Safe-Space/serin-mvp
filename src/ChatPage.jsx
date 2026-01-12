@@ -25,6 +25,7 @@ import SignInModal from './SignInModal'
 import SettingsPopup from './SettingsPopup'
 import ModelSelector from './ModelSelector'
 import StreakModal from './StreakModal'
+import VoiceModeOverlay from './VoiceModeOverlay'
 import './ChatPage.css'
 
 const SESSION_INACTIVITY_THRESHOLD_MS = DEFAULT_LAST_CHAT_TTL_MS
@@ -68,6 +69,7 @@ function ChatPage() {
   const [isStreakModalVisible, setIsStreakModalVisible] = useState(false)
   const [checkInTimer, setCheckInTimer] = useState(120) // 2 minutes in seconds
   const [isTimerActive, setIsTimerActive] = useState(false)
+  const [isVoiceModeOpen, setIsVoiceModeOpen] = useState(false)
   const inputRef = useRef(null)
   const sessionIdRef = useRef(currentSessionId)
   const userRef = useRef(user)
@@ -756,7 +758,13 @@ function ChatPage() {
 
   const handleTalkClick = async () => {
     setIsTimerActive(true)
+    setIsVoiceModeOpen(true)
     await handleVoiceButtonClick()
+  }
+
+  const handleCloseVoiceMode = () => {
+    setIsVoiceModeOpen(false)
+    stopRecording()
   }
 
   const handleStreakClick = () => {
@@ -1087,6 +1095,16 @@ function ChatPage() {
       <StreakModal
         isVisible={isStreakModalVisible}
         onClose={() => setIsStreakModalVisible(false)}
+      />
+
+      <VoiceModeOverlay
+        isVisible={isVoiceModeOpen}
+        onClose={handleCloseVoiceMode}
+        isRecording={isRecording}
+        isPlaying={isPlaying}
+        isLoading={isVoiceLoading}
+        isError={isError}
+        onTapToPause={stopRecording}
       />
     </div >
   )

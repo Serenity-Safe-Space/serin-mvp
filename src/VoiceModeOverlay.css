@@ -1,0 +1,286 @@
+.voice-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: linear-gradient(to bottom, #6B1FAD 0%, #3C2A73 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: voiceFadeIn 0.3s ease-out;
+}
+
+@keyframes voiceFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Close Button */
+.voice-close-btn {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  cursor: pointer;
+  padding: 12px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.voice-close-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.voice-close-btn svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Main Content Area */
+.voice-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  width: 100%;
+  max-width: 400px;
+}
+
+/* Avatar Section */
+.voice-avatar-section {
+  margin-bottom: 40px;
+}
+
+.voice-avatar-circle {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+
+/* Outer glow ring */
+.voice-avatar-circle::before {
+  content: '';
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 100px;
+  border: 3px solid transparent;
+  border-top-color: rgba(255, 255, 255, 0.7);
+  border-left-color: rgba(255, 255, 255, 0.3);
+  border-right-color: rgba(255, 255, 255, 0.3);
+  border-radius: 100px 100px 0 0;
+  pointer-events: none;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+}
+
+/* Inner purple glow */
+.voice-inner-glow {
+  position: absolute;
+  top: 55%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100px;
+  height: 70px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(200, 160, 255, 0.6) 0%, rgba(170, 130, 230, 0.3) 50%, transparent 80%);
+  pointer-events: none;
+  z-index: 0;
+  box-shadow:
+    0 0 30px 20px rgba(180, 140, 230, 0.4),
+    0 0 60px 40px rgba(150, 110, 200, 0.2);
+}
+
+.voice-llama-img {
+  width: 140px;
+  height: 140px;
+  object-fit: contain;
+  position: relative;
+  z-index: 2;
+}
+
+/* Timer Badge */
+.voice-timer-badge {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.5);
+  color: #FFFFFF;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  z-index: 3;
+  backdrop-filter: blur(4px);
+}
+
+/* Prompt Text */
+.voice-prompt {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
+  font-size: 28px;
+  font-weight: 600;
+  color: #FFFFFF;
+  text-align: center;
+  margin: 0 0 16px 0;
+  line-height: 1.3;
+}
+
+/* Status Indicator */
+.voice-status {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+}
+
+/* Bottom Section */
+.voice-bottom {
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+/* Waveform Visualization */
+.voice-waveform {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 60px;
+}
+
+.waveform-bar {
+  width: 6px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 3px;
+  animation: waveformPulse 1s ease-in-out infinite;
+}
+
+.waveform-bar:nth-child(1) {
+  height: 20px;
+  animation-delay: 0s;
+}
+
+.waveform-bar:nth-child(2) {
+  height: 35px;
+  animation-delay: 0.1s;
+}
+
+.waveform-bar:nth-child(3) {
+  height: 50px;
+  animation-delay: 0.2s;
+}
+
+.waveform-bar:nth-child(4) {
+  height: 40px;
+  animation-delay: 0.3s;
+}
+
+.waveform-bar:nth-child(5) {
+  height: 55px;
+  animation-delay: 0.15s;
+}
+
+.waveform-bar:nth-child(6) {
+  height: 30px;
+  animation-delay: 0.25s;
+}
+
+.waveform-bar:nth-child(7) {
+  height: 45px;
+  animation-delay: 0.05s;
+}
+
+@keyframes waveformPulse {
+  0%, 100% {
+    transform: scaleY(0.5);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+/* Waveform states */
+.voice-waveform.listening .waveform-bar {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.voice-waveform.speaking .waveform-bar {
+  background: #FFEB5B;
+  animation-duration: 0.6s;
+}
+
+.voice-waveform.paused .waveform-bar {
+  animation-play-state: paused;
+  opacity: 0.4;
+}
+
+.voice-waveform.loading .waveform-bar {
+  background: rgba(255, 255, 255, 0.6);
+  animation-duration: 1.5s;
+}
+
+.voice-waveform.error .waveform-bar {
+  background: rgba(255, 100, 100, 0.7);
+  animation-play-state: paused;
+  opacity: 0.5;
+}
+
+/* Tap to Pause Text */
+.voice-tap-text {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  margin: 0;
+}
+
+/* Tap area for pausing */
+.voice-tap-area {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  cursor: pointer;
+}
+
+/* Mobile adjustments */
+@media (max-width: 480px) {
+  .voice-avatar-circle {
+    width: 140px;
+    height: 140px;
+  }
+
+  .voice-llama-img {
+    width: 120px;
+    height: 120px;
+  }
+
+  .voice-prompt {
+    font-size: 24px;
+  }
+
+  .voice-content {
+    padding: 30px 20px;
+  }
+}
