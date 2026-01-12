@@ -1,27 +1,27 @@
 .profile-popup-overlay {
   position: fixed;
-  top: 0;
+  top: 60px;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.4);
   display: flex;
-  justify-content: flex-start;
+  justify-content: flex-end;
   align-items: stretch;
-  z-index: 1000;
+  z-index: 999;
   padding: 0;
-  animation: fadeIn 0.3s ease-out;
+  animation: fadeIn 0.2s ease-out;
 }
 
 .profile-popup {
   background: #F5F0FF;
-  border-radius: 0 24px 24px 0;
-  width: 85%;
-  max-width: 320px;
+  border-radius: 24px 0 0 0;
+  width: 100%;
+  max-width: 100%;
   height: 100%;
   padding: 24px;
-  box-shadow: 10px 0 40px rgba(0, 0, 0, 0.3);
-  animation: slideInFromLeft 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+  animation: slideInFromRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -33,31 +33,49 @@
   to { opacity: 1; }
 }
 
-@keyframes slideInFromLeft {
-  from { transform: translateX(-100%); }
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes slideInFromRight {
+  from { transform: translateX(100%); }
   to { transform: translateX(0); }
+}
+
+@keyframes slideOutToRight {
+  from { transform: translateX(0); }
+  to { transform: translateX(100%); }
+}
+
+.profile-popup-overlay.closing {
+  animation: fadeOut 0.25s ease-out forwards;
+}
+
+.profile-popup-overlay.closing .profile-popup {
+  animation: slideOutToRight 0.25s ease-out forwards;
 }
 
 .profile-popup-close {
   position: absolute;
-  top: 16px;
-  right: 16px;
-  background: none;
+  top: 12px;
+  left: 12px;
+  background: rgba(60, 42, 115, 0.1);
   border: none;
   cursor: pointer;
-  padding: 8px;
+  padding: 10px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(60, 42, 115, 0.5);
+  color: #3C2A73;
   transition: all 0.2s ease;
   z-index: 10;
 }
 
 .profile-popup-close:hover {
-  background: rgba(60, 42, 115, 0.1);
-  color: rgba(60, 42, 115, 0.8);
+  background: rgba(60, 42, 115, 0.2);
+  color: rgba(60, 42, 115, 1);
 }
 
 .profile-popup-content {
@@ -94,14 +112,14 @@
 }
 
 .profile-name {
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
   font-size: 32px;
   color: #3C2A73;
   margin: 0 0 4px 0;
 }
 
 .profile-status {
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
   font-size: 14px;
   color: #8B73B8;
   margin: 0;
@@ -144,7 +162,7 @@
 }
 
 .profile-stat-value {
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
   font-size: 20px;
   font-weight: 600;
   color: #3C2A73;
@@ -164,7 +182,7 @@
   color: #FFFFFF;
   border: none;
   border-radius: 50px;
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
@@ -185,7 +203,7 @@
 }
 
 .friends-title {
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
   font-size: 14px;
   color: #FFFFFF;
   margin: 0 0 12px 0;
@@ -219,7 +237,7 @@
 }
 
 .friend-initial {
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
   font-size: 18px;
   color: #FFFFFF;
 }
@@ -269,7 +287,7 @@
 }
 
 .menu-label {
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
   font-size: 16px;
   color: #3C2A73;
   flex: 1;
@@ -298,14 +316,14 @@
 }
 
 .signed-out-title {
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
   font-size: 28px;
   color: #3C2A73;
   margin: 0 0 8px 0;
 }
 
 .signed-out-subtitle {
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
   font-size: 14px;
   color: #8B73B8;
   margin: 0;
@@ -319,7 +337,7 @@
   color: #3C2A73;
   border: none;
   border-radius: 50px;
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
   font-size: 18px;
   font-weight: 600;
   cursor: pointer;
@@ -341,7 +359,7 @@
   color: #FFFFFF;
   padding: 12px 24px;
   border-radius: 50px;
-  font-family: 'Hangyaboly', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
   font-size: 14px;
   animation: toastIn 0.3s ease-out;
 }
@@ -360,8 +378,6 @@
 /* Mobile adjustments */
 @media (max-width: 480px) {
   .profile-popup {
-    max-width: 100%;
-    width: 80%;
     padding: 20px;
   }
 

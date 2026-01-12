@@ -30,6 +30,7 @@ function ProfilePopup({
   const [currentStreak, setCurrentStreak] = useState(0)
   const [loadingActivity, setLoadingActivity] = useState(false)
   const [showInviteToast, setShowInviteToast] = useState(false)
+  const [isClosing, setIsClosing] = useState(false)
   const { t } = useLanguage()
 
   useEffect(() => {
@@ -58,6 +59,14 @@ function ProfilePopup({
     setTimeout(() => setShowInviteToast(false), 2000)
   }
 
+  const handleClose = () => {
+    setIsClosing(true)
+    setTimeout(() => {
+      setIsClosing(false)
+      onClose()
+    }, 250)
+  }
+
   if (!isVisible) return null
 
   const firstName =
@@ -69,7 +78,7 @@ function ProfilePopup({
   const coinValue = loadingCoins ? '...' : coinBalance
 
   return (
-    <div className="profile-popup-overlay" onClick={onClose}>
+    <div className={`profile-popup-overlay ${isClosing ? 'closing' : ''}`} onClick={handleClose}>
       <div
         className="profile-popup"
         onClick={(e) => e.stopPropagation()}
@@ -82,10 +91,10 @@ function ProfilePopup({
           '--profile-color-accent-text': SERIN_COLORS.DEEP_SERIN_PURPLE.hex,
         }}
       >
-        {/* Close button */}
-        <button className="profile-popup-close" onClick={onClose} aria-label="Close menu">
+        {/* Back button */}
+        <button className="profile-popup-close" onClick={handleClose} aria-label="Go back">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
 
