@@ -1,0 +1,287 @@
+.streak-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  padding: 20px;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.streak-modal {
+  background: linear-gradient(180deg, #3C2A73 0%, #2D1F5C 100%);
+  border-radius: 24px;
+  width: 100%;
+  max-width: 380px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  padding: 60px 24px 24px;
+  animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.streak-modal-close {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.streak-modal-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+}
+
+.streak-llama-peek {
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 4px solid rgba(180, 160, 220, 0.6);
+  box-shadow:
+    0 0 0 4px rgba(180, 160, 220, 0.2),
+    0 0 20px rgba(139, 115, 184, 0.4);
+  background: #3C2A73;
+}
+
+.streak-llama-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.streak-modal-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.streak-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sparkle {
+  font-size: 16px;
+}
+
+.streak-title {
+  font-family: 'Hangyaboly', sans-serif;
+  font-size: 24px;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.streak-card {
+  background: #F5F0FF;
+  border-radius: 20px;
+  padding: 24px 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.streak-number {
+  font-family: 'Hangyaboly', sans-serif;
+  font-size: 72px;
+  font-weight: bold;
+  color: #3C2A73;
+  line-height: 1;
+}
+
+.streak-label {
+  font-family: 'Hangyaboly', sans-serif;
+  font-size: 16px;
+  color: #FF6B35;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.streak-calendar {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.calendar-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.nav-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.nav-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+}
+
+.calendar-month {
+  font-family: 'Hangyaboly', sans-serif;
+  font-size: 16px;
+  color: #FFFFFF;
+}
+
+.calendar-headers {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.calendar-header {
+  font-family: 'Hangyaboly', sans-serif;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
+  padding: 4px;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.calendar-cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-family: 'Hangyaboly', sans-serif;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.calendar-cell.empty {
+  background: transparent;
+}
+
+.calendar-cell.today {
+  background: rgba(139, 115, 184, 0.5);
+  border: 2px solid rgba(180, 160, 220, 0.8);
+}
+
+.calendar-cell.active {
+  background: transparent;
+}
+
+.fire-icon {
+  font-size: 18px;
+}
+
+.day-number {
+  font-size: 14px;
+}
+
+.streak-stats {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+}
+
+.stat-box {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stat-box .stat-icon {
+  font-size: 24px;
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-number {
+  font-family: 'Hangyaboly', sans-serif;
+  font-size: 20px;
+  font-weight: bold;
+  color: #FFFFFF;
+}
+
+.stat-label {
+  font-family: 'Hangyaboly', sans-serif;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Mobile adjustments */
+@media (max-width: 480px) {
+  .streak-modal {
+    padding: 50px 16px 20px;
+    max-width: 100%;
+    margin: 0 10px;
+  }
+
+  .streak-llama-peek {
+    width: 80px;
+    height: 80px;
+    top: -30px;
+  }
+
+  .streak-number {
+    font-size: 56px;
+  }
+
+  .streak-card {
+    padding: 20px 40px;
+  }
+
+  .fire-icon {
+    font-size: 14px;
+  }
+
+  .calendar-cell {
+    font-size: 12px;
+  }
+}

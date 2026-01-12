@@ -6,17 +6,32 @@ import { getCurrentStreak } from './lib/activityService'
 import { SERIN_COLORS } from './utils/serinColors'
 import './ProfilePopup.css'
 
-function ProfilePopup({ isVisible, onClose, onSignInClick, onChatHistoryClick, onSettingsClick,
+// Placeholder friend avatars for demo
+const DEMO_FRIENDS = [
+  { id: 1, name: 'Alex', avatar: null, hasCoins: true },
+  { id: 2, name: 'Jordan', avatar: null, hasStreak: true },
+  { id: 3, name: 'Sam', avatar: null, hasCoins: true },
+  { id: 4, name: 'Taylor', avatar: null, hasStreak: true },
+  { id: 5, name: 'Casey', avatar: null, hasCoins: true },
+]
+
+function ProfilePopup({
+  isVisible,
+  onClose,
+  onSignInClick,
+  onChatHistoryClick,
+  onSettingsClick,
   onAdminDashboardClick,
-  onProgressClick
+  onProgressClick,
+  onStreakClick
 }) {
   const { user, adminRole } = useAuth()
   const { coinBalance, loading: loadingCoins } = usePremium()
   const [currentStreak, setCurrentStreak] = useState(0)
   const [loadingActivity, setLoadingActivity] = useState(false)
+  const [showInviteToast, setShowInviteToast] = useState(false)
   const { t } = useLanguage()
 
-  // Load user activity data when popup opens and user is signed in
   useEffect(() => {
     if (isVisible && user) {
       loadUserActivity()
@@ -38,14 +53,20 @@ function ProfilePopup({ isVisible, onClose, onSignInClick, onChatHistoryClick, o
     }
   }
 
+  const handleInviteClick = () => {
+    setShowInviteToast(true)
+    setTimeout(() => setShowInviteToast(false), 2000)
+  }
+
   if (!isVisible) return null
 
   const firstName =
     user?.user_metadata?.full_name?.split(' ')[0] ||
     user?.email?.split('@')[0] ||
-    t('profile.friendFallback')
+    'Friend'
 
   const streakValue = loadingActivity ? '...' : currentStreak
+  const coinValue = loadingCoins ? '...' : coinBalance
 
   return (
     <div className="profile-popup-overlay" onClick={onClose}>
@@ -61,65 +82,102 @@ function ProfilePopup({ isVisible, onClose, onSignInClick, onChatHistoryClick, o
           '--profile-color-accent-text': SERIN_COLORS.DEEP_SERIN_PURPLE.hex,
         }}
       >
-        <div className="profile-popup-header">
-          <button className="profile-popup-close" onClick={onClose} aria-label="Close menu">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-        </div>
+        {/* Close button */}
+        <button className="profile-popup-close" onClick={onClose} aria-label="Close menu">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        </button>
 
         <div className="profile-popup-content">
           {user ? (
             <>
-              <h2 className="profile-title">
-                Your Progress
-              </h2>
-
-              <div className="profile-coin-section">
-                <div className="profile-coin-icon-large">
-                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="12" cy="12" r="10" fill="currentColor" className="coin-bg" />
-                    <path d="M12 6C13.6569 6 15 7.34315 15 9C15 10.6569 13.6569 12 12 12C10.3431 12 9 10.6569 9 9C9 7.34315 10.3431 6 12 6Z" fill="#B8860B" />
-                    <path d="M12 18C14.2091 18 16 16.2091 16 14V13H8V14C8 16.2091 9.79086 18 12 18Z" fill="#B8860B" />
-                  </svg>
+              {/* Avatar Section */}
+              <div className="profile-avatar-section">
+                <div className="profile-avatar-circle">
+                  <img src="/serin-llama.png" alt="Profile" className="profile-avatar-img" />
                 </div>
-                <div className="profile-coin-text">
-                  {loadingCoins ? '...' : coinBalance} coins earnt!
-                </div>
-                {onProgressClick && (
-                  <button className="earn-coin-btn" onClick={onProgressClick}>
-                    Earn more coin
-                  </button>
-                )}
+                <h2 className="profile-name">{firstName}</h2>
+                <p className="profile-status">Still here ✨</p>
               </div>
 
-              <div className="profile-links-container">
-                <button className="profile-link" onClick={onChatHistoryClick}>
-                  <span>{t('profile.chatHistory')}</span>
-                  <span className="profile-link-arrow">&gt;</span>
+              {/* Stats Row */}
+              <div className="profile-stats-row">
+                <button className="profile-stat" onClick={onProgressClick}>
+                  <svg className="profile-stat-icon coin" width="24" height="24" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" fill="#FFD700" stroke="#DAA520" strokeWidth="1.5"/>
+                    <text x="12" y="16" textAnchor="middle" fontSize="10" fontWeight="bold" fill="#B8860B">S</text>
+                  </svg>
+                  <span className="profile-stat-value">{coinValue}</span>
+                </button>
+                <div className="profile-stat-divider"></div>
+                <button className="profile-stat" onClick={onStreakClick}>
+                  <span className="profile-stat-icon fire">🔥</span>
+                  <span className="profile-stat-value">{streakValue}</span>
+                </button>
+              </div>
+
+              {/* Invite Button */}
+              <button className="invite-btn" onClick={handleInviteClick}>
+                Invite a friend
+              </button>
+
+              {/* Friends Progress Section */}
+              <div className="friends-section">
+                <h3 className="friends-title">Friends progress</h3>
+                <div className="friends-scroll">
+                  {DEMO_FRIENDS.map((friend) => (
+                    <div key={friend.id} className="friend-avatar-wrapper">
+                      <div className="friend-avatar">
+                        <span className="friend-initial">{friend.name[0]}</span>
+                      </div>
+                      {friend.hasCoins && (
+                        <span className="friend-badge coin-badge">🪙</span>
+                      )}
+                      {friend.hasStreak && (
+                        <span className="friend-badge streak-badge">🔥</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Menu Items */}
+              <div className="profile-menu">
+                <button className="profile-menu-item" onClick={onChatHistoryClick}>
+                  <svg className="menu-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill="currentColor"/>
+                  </svg>
+                  <span className="menu-label">{t('profile.chatHistory')}</span>
+                  <span className="menu-arrow">&gt;</span>
                 </button>
 
-                <button className="profile-link" onClick={onSettingsClick}>
-                  <span>{t('profile.settings')}</span>
-                  <span className="profile-link-arrow">&gt;</span>
+                <button className="profile-menu-item" onClick={onSettingsClick}>
+                  <svg className="menu-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" fill="currentColor"/>
+                  </svg>
+                  <span className="menu-label">{t('profile.settings')}</span>
+                  <span className="menu-arrow">&gt;</span>
                 </button>
 
                 {adminRole?.isAdmin && (
-                  <button
-                    className="profile-link profile-link--admin"
-                    onClick={() => onAdminDashboardClick?.()}
-                  >
-                    <span>Admin Dashboard</span>
-                    <span className="profile-link-arrow">&gt;</span>
+                  <button className="profile-menu-item" onClick={() => onAdminDashboardClick?.()}>
+                    <svg className="menu-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                      <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" fill="currentColor"/>
+                    </svg>
+                    <span className="menu-label">Admin Dashboard</span>
+                    <span className="menu-arrow">&gt;</span>
                   </button>
                 )}
               </div>
-
-              <div className="privacy-footer">{t('profile.privacy')}</div>
             </>
           ) : (
             <div className="signed-out-content">
+              <div className="profile-avatar-section">
+                <div className="profile-avatar-circle">
+                  <img src="/serin-llama.png" alt="Serin" className="profile-avatar-img" />
+                </div>
+              </div>
               <div className="signed-out-message">
                 <h3 className="signed-out-title">
                   {t('profile.signedOutTitle')} <span aria-hidden="true">✨</span>
@@ -131,10 +189,16 @@ function ProfilePopup({ isVisible, onClose, onSignInClick, onChatHistoryClick, o
               <button className="sign-in-btn" onClick={onSignInClick}>
                 {t('profile.signIn')}
               </button>
-              <div className="privacy-footer" style={{ marginTop: 'auto' }}>{t('profile.privacy')}</div>
             </div>
           )}
         </div>
+
+        {/* Toast notification */}
+        {showInviteToast && (
+          <div className="invite-toast">
+            Coming soon!
+          </div>
+        )}
       </div>
     </div>
   )

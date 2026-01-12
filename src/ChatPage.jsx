@@ -5,7 +5,7 @@ import { useLanguage } from './contexts/LanguageContext'
 import { usePremium } from './contexts/PremiumContext'
 import { useLastChat, DEFAULT_LAST_CHAT_TTL_MS } from './contexts/LastChatContext'
 import { useModelPreference } from './contexts/ModelPreferenceContext'
-import { recordDailyActivity } from './lib/activityService'
+import { recordDailyActivity, getCurrentStreak } from './lib/activityService'
 import { createChatSession, createVoiceSession, finalizeSession, saveMessage, getChatSession } from './lib/chatHistoryService'
 import { analyzeMoodShift } from './lib/memoryAnalyzer'
 import { upsertMoodMemory } from './lib/memoryService'
@@ -24,6 +24,7 @@ import ChatHistoryPopup from './ChatHistoryPopup'
 import SignInModal from './SignInModal'
 import SettingsPopup from './SettingsPopup'
 import ModelSelector from './ModelSelector'
+import StreakModal from './StreakModal'
 import './ChatPage.css'
 
 const SESSION_INACTIVITY_THRESHOLD_MS = DEFAULT_LAST_CHAT_TTL_MS
@@ -34,7 +35,7 @@ function ChatPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { t } = useLanguage()
-  const { isPremium, premiumEndsAt } = usePremium()
+  const { isPremium, premiumEndsAt, coinBalance } = usePremium()
   const { lastChat, rememberChat, clearLastChat } = useLastChat()
   const {
     currentModel,
@@ -62,6 +63,11 @@ function ChatPage() {
   const [showExpirationBanner, setShowExpirationBanner] = useState(false)
   const [activeModel, setActiveModel] = useState(currentModel)
   const [isModelLocked, setIsModelLocked] = useState(false)
+  const [currentStreak, setCurrentStreak] = useState(0)
+  const [isTypingMode, setIsTypingMode] = useState(false)
+  const [isStreakModalVisible, setIsStreakModalVisible] = useState(false)
+  const [checkInTimer, setCheckInTimer] = useState(120) // 2 minutes in seconds
+  const [isTimerActive, setIsTimerActive] = useState(false)
   const inputRef = useRef(null)
   const sessionIdRef = useRef(currentSessionId)
   const userRef = useRef(user)
@@ -316,6 +322,30 @@ function ChatPage() {
       inputRef.current.focus()
     }
   }, [])
+
+  // Load streak count on mount
+  useEffect(() => {
+    const loadStreak = async () => {
+      if (user?.id) {
+        const { count } = await getCurrentStreak(user.id)
+        setCurrentStreak(count)
+      }
+    }
+    loadStreak()
+  }, [user])
+
+  // Timer countdown effect
+  useEffect(() => {
+    let interval = null
+    if (isTimerActive && checkInTimer > 0) {
+      interval = setInterval(() => {
+        setCheckInTimer(prev => prev - 1)
+      }, 1000)
+    } else if (checkInTimer === 0) {
+      setIsTimerActive(false)
+    }
+    return () => clearInterval(interval)
+  }, [isTimerActive, checkInTimer])
 
   useEffect(() => {
     sessionIdRef.current = currentSessionId
@@ -714,48 +744,53 @@ function ChatPage() {
     }
   }
 
+  const handleTypeClick = () => {
+    setIsTypingMode(true)
+    setIsTimerActive(true)
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus()
+      }
+    }, 100)
+  }
+
+  const handleTalkClick = async () => {
+    setIsTimerActive(true)
+    await handleVoiceButtonClick()
+  }
+
+  const handleStreakClick = () => {
+    setIsStreakModalVisible(true)
+  }
+
+  const formatTimer = (seconds) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
 
   return (
     <div className="chat-page">
-      <button className="chat-sidebar-trigger" onClick={handleProfileClick} aria-label="Open Menu">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M3 12h18M3 6h18M3 18h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
-      <div className="chat-top-controls">
-        {sessionId ? (
-          <button
-            className="new-chat-button"
-            onClick={handleStartNewChat}
-            title={t('chat.newChat')}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="currentColor" />
-            </svg>
-            <span>{t('chat.newChat')}</span>
+      {/* Top Stats Bar */}
+      <div className="chat-top-bar">
+        <div className="top-stats">
+          <button className="stat-item" onClick={handleStreakClick} aria-label="View streak">
+            <span className="stat-icon">🔥</span>
+            <span className="stat-value">{currentStreak}</span>
           </button>
-        ) : lastChat?.sessionId ? (
-          <button
-            className="new-chat-button"
-            onClick={handleLastChatClick}
-            title={t('chat.lastChat')}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z" fill="currentColor" />
+          <button className="stat-item" onClick={handleOpenProgress} aria-label="View coins">
+            <svg className="stat-icon coin-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="12" r="10" fill="#FFD700" stroke="#DAA520" strokeWidth="1.5"/>
+              <text x="12" y="16" textAnchor="middle" fontSize="10" fontWeight="bold" fill="#B8860B">S</text>
             </svg>
-            <span>{t('chat.lastChat') || 'Resume Last Chat'}</span>
+            <span className="stat-value">{coinBalance}</span>
           </button>
-        ) : null}
-
-        {canEdit && (
-          <ModelSelector
-            value={isModelLocked ? (activeModel || currentModel) : currentModel}
-            availableModels={availableModels}
-            disabled={isLoading}
-            isLocked={isModelLocked}
-            onChange={setPreferredModel}
-          />
-        )}
+        </div>
+        <button className="chat-sidebar-trigger" onClick={handleProfileClick} aria-label="Open Menu">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 12h18M3 6h18M3 18h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
       </div>
 
       {showExpirationBanner && (
@@ -773,11 +808,11 @@ function ChatPage() {
             <div
               style={{
                 position: 'fixed',
-                top: '20px',
-                right: '20px',
+                bottom: '120px',
+                left: '20px',
                 display: 'flex',
                 gap: '12px',
-                zIndex: 1000,
+                zIndex: 999,
               }}
             >
               <button
@@ -805,14 +840,14 @@ function ChatPage() {
                 className="test-audio-files"
                 style={{
                   position: 'fixed',
-                  top: '60px',
-                  right: '20px',
+                  bottom: '170px',
+                  left: '20px',
                   background: 'rgba(255, 255, 255, 0.95)',
                   border: '2px solid #3C2A73',
                   borderRadius: '12px',
                   padding: '16px',
                   maxWidth: '200px',
-                  zIndex: 1000,
+                  zIndex: 999,
                   boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
                 }}
               >
@@ -868,25 +903,30 @@ function ChatPage() {
 
       <div className="chat-content">
         <div className="character-container">
+          {/* Sparkle decorations */}
+          <div className="sparkle sparkle-1">✦</div>
+          <div className="sparkle sparkle-2">✧</div>
+          <div className="sparkle sparkle-3">✦</div>
+          <div className="sparkle sparkle-4">✧</div>
           <div className="character-circle">
-            <img src="/llama.png" alt="Serin the llama" className="llama-image" />
+            <div className="character-inner-glow"></div>
+            <img src="/serin-llama.png" alt="Serin the llama" className="llama-image" />
+            <div className="timer-badge">
+              {formatTimer(checkInTimer)}
+            </div>
           </div>
         </div>
-
 
         <div className="chat-title-section">
           {isLoadingSession ? (
             <p className="thinking-indicator">{t('chat.statuses.loadingSession')}</p>
-          ) : (
+          ) : hasStartedChat ? (
             <>
               <h1 className="chat-main-title">
                 {currentMessage}
               </h1>
-              {(isLoading || isVoiceLoading) && hasStartedChat && (
+              {(isLoading || isVoiceLoading) && (
                 <p className="thinking-indicator">{t('chat.statuses.thinking')}</p>
-              )}
-              {!hasStartedChat && (
-                <h2 className="chat-subtitle">{t('chat.subtitle')}</h2>
               )}
               {isRecording && (
                 <p className="thinking-indicator">{t('chat.statuses.recording')}</p>
@@ -898,75 +938,102 @@ function ChatPage() {
                 <p className="error-message">{t('chat.statuses.voiceError')}</p>
               )}
             </>
+          ) : (
+            <>
+              <h1 className="chat-main-title">2-minute check-in</h1>
+              <h2 className="chat-subtitle">Quick mental reset</h2>
+              <h2 className="chat-subtitle-secondary">One small step today</h2>
+            </>
           )}
         </div>
 
         <div className="chat-input-section">
-          <div className="input-container">
-            <button
-              className={`input-icon voice-icon ${isVoiceActive ? 'voice-active' : ''}`}
-              onClick={handleVoiceButtonClick}
-              disabled={isVoiceLoading}
-            >
-              <svg
-                width="48"
-                height="48"
-                viewBox="0 0 64 64"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-                focusable="false"
+          {(isTypingMode || hasStartedChat) ? (
+            <div className="input-container">
+              <button
+                className={`input-icon voice-icon ${isVoiceActive ? 'voice-active' : ''}`}
+                onClick={handleVoiceButtonClick}
+                disabled={isVoiceLoading}
               >
-                <circle
-                  cx="32"
-                  cy="32"
-                  r="28"
-                  fill={SERIN_COLORS.SUNBEAM_YELLOW.hex}
-                />
-
-                <rect
-                  x="26"
-                  y="12"
-                  width="12"
-                  height="28"
-                  rx="6"
-                  fill={SERIN_COLORS.DEEP_SERIN_PURPLE.hex}
-                />
-                <path
-                  d="M20 30v5c0 6.627 5.373 12 12 12s12-5.373 12-12v-5"
-                  fill="none"
-                  stroke={SERIN_COLORS.DEEP_SERIN_PURPLE.hex}
-                  strokeWidth="4.5"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M32 42v10"
-                  fill="none"
-                  stroke={SERIN_COLORS.DEEP_SERIN_PURPLE.hex}
-                  strokeWidth="4"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </button>
-            <input
-              ref={inputRef}
-              type="text"
-              placeholder={t('chat.inputPlaceholder')}
-              className="chat-input"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-              disabled={isLoading}
-            />
-            <button
-              className="send-button"
-              onClick={handleSendMessage}
-              disabled={isLoading || !inputValue.trim()}
-            >
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="#2D1F5C" />
-              </svg>
-            </button>
-          </div>
+                <svg
+                  width="48"
+                  height="48"
+                  viewBox="0 0 64 64"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <circle
+                    cx="32"
+                    cy="32"
+                    r="28"
+                    fill={SERIN_COLORS.SUNBEAM_YELLOW.hex}
+                  />
+                  <rect
+                    x="26"
+                    y="12"
+                    width="12"
+                    height="28"
+                    rx="6"
+                    fill={SERIN_COLORS.DEEP_SERIN_PURPLE.hex}
+                  />
+                  <path
+                    d="M20 30v5c0 6.627 5.373 12 12 12s12-5.373 12-12v-5"
+                    fill="none"
+                    stroke={SERIN_COLORS.DEEP_SERIN_PURPLE.hex}
+                    strokeWidth="4.5"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M32 42v10"
+                    fill="none"
+                    stroke={SERIN_COLORS.DEEP_SERIN_PURPLE.hex}
+                    strokeWidth="4"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </button>
+              <input
+                ref={inputRef}
+                type="text"
+                placeholder={t('chat.inputPlaceholder')}
+                className="chat-input"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={isLoading}
+              />
+              <button
+                className="send-button"
+                onClick={handleSendMessage}
+                disabled={isLoading || !inputValue.trim()}
+              >
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="#2D1F5C" />
+                </svg>
+              </button>
+            </div>
+          ) : (
+            <div className="action-buttons">
+              <button className="action-btn type-btn" onClick={handleTypeClick}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill="currentColor" />
+                </svg>
+                <span>Type</span>
+              </button>
+              <button
+                className={`action-btn talk-btn ${isVoiceActive ? 'voice-active' : ''}`}
+                onClick={handleTalkClick}
+                disabled={isVoiceLoading}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" fill="currentColor" />
+                  <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" fill="currentColor" />
+                </svg>
+                <span>Talk</span>
+              </button>
+            </div>
+          )}
 
           <div className="privacy-notice">
             <Link to="/privacy" className="privacy-link">{t('chat.privacyLink')}</Link>
@@ -982,6 +1049,10 @@ function ChatPage() {
         onSettingsClick={handleSettingsClick}
         onAdminDashboardClick={handleAdminDashboardLink}
         onProgressClick={handleOpenProgress}
+        onStreakClick={() => {
+          setIsProfilePopupVisible(false)
+          setIsStreakModalVisible(true)
+        }}
       />
 
       <MyProgressPopup
@@ -1011,6 +1082,11 @@ function ChatPage() {
         isVisible={isSettingsPopupVisible}
         onClose={handleCloseSettings}
         onOpenPaywall={handleOpenPaywall}
+      />
+
+      <StreakModal
+        isVisible={isStreakModalVisible}
+        onClose={() => setIsStreakModalVisible(false)}
       />
     </div >
   )
