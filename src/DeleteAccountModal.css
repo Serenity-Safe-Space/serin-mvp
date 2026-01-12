@@ -1,0 +1,257 @@
+/* Modal Overlay */
+.delete-account-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+  animation: deleteOverlayFadeIn 0.2s ease-out;
+}
+
+@keyframes deleteOverlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Modal Container */
+.delete-account-modal {
+  background: #FFFFFF;
+  border-radius: 24px;
+  width: 100%;
+  max-width: 360px;
+  padding: 32px 24px;
+  animation: deleteModalSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes deleteModalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Warning Icon */
+.delete-account-icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.delete-account-icon-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FFE8E8, #FFD0D0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+}
+
+/* Title */
+.delete-account-title {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #E53935;
+  text-align: center;
+  margin: 0 0 16px 0;
+}
+
+/* Description */
+.delete-account-description {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
+  font-size: 15px;
+  color: #666666;
+  text-align: center;
+  margin: 0 0 20px 0;
+  line-height: 1.5;
+}
+
+/* Warning List */
+.delete-account-warning-list {
+  background: #FFF8F8;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.delete-account-warning-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  color: #333333;
+  padding: 6px 0;
+}
+
+.delete-account-warning-item::before {
+  content: '•';
+  color: #E53935;
+  font-weight: bold;
+}
+
+/* Confirmation Input Section */
+.delete-account-confirm-section {
+  margin-bottom: 24px;
+}
+
+.delete-account-confirm-label {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333333;
+  display: block;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.delete-account-confirm-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #E0E0E0;
+  border-radius: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  text-align: center;
+  letter-spacing: 2px;
+  font-weight: 600;
+  transition: border-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+.delete-account-confirm-input:focus {
+  outline: none;
+  border-color: #E53935;
+}
+
+.delete-account-confirm-input::placeholder {
+  letter-spacing: normal;
+  font-weight: 500;
+  color: #B0B0B0;
+}
+
+/* Final Warning */
+.delete-account-final-warning {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
+  font-size: 12px;
+  color: #E53935;
+  text-align: center;
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
+/* Buttons */
+.delete-account-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.delete-account-cancel-btn {
+  width: 100%;
+  padding: 16px;
+  background: #F0EBF7;
+  color: #3C2A73;
+  border: none;
+  border-radius: 50px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.delete-account-cancel-btn:hover {
+  background: #E8E0F0;
+}
+
+.delete-account-continue-btn {
+  width: 100%;
+  padding: 16px;
+  background: transparent;
+  color: #999999;
+  border: 1px solid #E0E0E0;
+  border-radius: 50px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.delete-account-continue-btn:hover {
+  background: #F5F5F5;
+  color: #666666;
+}
+
+.delete-account-delete-btn {
+  width: 100%;
+  padding: 16px;
+  background: #E53935;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 50px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.delete-account-delete-btn:hover:not(:disabled) {
+  background: #C62828;
+}
+
+.delete-account-delete-btn:disabled {
+  background: #CCCCCC;
+  cursor: not-allowed;
+}
+
+/* Back Button for Step 2 */
+.delete-account-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #8B73B8;
+  padding: 8px 0;
+  margin-bottom: 16px;
+}
+
+.delete-account-back-btn:hover {
+  color: #3C2A73;
+}
+
+/* Mobile adjustments */
+@media (max-width: 480px) {
+  .delete-account-modal {
+    padding: 24px 20px;
+  }
+
+  .delete-account-title {
+    font-size: 20px;
+  }
+
+  .delete-account-description {
+    font-size: 14px;
+  }
+
+  .delete-account-warning-item {
+    font-size: 13px;
+  }
+}

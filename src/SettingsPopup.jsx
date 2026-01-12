@@ -1,92 +1,122 @@
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext'
 import { useLanguage } from './contexts/LanguageContext'
-import { usePremium } from './contexts/PremiumContext'
-import { SERIN_COLORS } from './utils/serinColors'
 import './SettingsPopup.css'
 
-const sanitizeDisplayName = (value = '') => value.replace(/\s+/g, ' ').trim()
-
-const createEmojiRegex = () => {
-  try {
-    return new RegExp('\\p{Extended_Pictographic}', 'u')
-  } catch (error) {
-    return null
+// Toggle Switch Component
+function ToggleSwitch({ checked, onChange }) {
+  const handleClick = (e) => {
+    e.stopPropagation()
+    onChange(!checked)
   }
+
+  return (
+    <button
+      className={`toggle-switch ${checked ? 'on' : ''}`}
+      onClick={handleClick}
+      type="button"
+      role="switch"
+      aria-checked={checked}
+    >
+      <span className="toggle-knob" />
+    </button>
+  )
 }
 
-const EMOJI_REGEX = createEmojiRegex()
-const SURROGATE_PAIR_EMOJI_REGEX = /[\uD83C-\uDBFF][\uDC00-\uDFFF]/
-
-const containsEmoji = (value = '') => {
-  if (!value) return false
-  if (EMOJI_REGEX) {
-    return EMOJI_REGEX.test(value)
+// Settings Row Component
+function SettingsRow({ icon, iconColor, label, subtitle, type, value, checked, onChange, onClick }) {
+  const handleClick = () => {
+    if (type === 'toggle') return
+    if (onClick) onClick()
   }
-  return SURROGATE_PAIR_EMOJI_REGEX.test(value)
+
+  return (
+    <button className="settings-row" onClick={handleClick} type="button">
+      <div className={`settings-row-icon ${iconColor || 'purple'}`}>
+        {icon}
+      </div>
+      <div className="settings-row-content">
+        <span className="settings-row-label">{label}</span>
+        {subtitle && <span className="settings-row-subtitle">{subtitle}</span>}
+      </div>
+      {type === 'nav' && <span className="settings-row-chevron">›</span>}
+      {type === 'value' && (
+        <>
+          <span className="settings-row-value">{value}</span>
+          <span className="settings-row-chevron">›</span>
+        </>
+      )}
+      {type === 'toggle' && <ToggleSwitch checked={checked} onChange={onChange} />}
+    </button>
+  )
 }
 
-const getAvatarInitial = (name, email) => {
-  const sanitizedName = sanitizeDisplayName(name)
-  if (sanitizedName) {
-    return sanitizedName.charAt(0).toUpperCase()
-  }
-
-  const fallback = (email ?? '').trim()
-  if (fallback) {
-    return fallback.charAt(0).toUpperCase()
-  }
-
-  return '?'
+// Settings Section Component
+function SettingsSection({ title, children }) {
+  return (
+    <div className="settings-section">
+      <h3 className="settings-section-title">{title}</h3>
+      <div className="settings-section-items">
+        {children}
+      </div>
+    </div>
+  )
 }
 
-const getValidationMessage = (value, t) => {
-  const sanitized = sanitizeDisplayName(value)
-
-  if (!sanitized || sanitized.length < 2 || sanitized.length > 60) {
-    return t('settings.displayNameErrorLength')
-  }
-
-  if (containsEmoji(sanitized)) {
-    return t('settings.displayNameErrorEmoji')
-  }
-
-  return ''
-}
-
-const SettingsPopup = ({ isVisible, onClose, onOpenPaywall }) => {
+function SettingsPopup({ isVisible, onClose, onEditProfile }) {
   const navigate = useNavigate()
-  const { signOut, updateUserProfile, user, currentModel } = useAuth()
+  const { signOut, user } = useAuth()
   const { language, setLanguage, t } = useLanguage()
-  const { isPremium, premiumEndsAt } = usePremium()
-  const [displayName, setDisplayName] = useState('')
-  const [initialName, setInitialName] = useState('')
-  const [error, setError] = useState('')
-  const [successMessage, setSuccessMessage] = useState('')
-  const [isSaving, setIsSaving] = useState(false)
+  const [isClosing, setIsClosing] = useState(false)
+  const [dailyReminders, setDailyReminders] = useState(true)
+  const [soundEffects, setSoundEffects] = useState(false)
 
+  // Reset state when popup closes
   useEffect(() => {
-    if (isVisible) {
-      const currentName = user?.user_metadata?.full_name ?? ''
-      setDisplayName(currentName)
-      setInitialName(currentName)
-      setError('')
-      setSuccessMessage('')
-      setIsSaving(false)
+    if (!isVisible) {
+      setIsClosing(false)
     }
-  }, [isVisible, user])
+  }, [isVisible])
 
   if (!isVisible) return null
 
-  const handlePrivacyClick = () => {
-    onClose()
-    navigate('/privacy')
+  const handleClose = () => {
+    setIsClosing(true)
+    setTimeout(() => {
+      setIsClosing(false)
+      onClose()
+    }, 250)
   }
 
-  const handleChangePasswordClick = () => {
-    onClose()
-    navigate('/reset-password')
+  const handleEditProfile = () => {
+    if (onEditProfile) {
+      // Don't close Settings - let Edit Profile slide on top
+      onEditProfile()
+    }
+  }
+
+  const handleChangePassword = () => {
+    handleClose()
+    setTimeout(() => navigate('/reset-password'), 300)
+  }
+
+  const handleTheme = () => {
+    console.info('Theme selection - coming soon')
+  }
+
+  const handleLanguage = () => {
+    // Toggle language for now
+    setLanguage(language === 'en' ? 'fr' : 'en')
+  }
+
+  const handleHelpCenter = () => {
+    console.info('Help center - coming soon')
+  }
+
+  const handlePrivacy = () => {
+    handleClose()
+    setTimeout(() => navigate('/privacy'), 300)
   }
 
   const handleSignOut = async () => {
@@ -95,239 +125,117 @@ const SettingsPopup = ({ isVisible, onClose, onOpenPaywall }) => {
       if (error) {
         console.error('Error signing out:', error)
       } else {
-        onClose()
+        handleClose()
       }
     } catch (error) {
       console.error('Unexpected error during sign out:', error)
     }
   }
 
-  const handleDeleteAccount = () => {
-    console.info('Delete account flow not implemented yet.')
-  }
-
-  const handleDisplayNameChange = (event) => {
-    setDisplayName(event.target.value)
-    if (error) {
-      setError('')
-    }
-    if (successMessage) {
-      setSuccessMessage('')
-    }
-  }
-
-  const handleDisplayNameBlur = () => {
-    const sanitized = sanitizeDisplayName(displayName)
-    setDisplayName(sanitized)
-    const validationMessage = getValidationMessage(sanitized, t)
-    setError(validationMessage)
-  }
-
-  const handleProfileSubmit = async (event) => {
-    event.preventDefault()
-
-    if (!user) {
-      return
-    }
-
-    const sanitized = sanitizeDisplayName(displayName)
-    const validationMessage = getValidationMessage(sanitized, t)
-
-    if (validationMessage) {
-      setDisplayName(sanitized)
-      setError(validationMessage)
-      setSuccessMessage('')
-      return
-    }
-
-    const sanitizedInitialName = sanitizeDisplayName(initialName)
-    if (sanitized === sanitizedInitialName) {
-      setDisplayName(sanitized)
-      setError('')
-      return
-    }
-
-    setIsSaving(true)
-
-    try {
-      const { error: updateError } = await updateUserProfile({ full_name: sanitized })
-      if (updateError) {
-        setError(t('settings.displayNameErrorGeneric'))
-        setSuccessMessage('')
-        return
-      }
-
-      setInitialName(sanitized)
-      setDisplayName(sanitized)
-      setError('')
-      setSuccessMessage(t('settings.displayNameSuccess'))
-    } catch (caughtError) {
-      console.error('Failed to update profile name:', caughtError)
-      setError(t('settings.displayNameErrorGeneric'))
-      setSuccessMessage('')
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  const currentValidationMessage = getValidationMessage(displayName, t)
-  const sanitizedCurrentName = sanitizeDisplayName(displayName)
-  const sanitizedInitialName = sanitizeDisplayName(initialName)
-  const isDirty = sanitizedCurrentName !== sanitizedInitialName
-  const canSaveName = Boolean(user) && isDirty && !currentValidationMessage && !isSaving
-  const avatarInitial = getAvatarInitial(displayName || initialName, user?.email)
+  // Get display values
+  const languageDisplay = language === 'en' ? 'English' : 'Français'
+  const themeDisplay = language === 'en' ? 'Light Mode' : 'Mode clair'
+  const profileSubtitle = language === 'en' ? 'Lvl 1 • Beginner' : 'Niv 1 • Débutant'
 
   return (
-    <div className="settings-popup-overlay" onClick={onClose}>
-      <div
-        className="settings-popup"
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          '--settings-color-surface': SERIN_COLORS.DEEP_SERIN_PURPLE.hex,
-          '--settings-color-primary-text': SERIN_COLORS.COOL_WHITE.hex,
-          '--settings-color-secondary-text': SERIN_COLORS.SOFT_VIOLET.hex,
-          '--settings-color-divider': `${SERIN_COLORS.SOFT_VIOLET.hex}66`,
-          '--settings-color-accent': SERIN_COLORS.SUNBEAM_YELLOW.hex,
-          '--settings-color-accent-text': SERIN_COLORS.DEEP_SERIN_PURPLE.hex,
-        }}
-      >
-        <div className="settings-popup-header">
-          <button className="settings-popup-close" onClick={onClose} aria-label={t('settings.closeAria')}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-        </div>
+    <div className={`settings-overlay ${isClosing ? 'closing' : ''}`}>
+      {/* Header */}
+      <div className="settings-header">
+        <button className="settings-back-btn" onClick={handleClose} aria-label="Go back">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        <h1 className="settings-title">{t('settings.title')}</h1>
+      </div>
 
-        <div className="settings-content">
-          {!isPremium ? (
-            <button className="premium-upsell-btn" onClick={onOpenPaywall}>
-              <span className="icon">💎</span>
-              <div className="text-content">
-                <span className="title">Serin Premium</span>
-                <span className="subtitle">Unlock all features</span>
-              </div>
-              <span className="arrow">→</span>
-            </button>
-          ) : (
-            <div className="premium-active-badge">
-              <span className="icon">✨</span>
-              <div className="text-content">
-                <span className="title">Premium Active</span>
-                <span className="subtitle">
-                  Expires: {premiumEndsAt ? new Date(premiumEndsAt).toLocaleDateString() : 'Never'}
-                </span>
-              </div>
-            </div>
-          )}
+      {/* Content */}
+      <div className="settings-content">
+        {/* Account Section */}
+        <SettingsSection title={language === 'en' ? 'ACCOUNT' : 'COMPTE'}>
+          <SettingsRow
+            icon="👤"
+            iconColor="purple"
+            label={language === 'en' ? 'Edit Profile' : 'Modifier le profil'}
+            subtitle={profileSubtitle}
+            type="nav"
+            onClick={handleEditProfile}
+          />
+          <SettingsRow
+            icon="🔒"
+            iconColor="blue"
+            label={t('settings.changePassword')}
+            type="nav"
+            onClick={handleChangePassword}
+          />
+        </SettingsSection>
 
-          {user && (
-            <form className="settings-profile-card" onSubmit={handleProfileSubmit}>
-              <div className="settings-profile-header">
-                <div className="settings-profile-avatar" aria-hidden="true">
-                  <span>{avatarInitial}</span>
-                </div>
-                <div className="settings-profile-meta">
-                  <div className="settings-profile-top">
-                    <span className="settings-profile-label">{t('settings.profileLabel')}</span>
-                    {isPremium ? (
-                      <span className="status-pill status-pill--premium">Premium</span>
-                    ) : (
-                      <span className="status-pill status-pill--free">Free</span>
-                    )}
-                  </div>
-                  <span className="settings-profile-email">{user.email}</span>
-                </div>
-              </div>
+        {/* Notifications Section */}
+        <SettingsSection title={language === 'en' ? 'NOTIFICATIONS' : 'NOTIFICATIONS'}>
+          <SettingsRow
+            icon="🔔"
+            iconColor="orange"
+            label={language === 'en' ? 'Daily Reminders' : 'Rappels quotidiens'}
+            subtitle={language === 'en' ? 'Keep your streak going' : 'Maintenez votre série'}
+            type="toggle"
+            checked={dailyReminders}
+            onChange={setDailyReminders}
+          />
+          <SettingsRow
+            icon="🔊"
+            iconColor="green"
+            label={language === 'en' ? 'Sound Effects' : 'Effets sonores'}
+            type="toggle"
+            checked={soundEffects}
+            onChange={setSoundEffects}
+          />
+        </SettingsSection>
 
-              <label className="settings-field">
-                <span className="settings-field-label">{t('settings.displayName')}</span>
-                <input
-                  type="text"
-                  value={displayName}
-                  onChange={handleDisplayNameChange}
-                  onBlur={handleDisplayNameBlur}
-                  maxLength={60}
-                  autoComplete="name"
-                  placeholder={t('settings.displayNamePlaceholder')}
-                  className={`settings-field-input${error ? ' has-error' : ''}`}
-                />
-              </label>
+        {/* General Section */}
+        <SettingsSection title={language === 'en' ? 'GENERAL' : 'GÉNÉRAL'}>
+          <SettingsRow
+            icon="🎨"
+            iconColor="pink"
+            label={language === 'en' ? 'Theme' : 'Thème'}
+            type="value"
+            value={themeDisplay}
+            onClick={handleTheme}
+          />
+          <SettingsRow
+            icon="🌐"
+            iconColor="blue"
+            label={t('settings.language')}
+            type="value"
+            value={languageDisplay}
+            onClick={handleLanguage}
+          />
+        </SettingsSection>
 
-              <p className={`settings-field-helper${error ? ' is-error' : ''}`}>
-                {error || t('settings.displayNameHelper')}
-              </p>
+        {/* Support Section */}
+        <SettingsSection title={language === 'en' ? 'SUPPORT' : 'SUPPORT'}>
+          <SettingsRow
+            icon="❓"
+            iconColor="purple"
+            label={language === 'en' ? 'Help Center' : 'Centre d\'aide'}
+            type="nav"
+            onClick={handleHelpCenter}
+          />
+          <SettingsRow
+            icon="🔐"
+            iconColor="green"
+            label={t('settings.privacy')}
+            type="nav"
+            onClick={handlePrivacy}
+          />
+        </SettingsSection>
+      </div>
 
-              <div className="settings-profile-actions">
-                {successMessage && (
-                  <span className="settings-profile-status" role="status">
-                    {successMessage}
-                  </span>
-                )}
-                <button
-                  type="submit"
-                  className="settings-profile-save"
-                  disabled={!canSaveName}
-                >
-                  {isSaving ? t('settings.displayNameSaving') : t('settings.displayNameSave')}
-                </button>
-              </div>
-            </form>
-          )}
-
-          <h2 className="settings-main-title">{t('settings.title')}</h2>
-
-          <div className="settings-section">
-            <h3>{t('settings.modelSelection')}</h3>
-            {/* Model selection content will go here */}
-            <p>Current Model: {currentModel}</p>
-          </div>
-
-          <div className="settings-panel">
-            <button type="button" className="settings-row" onClick={handleChangePasswordClick}>
-              {t('settings.changePassword')}
-            </button>
-
-            <div className="settings-divider" aria-hidden="true" />
-
-            <div className="settings-row settings-row--language">
-              <span className="settings-row-label">{t('settings.language')}</span>
-              <div className="settings-language-toggle" role="group" aria-label={t('settings.languageAria')}>
-                <button
-                  type="button"
-                  className={`settings-language-button${language === 'en' ? ' is-active' : ''}`}
-                  onClick={() => setLanguage('en')}
-                  aria-pressed={language === 'en'}
-                >
-                  EN
-                </button>
-                <span className="settings-language-separator" aria-hidden="true">|</span>
-                <button
-                  type="button"
-                  className={`settings-language-button${language === 'fr' ? ' is-active' : ''}`}
-                  onClick={() => setLanguage('fr')}
-                  aria-pressed={language === 'fr'}
-                >
-                  FR
-                </button>
-              </div>
-            </div>
-
-            <div className="settings-divider" aria-hidden="true" />
-
-            <button type="button" className="settings-row" onClick={handlePrivacyClick}>
-              {t('settings.privacy')}
-            </button>
-          </div>
-
-          <button type="button" className="settings-signout" onClick={handleSignOut}>
-            {t('settings.signOut')}
-          </button>
-
-          <button type="button" className="settings-delete" onClick={handleDeleteAccount}>
-            {t('settings.deleteAccount')}
-          </button>
-        </div>
+      {/* Footer */}
+      <div className="settings-footer">
+        <button className="settings-logout-btn" onClick={handleSignOut}>
+          {t('settings.signOut')}
+        </button>
+        <p className="settings-version">Serin v1.0.0</p>
       </div>
     </div>
   )

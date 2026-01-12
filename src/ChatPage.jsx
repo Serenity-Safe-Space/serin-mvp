@@ -23,6 +23,7 @@ import PremiumPaywall from './PremiumPaywall'
 import ChatHistoryPopup from './ChatHistoryPopup'
 import SignInModal from './SignInModal'
 import SettingsPopup from './SettingsPopup'
+import EditProfilePopup from './EditProfilePopup'
 import ModelSelector from './ModelSelector'
 import StreakModal from './StreakModal'
 import VoiceModeOverlay from './VoiceModeOverlay'
@@ -59,6 +60,7 @@ function ChatPage() {
   const [isChatHistoryPopupVisible, setIsChatHistoryPopupVisible] = useState(false)
   const [isSignInModalVisible, setIsSignInModalVisible] = useState(false)
   const [isSettingsPopupVisible, setIsSettingsPopupVisible] = useState(false)
+  const [isEditProfilePopupVisible, setIsEditProfilePopupVisible] = useState(false)
   const [testAudioFiles, setTestAudioFiles] = useState([])
   const [showTestPanel, setShowTestPanel] = useState(false)
   const [showExpirationBanner, setShowExpirationBanner] = useState(false)
@@ -663,6 +665,14 @@ function ChatPage() {
     setIsSettingsPopupVisible(false)
   }
 
+  const handleEditProfile = () => {
+    setIsEditProfilePopupVisible(true)
+  }
+
+  const handleCloseEditProfile = () => {
+    setIsEditProfilePopupVisible(false)
+  }
+
   const handleAdminDashboardLink = () => {
     setIsProfilePopupVisible(false)
     navigate('/admin')
@@ -1089,7 +1099,12 @@ function ChatPage() {
       <SettingsPopup
         isVisible={isSettingsPopupVisible}
         onClose={handleCloseSettings}
-        onOpenPaywall={handleOpenPaywall}
+        onEditProfile={handleEditProfile}
+      />
+
+      <EditProfilePopup
+        isVisible={isEditProfilePopupVisible}
+        onClose={handleCloseEditProfile}
       />
 
       <StreakModal
