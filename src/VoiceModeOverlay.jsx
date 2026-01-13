@@ -7,7 +7,8 @@ function VoiceModeOverlay({
   isPlaying,
   isLoading,
   isError,
-  onTapToPause
+  onTapToPause,
+  timerDisplay
 }) {
   if (!isVisible) return null
 
@@ -71,7 +72,7 @@ function VoiceModeOverlay({
               alt="Serin"
               className="voice-llama-img"
             />
-            <span className="voice-timer-badge">2:00</span>
+            <span className="voice-timer-badge">{timerDisplay || '2:00'}</span>
           </div>
         </div>
 

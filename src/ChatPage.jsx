@@ -775,6 +775,8 @@ function ChatPage() {
   const handleCloseVoiceMode = () => {
     setIsVoiceModeOpen(false)
     stopRecording()
+    setIsTimerActive(false)
+    setCheckInTimer(120) // Reset timer for next session
   }
 
   const handleStreakClick = () => {
@@ -929,9 +931,11 @@ function ChatPage() {
           <div className="character-circle">
             <div className="character-inner-glow"></div>
             <img src="/serin-llama.png" alt="Serin the llama" className="llama-image" />
-            <div className="timer-badge">
-              {formatTimer(checkInTimer)}
-            </div>
+            {isTimerActive && (
+              <div className="timer-badge">
+                {formatTimer(checkInTimer)}
+              </div>
+            )}
           </div>
         </div>
 
@@ -1120,6 +1124,7 @@ function ChatPage() {
         isLoading={isVoiceLoading}
         isError={isError}
         onTapToPause={stopRecording}
+        timerDisplay={formatTimer(checkInTimer)}
       />
     </div >
   )
