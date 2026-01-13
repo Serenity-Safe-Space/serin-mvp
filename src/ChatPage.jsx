@@ -15,7 +15,6 @@ import { rememberSessionModel, getSessionModel, clearSessionModel } from './lib/
 import { useVoiceToGemini } from './useVoiceToGemini'
 import { trackAnonymousEvent } from './lib/anonymousAnalyticsService'
 import { getDailyMessageCount, FREE_DAILY_MESSAGE_LIMIT } from './lib/usageLimitService'
-import { SERIN_COLORS } from './utils/serinColors'
 import { useAppOpenReward } from './hooks/useAppOpenReward'
 import PremiumBanner from './components/PremiumBanner'
 import MyProgressPopup from './MyProgressPopup'
@@ -28,7 +27,6 @@ import EditProfilePopup from './EditProfilePopup'
 import ModelSelector from './ModelSelector'
 import StreakModal from './StreakModal'
 import VoiceModeOverlay from './VoiceModeOverlay'
-import CelebrationModal from './components/CelebrationModal'
 import './ChatPage.css'
 
 const SESSION_INACTIVITY_THRESHOLD_MS = DEFAULT_LAST_CHAT_TTL_MS
@@ -711,6 +709,7 @@ function ChatPage() {
     setCurrentSessionId(null)
     setHasStartedChat(false)
     setIsFirstMessage(true)
+    setIsTypingMode(false)
     setCurrentMessage(t('chat.initialGreeting'))
     setInputValue('')
     lastInteractionRef.current = null
@@ -868,18 +867,27 @@ function ChatPage() {
     <div className="chat-page">
       {/* Top Stats Bar */}
       <div className="chat-top-bar">
-        <div className="top-stats">
-          <button className="stat-item" onClick={handleStreakClick} aria-label="View streak">
-            <span className="stat-icon">🔥</span>
-            <span className="stat-value">{currentStreak}</span>
-          </button>
-          <button className="stat-item" onClick={handleOpenProgress} aria-label="View coins">
-            <svg className="stat-icon coin-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="12" cy="12" r="10" fill="#FFD700" stroke="#DAA520" strokeWidth="1.5"/>
-              <text x="12" y="16" textAnchor="middle" fontSize="10" fontWeight="bold" fill="#B8860B">S</text>
-            </svg>
-            <span className="stat-value">{coinBalance}</span>
-          </button>
+        <div className="top-bar-left">
+          {(hasStartedChat || isTypingMode) && (
+            <button className="home-button" onClick={handleStartNewChat} aria-label="Back to home">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          )}
+          <div className="top-stats">
+            <button className="stat-item" onClick={handleStreakClick} aria-label="View streak">
+              <span className="stat-icon">🔥</span>
+              <span className="stat-value">{currentStreak}</span>
+            </button>
+            <button className="stat-item" onClick={handleOpenProgress} aria-label="View coins">
+              <svg className="stat-icon coin-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="10" fill="#FFD700" stroke="#DAA520" strokeWidth="1.5"/>
+                <text x="12" y="16" textAnchor="middle" fontSize="10" fontWeight="bold" fill="#B8860B">S</text>
+              </svg>
+              <span className="stat-value">{coinBalance}</span>
+            </button>
+          </div>
         </div>
         <button className="chat-sidebar-trigger" onClick={handleProfileClick} aria-label="Open Menu">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1058,49 +1066,6 @@ function ChatPage() {
         <div className="chat-input-section">
           {(isTypingMode || hasStartedChat) ? (
             <div className="input-container">
-              <button
-                className={`input-icon voice-icon ${isVoiceActive ? 'voice-active' : ''}`}
-                onClick={handleVoiceButtonClick}
-                disabled={isVoiceLoading}
-              >
-                <svg
-                  width="48"
-                  height="48"
-                  viewBox="0 0 64 64"
-                  xmlns="http://www.w3.org/2000/svg"
-                  aria-hidden="true"
-                  focusable="false"
-                >
-                  <circle
-                    cx="32"
-                    cy="32"
-                    r="28"
-                    fill={SERIN_COLORS.SUNBEAM_YELLOW.hex}
-                  />
-                  <rect
-                    x="26"
-                    y="12"
-                    width="12"
-                    height="28"
-                    rx="6"
-                    fill={SERIN_COLORS.DEEP_SERIN_PURPLE.hex}
-                  />
-                  <path
-                    d="M20 30v5c0 6.627 5.373 12 12 12s12-5.373 12-12v-5"
-                    fill="none"
-                    stroke={SERIN_COLORS.DEEP_SERIN_PURPLE.hex}
-                    strokeWidth="4.5"
-                    strokeLinecap="round"
-                  />
-                  <path
-                    d="M32 42v10"
-                    fill="none"
-                    stroke={SERIN_COLORS.DEEP_SERIN_PURPLE.hex}
-                    strokeWidth="4"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </button>
               <input
                 ref={inputRef}
                 type="text"
@@ -1115,9 +1080,10 @@ function ChatPage() {
                 className="send-button"
                 onClick={handleSendMessage}
                 disabled={isLoading || !inputValue.trim()}
+                aria-label="Send message"
               >
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="#2D1F5C" />
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </button>
             </div>
@@ -1214,11 +1180,16 @@ function ChatPage() {
         isCheckInCompleted={isCheckInCompleted}
       />
 
-      <CelebrationModal
-        isVisible={showCheckInCelebration}
-        onClose={() => setShowCheckInCelebration(false)}
-        message="You completed your daily 2-minute check-in! +3 coins earned."
-      />
+      {/* Check-in completion toast */}
+      {showCheckInCelebration && (
+        <div className="checkin-toast" onClick={() => setShowCheckInCelebration(false)}>
+          <span className="checkin-toast-icon">🎉</span>
+          <div className="checkin-toast-content">
+            <span className="checkin-toast-title">Check-in complete!</span>
+            <span className="checkin-toast-message">+3 coins earned</span>
+          </div>
+        </div>
+      )}
     </div >
   )
 }
