@@ -315,6 +315,13 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
+.timer-badge.completed {
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  border-color: rgba(76, 175, 80, 0.6);
+  padding: 8px 16px;
+  font-size: 16px;
+}
+
 .chat-title-section {
   text-align: center;
   margin-bottom: 40px;

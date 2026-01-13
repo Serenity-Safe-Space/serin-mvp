@@ -129,6 +129,11 @@
   backdrop-filter: blur(4px);
 }
 
+.voice-timer-badge.completed {
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  padding: 6px 12px;
+}
+
 /* Prompt Text */
 .voice-prompt {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, sans-serif;

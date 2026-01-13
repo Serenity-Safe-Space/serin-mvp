@@ -28,9 +28,52 @@ import EditProfilePopup from './EditProfilePopup'
 import ModelSelector from './ModelSelector'
 import StreakModal from './StreakModal'
 import VoiceModeOverlay from './VoiceModeOverlay'
+import CelebrationModal from './components/CelebrationModal'
 import './ChatPage.css'
 
 const SESSION_INACTIVITY_THRESHOLD_MS = DEFAULT_LAST_CHAT_TTL_MS
+
+// Daily check-in timer persistence
+const CHECKIN_STORAGE_KEY = 'serin_daily_checkin'
+const CHECKIN_DURATION_SECONDS = 120 // 2 minutes
+
+const getStoredCheckIn = () => {
+  try {
+    const stored = localStorage.getItem(CHECKIN_STORAGE_KEY)
+    if (!stored) return null
+    return JSON.parse(stored)
+  } catch {
+    return null
+  }
+}
+
+const saveCheckInState = (secondsRemaining, completed) => {
+  const today = new Date().toLocaleDateString('en-CA')
+  localStorage.setItem(CHECKIN_STORAGE_KEY, JSON.stringify({
+    date: today,
+    secondsRemaining,
+    completed
+  }))
+}
+
+const getInitialCheckInState = () => {
+  const today = new Date().toLocaleDateString('en-CA')
+  const stored = getStoredCheckIn()
+
+  // If stored data is from today, use it
+  if (stored && stored.date === today) {
+    return {
+      timer: stored.completed ? 0 : stored.secondsRemaining,
+      completed: stored.completed
+    }
+  }
+
+  // New day - reset everything
+  return {
+    timer: CHECKIN_DURATION_SECONDS,
+    completed: false
+  }
+}
 
 function ChatPage() {
   const { user } = useAuth()
@@ -70,8 +113,10 @@ function ChatPage() {
   const [currentStreak, setCurrentStreak] = useState(0)
   const [isTypingMode, setIsTypingMode] = useState(false)
   const [isStreakModalVisible, setIsStreakModalVisible] = useState(false)
-  const [checkInTimer, setCheckInTimer] = useState(120) // 2 minutes in seconds
+  const [checkInTimer, setCheckInTimer] = useState(() => getInitialCheckInState().timer)
   const [isTimerActive, setIsTimerActive] = useState(false)
+  const [isCheckInCompleted, setIsCheckInCompleted] = useState(() => getInitialCheckInState().completed)
+  const [showCheckInCelebration, setShowCheckInCelebration] = useState(false)
   const [isVoiceModeOpen, setIsVoiceModeOpen] = useState(false)
   const inputRef = useRef(null)
   const sessionIdRef = useRef(currentSessionId)
@@ -339,15 +384,24 @@ function ChatPage() {
     loadStreak()
   }, [user])
 
-  // Timer countdown effect
+  // Timer countdown effect with persistence
   useEffect(() => {
     let interval = null
-    if (isTimerActive && checkInTimer > 0) {
+    if (isTimerActive && checkInTimer > 0 && !isCheckInCompleted) {
       interval = setInterval(() => {
-        setCheckInTimer(prev => prev - 1)
+        setCheckInTimer(prev => {
+          const newValue = prev - 1
+          // Save progress to localStorage
+          saveCheckInState(newValue, false)
+          return newValue
+        })
       }, 1000)
-    } else if (checkInTimer === 0 && isTimerActive) {
+    } else if (checkInTimer === 0 && isTimerActive && !isCheckInCompleted) {
       setIsTimerActive(false)
+      setIsCheckInCompleted(true)
+      setShowCheckInCelebration(true)
+      // Mark as completed in localStorage
+      saveCheckInState(0, true)
       // Award daily check-in coins when timer completes
       if (user) {
         const localDate = new Date().toLocaleDateString('en-CA')
@@ -359,9 +413,13 @@ function ChatPage() {
             console.warn('Failed to award daily check-in coins:', error)
           })
       }
+      // Auto-dismiss celebration after 3 seconds
+      setTimeout(() => {
+        setShowCheckInCelebration(false)
+      }, 3000)
     }
     return () => clearInterval(interval)
-  }, [isTimerActive, checkInTimer, user])
+  }, [isTimerActive, checkInTimer, user, isCheckInCompleted])
 
   useEffect(() => {
     sessionIdRef.current = currentSessionId
@@ -770,7 +828,10 @@ function ChatPage() {
 
   const handleTypeClick = () => {
     setIsTypingMode(true)
-    setIsTimerActive(true)
+    // Only start timer if not already completed for today
+    if (!isCheckInCompleted) {
+      setIsTimerActive(true)
+    }
     setTimeout(() => {
       if (inputRef.current) {
         inputRef.current.focus()
@@ -779,7 +840,10 @@ function ChatPage() {
   }
 
   const handleTalkClick = async () => {
-    setIsTimerActive(true)
+    // Only start timer if not already completed for today
+    if (!isCheckInCompleted) {
+      setIsTimerActive(true)
+    }
     setIsVoiceModeOpen(true)
     await handleVoiceButtonClick()
   }
@@ -787,8 +851,7 @@ function ChatPage() {
   const handleCloseVoiceMode = () => {
     setIsVoiceModeOpen(false)
     stopRecording()
-    setIsTimerActive(false)
-    setCheckInTimer(120) // Reset timer for next session
+    // Don't reset timer - it persists across sessions for the day
   }
 
   const handleStreakClick = () => {
@@ -943,9 +1006,14 @@ function ChatPage() {
           <div className="character-circle">
             <div className="character-inner-glow"></div>
             <img src="/serin-llama.png" alt="Serin the llama" className="llama-image" />
-            {isTimerActive && (
+            {isTimerActive && !isCheckInCompleted && (
               <div className="timer-badge">
                 {formatTimer(checkInTimer)}
+              </div>
+            )}
+            {isCheckInCompleted && (
+              <div className="timer-badge completed">
+                ✓
               </div>
             )}
           </div>
@@ -971,6 +1039,12 @@ function ChatPage() {
               {isError && (
                 <p className="error-message">{t('chat.statuses.voiceError')}</p>
               )}
+            </>
+          ) : isCheckInCompleted ? (
+            <>
+              <h1 className="chat-main-title">You're all checked in! ✨</h1>
+              <h2 className="chat-subtitle">Great job taking time for yourself</h2>
+              <h2 className="chat-subtitle-secondary">Come back tomorrow</h2>
             </>
           ) : (
             <>
@@ -1137,6 +1211,13 @@ function ChatPage() {
         isError={isError}
         onTapToPause={stopRecording}
         timerDisplay={formatTimer(checkInTimer)}
+        isCheckInCompleted={isCheckInCompleted}
+      />
+
+      <CelebrationModal
+        isVisible={showCheckInCelebration}
+        onClose={() => setShowCheckInCelebration(false)}
+        message="You completed your daily 2-minute check-in! +3 coins earned."
       />
     </div >
   )
