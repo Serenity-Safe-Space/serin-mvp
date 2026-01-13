@@ -6,6 +6,7 @@ import { usePremium } from './contexts/PremiumContext'
 import { useLastChat, DEFAULT_LAST_CHAT_TTL_MS } from './contexts/LastChatContext'
 import { useModelPreference } from './contexts/ModelPreferenceContext'
 import { recordDailyActivity, getCurrentStreak } from './lib/activityService'
+import { awardCoins } from './lib/coinService'
 import { createChatSession, createVoiceSession, finalizeSession, saveMessage, getChatSession } from './lib/chatHistoryService'
 import { analyzeMoodShift } from './lib/memoryAnalyzer'
 import { upsertMoodMemory } from './lib/memoryService'
@@ -345,11 +346,22 @@ function ChatPage() {
       interval = setInterval(() => {
         setCheckInTimer(prev => prev - 1)
       }, 1000)
-    } else if (checkInTimer === 0) {
+    } else if (checkInTimer === 0 && isTimerActive) {
       setIsTimerActive(false)
+      // Award daily check-in coins when timer completes
+      if (user) {
+        const localDate = new Date().toLocaleDateString('en-CA')
+        awardCoins(user.id, 'daily_checkin', 3, { local_date: localDate })
+          .then(() => {
+            console.info('Daily check-in coins awarded for completing 2-minute session')
+          })
+          .catch(error => {
+            console.warn('Failed to award daily check-in coins:', error)
+          })
+      }
     }
     return () => clearInterval(interval)
-  }, [isTimerActive, checkInTimer])
+  }, [isTimerActive, checkInTimer, user])
 
   useEffect(() => {
     sessionIdRef.current = currentSessionId

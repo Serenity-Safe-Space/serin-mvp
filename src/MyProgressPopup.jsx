@@ -262,6 +262,22 @@ const MyProgressPopup = ({ isVisible, onClose }) => {
         icon: '💭',
         iconColor: 'pink',
         title: language === 'en' ? 'Mood Check-in' : 'Check-in humeur'
+      },
+      // Premium spend transactions
+      spend_day: {
+        icon: '⭐',
+        iconColor: 'orange',
+        title: language === 'en' ? '1 Day Premium' : '1 Jour Premium'
+      },
+      spend_week: {
+        icon: '👑',
+        iconColor: 'orange',
+        title: language === 'en' ? '7 Days Premium' : '7 Jours Premium'
+      },
+      spend_month: {
+        icon: '💎',
+        iconColor: 'orange',
+        title: language === 'en' ? '30 Days Premium' : '30 Jours Premium'
       }
     }
 
