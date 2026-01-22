@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { fetchAdminUserFeatureAnalytics } from '../lib/adminAnalyticsService'
 import { useAuth } from '../contexts/AuthContext'
+import { PromptTestingTab } from './PromptTesting'
 import './AdminDashboard.css'
 
 const AdminDashboard = () => {
@@ -12,6 +13,10 @@ const AdminDashboard = () => {
   const [activeUsersState, setActiveUsersState] = useState({ status: 'loading', value: null })
   const [avgDailyUsersState, setAvgDailyUsersState] = useState({ status: 'loading', value: null })
   const [avgSessionDurationState, setAvgSessionDurationState] = useState({ status: 'loading', value: null })
+
+  // Tab navigation (super admin only)
+  const [activeTab, setActiveTab] = useState('analytics')
+  const isSuperAdmin = adminRole.role === 'super_admin'
 
   // Anonymous Stats
   const [viewMode, setViewMode] = useState('loggedin')
@@ -325,6 +330,29 @@ const AdminDashboard = () => {
           )}
         </header>
 
+        {isSuperAdmin && (
+          <nav className="admin-dashboard__tabs">
+            <button
+              type="button"
+              className={`admin-dashboard__tab ${activeTab === 'analytics' ? 'admin-dashboard__tab--active' : ''}`}
+              onClick={() => setActiveTab('analytics')}
+            >
+              Analytics
+            </button>
+            <button
+              type="button"
+              className={`admin-dashboard__tab ${activeTab === 'prompt-testing' ? 'admin-dashboard__tab--active' : ''}`}
+              onClick={() => setActiveTab('prompt-testing')}
+            >
+              Prompt Testing
+            </button>
+          </nav>
+        )}
+
+        {activeTab === 'prompt-testing' && isSuperAdmin ? (
+          <PromptTestingTab />
+        ) : (
+          <>
         <section className="admin-dashboard__overview">
           <div className="admin-dashboard__overview-header">
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -469,6 +497,8 @@ const AdminDashboard = () => {
             </div>
           )}
         </section>
+          </>
+        )}
       </div>
     </div>
   )

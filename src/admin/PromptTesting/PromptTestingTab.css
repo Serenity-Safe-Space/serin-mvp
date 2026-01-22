@@ -1,0 +1,225 @@
+.prompt-testing-tab {
+  background: rgba(38, 20, 88, 0.75);
+  border-radius: 28px;
+  padding: 32px 36px;
+  border: 1px solid rgba(245, 233, 255, 0.12);
+}
+
+.prompt-testing-tab__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.prompt-testing-tab__title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #F5E9FF;
+  margin: 0;
+}
+
+.prompt-testing-tab__new-test-btn {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 12px;
+  background: #FFEB5B;
+  color: #331B68;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(255, 235, 91, 0.25);
+}
+
+.prompt-testing-tab__new-test-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(255, 235, 91, 0.35);
+}
+
+.prompt-testing-tab__new-test-btn--active {
+  background: rgba(255, 107, 107, 0.2);
+  color: #FF9A9A;
+  box-shadow: none;
+}
+
+.prompt-testing-tab__new-test-btn--active:hover {
+  background: rgba(255, 107, 107, 0.3);
+  transform: none;
+  box-shadow: none;
+}
+
+.prompt-testing-tab__error {
+  margin-bottom: 20px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: rgba(255, 107, 107, 0.15);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  color: #FF6B6B;
+  font-size: 14px;
+}
+
+.prompt-testing-tab__content {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 24px;
+}
+
+.prompt-testing-tab__sidebar {
+  flex-shrink: 0;
+}
+
+.prompt-testing-tab__main {
+  min-width: 0;
+}
+
+/* Loading states */
+.prompt-testing-tab__loading,
+.prompt-testing-tab__results-loading,
+.prompt-testing-tab__no-selection {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: rgba(245, 233, 255, 0.6);
+  font-style: italic;
+  text-align: center;
+  background: rgba(23, 12, 60, 0.5);
+  border-radius: 16px;
+  border: 1px dashed rgba(245, 233, 255, 0.15);
+  padding: 24px;
+}
+
+/* Run info header */
+.prompt-testing-tab__run-info {
+  background: rgba(44, 24, 99, 0.6);
+  border: 1px solid rgba(245, 233, 255, 0.1);
+  border-radius: 16px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+
+.prompt-testing-tab__run-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.prompt-testing-tab__run-label {
+  font-size: 18px;
+  font-weight: 600;
+  color: #F5E9FF;
+}
+
+.prompt-testing-tab__run-status {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+.prompt-testing-tab__run-status--pending {
+  background: rgba(255, 167, 38, 0.2);
+  color: #FFA726;
+}
+
+.prompt-testing-tab__run-status--running {
+  background: rgba(156, 200, 255, 0.2);
+  color: #9CC8FF;
+}
+
+.prompt-testing-tab__run-status--completed {
+  background: rgba(140, 217, 200, 0.2);
+  color: #8CD9C8;
+}
+
+.prompt-testing-tab__run-status--failed {
+  background: rgba(255, 107, 107, 0.2);
+  color: #FF6B6B;
+}
+
+.prompt-testing-tab__run-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 13px;
+  color: rgba(245, 233, 255, 0.6);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .prompt-testing-tab__content {
+    grid-template-columns: 280px 1fr;
+    gap: 20px;
+  }
+}
+
+@media (max-width: 900px) {
+  .prompt-testing-tab {
+    padding: 24px;
+    border-radius: 24px;
+  }
+
+  .prompt-testing-tab__content {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .prompt-testing-tab__sidebar {
+    order: -1;
+  }
+}
+
+@media (max-width: 640px) {
+  .prompt-testing-tab {
+    padding: 20px 16px;
+    border-radius: 20px;
+  }
+
+  .prompt-testing-tab__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .prompt-testing-tab__title {
+    font-size: 20px;
+  }
+
+  .prompt-testing-tab__new-test-btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 14px;
+  }
+
+  .prompt-testing-tab__run-info {
+    padding: 14px 16px;
+    border-radius: 14px;
+  }
+
+  .prompt-testing-tab__run-label {
+    font-size: 16px;
+  }
+
+  .prompt-testing-tab__run-meta {
+    gap: 12px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 420px) {
+  .prompt-testing-tab {
+    padding: 16px 14px;
+    border-radius: 18px;
+  }
+
+  .prompt-testing-tab__run-info-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
