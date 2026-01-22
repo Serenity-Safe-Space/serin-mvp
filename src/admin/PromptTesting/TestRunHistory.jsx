@@ -13,6 +13,12 @@ const TestRunHistory = ({ runs, selectedRunId, onSelectRun, disabled = false }) 
         month: 'short',
         day: 'numeric',
       })
+      const timeStr = date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      })
+      const dateTimeStr = `${dateStr}, ${timeStr}`
 
       const avgRating = run.avg_rating ? run.avg_rating.toFixed(1) : '-'
       const ratedInfo = run.rated_count > 0
@@ -24,6 +30,8 @@ const TestRunHistory = ({ runs, selectedRunId, onSelectRun, disabled = false }) 
         label: run.run_label || dateStr,
         model: run.model_label || run.model_id,
         date: dateStr,
+        time: timeStr,
+        dateTime: dateTimeStr,
         avgRating,
         ratedInfo,
         status: run.status,
@@ -53,7 +61,7 @@ const TestRunHistory = ({ runs, selectedRunId, onSelectRun, disabled = false }) 
       >
         {options.map((option) => (
           <option key={option.id} value={option.id}>
-            {option.label} • {option.model} • Avg: {option.avgRating} • {option.ratedInfo} rated
+            {option.dateTime} • {option.label} • Avg: {option.avgRating}
           </option>
         ))}
       </select>

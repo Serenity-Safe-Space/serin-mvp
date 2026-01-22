@@ -190,8 +190,18 @@ const PromptTestingTab = () => {
                   </span>
                 </div>
                 <div className="prompt-testing-tab__run-meta">
+                  <span>
+                    {new Date(selectedRun.created_at).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                    })}, {new Date(selectedRun.created_at).toLocaleTimeString('en-US', {
+                      hour: 'numeric',
+                      minute: '2-digit',
+                      hour12: true,
+                    })}
+                  </span>
                   <span>{selectedRun.model_label || selectedRun.model_id}</span>
-                  <span>{selectedRun.completed_questions}/{selectedRun.total_questions} completed</span>
+                  <span>{selectedRun.rated_count || 0}/{selectedRun.total_questions} rated</span>
                   {selectedRun.avg_rating && (
                     <span>Avg: {selectedRun.avg_rating.toFixed(1)}</span>
                   )}
