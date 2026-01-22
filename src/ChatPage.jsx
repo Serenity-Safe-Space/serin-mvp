@@ -74,7 +74,7 @@ const getInitialCheckInState = () => {
 }
 
 function ChatPage() {
-  const { user } = useAuth()
+  const { user, adminRole } = useAuth()
   const { sessionId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
@@ -1062,6 +1062,21 @@ function ChatPage() {
             </>
           )}
         </div>
+
+        {adminRole?.isSuperAdmin && (
+          <div className="super-admin-model-picker">
+            <ModelSelector
+              value={activeModel}
+              availableModels={availableModels}
+              onChange={(modelId) => {
+                setActiveModel(modelId)
+                setPreferredModel(modelId)
+              }}
+              disabled={false}
+              isLocked={isModelLocked}
+            />
+          </div>
+        )}
 
         <div className="chat-input-section">
           {(isTypingMode || hasStartedChat) ? (

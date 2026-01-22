@@ -753,3 +753,16 @@
     transform: translateX(-50%) translateY(0);
   }
 }
+
+/* Super Admin Model Picker */
+.super-admin-model-picker {
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: center;
+}
+
+.super-admin-model-picker .chat-model-selector {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+}
