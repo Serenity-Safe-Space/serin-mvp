@@ -35,19 +35,6 @@ const TestRunHistory = ({ runs, selectedRunId, onSelectRun, disabled = false }) 
     return runs.map(formatRunOption)
   }, [runs, formatRunOption])
 
-  const selectedOption = useMemo(() => {
-    return options.find(opt => opt.id === selectedRunId)
-  }, [options, selectedRunId])
-
-  const getRatingClass = (avgRating) => {
-    if (avgRating === '-') return ''
-    const rating = parseFloat(avgRating)
-    if (rating <= 3) return 'test-run-history__rating--low'
-    if (rating <= 5) return 'test-run-history__rating--medium-low'
-    if (rating <= 7) return 'test-run-history__rating--medium-high'
-    return 'test-run-history__rating--high'
-  }
-
   if (!runs || runs.length === 0) {
     return (
       <div className="test-run-history test-run-history--empty">
@@ -70,23 +57,6 @@ const TestRunHistory = ({ runs, selectedRunId, onSelectRun, disabled = false }) 
           </option>
         ))}
       </select>
-
-      {selectedOption && (
-        <div className="test-run-history__preview">
-          <div className="test-run-history__preview-row">
-            <span className="test-run-history__preview-label">{selectedOption.label}</span>
-            <span className="test-run-history__preview-model">{selectedOption.model}</span>
-          </div>
-          <div className="test-run-history__preview-stats">
-            <span className={`test-run-history__rating ${getRatingClass(selectedOption.avgRating)}`}>
-              Avg: {selectedOption.avgRating}
-            </span>
-            <span className="test-run-history__rated-count">
-              {selectedOption.ratedInfo} rated
-            </span>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
