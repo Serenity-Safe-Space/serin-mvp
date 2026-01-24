@@ -1,17 +1,17 @@
 const TEXT_MODELS = [
   {
-    id: 'gemini-2.5-flash',
-    label: 'Gemini 2.5 Flash',
-    provider: 'google',
-    apiName: 'gemini-2.5-flash',
-    description: 'Balanced for fast reasoning and low latency across most prompts.',
-  },
-  {
     id: 'gemini-3-flash-preview',
     label: 'Gemini 3 Flash',
     provider: 'google',
     apiName: 'gemini-3-flash-preview',
     description: 'Next-generation high-speed model with enhanced reasoning.',
+  },
+  {
+    id: 'gemini-2.5-flash',
+    label: 'Gemini 2.5 Flash',
+    provider: 'google',
+    apiName: 'gemini-2.5-flash',
+    description: 'Balanced for fast reasoning and low latency across most prompts.',
   },
   {
     id: 'gpt-4.1',
@@ -58,7 +58,7 @@ export const getDefaultTextModelId = () => {
   }
 
   const fallback = TEXT_MODELS.find((model) => isModelAvailable(model.id))
-  return fallback?.id ?? TEXT_MODELS[0]?.id ?? 'gemini-2.5-flash'
+  return fallback?.id ?? TEXT_MODELS[0]?.id ?? 'gemini-3-flash-preview'
 }
 
 export const listTextModels = () => {

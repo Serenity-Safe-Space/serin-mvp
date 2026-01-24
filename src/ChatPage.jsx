@@ -24,7 +24,8 @@ import ChatHistoryPopup from './ChatHistoryPopup'
 import SignInModal from './SignInModal'
 import SettingsPopup from './SettingsPopup'
 import EditProfilePopup from './EditProfilePopup'
-import ModelSelector from './ModelSelector'
+// ModelSelector hidden - using Gemini 3 Flash as default
+// import ModelSelector from './ModelSelector'
 import StreakModal from './StreakModal'
 import VoiceModeOverlay from './VoiceModeOverlay'
 import './ChatPage.css'
@@ -1063,20 +1064,7 @@ function ChatPage() {
           )}
         </div>
 
-        {adminRole?.isSuperAdmin && (
-          <div className="super-admin-model-picker">
-            <ModelSelector
-              value={activeModel}
-              availableModels={availableModels}
-              onChange={(modelId) => {
-                setActiveModel(modelId)
-                setPreferredModel(modelId)
-              }}
-              disabled={false}
-              isLocked={isModelLocked}
-            />
-          </div>
-        )}
+        {/* Model selector hidden - using Gemini 3 Flash as default */}
 
         <div className="chat-input-section">
           {(isTypingMode || hasStartedChat) ? (
