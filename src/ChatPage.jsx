@@ -5,6 +5,7 @@ import { useLanguage } from './contexts/LanguageContext'
 import { usePremium } from './contexts/PremiumContext'
 import { useLastChat, DEFAULT_LAST_CHAT_TTL_MS } from './contexts/LastChatContext'
 import { useModelPreference } from './contexts/ModelPreferenceContext'
+import { usePromptPreference } from './contexts/PromptPreferenceContext'
 import { recordDailyActivity, getCurrentStreak } from './lib/activityService'
 import { awardCoins } from './lib/coinService'
 import { createChatSession, createVoiceSession, finalizeSession, saveMessage, getChatSession } from './lib/chatHistoryService'
@@ -12,6 +13,7 @@ import { analyzeMoodShift } from './lib/memoryAnalyzer'
 import { upsertMoodMemory } from './lib/memoryService'
 import { generateTextResponse } from './lib/aiModelClient'
 import { rememberSessionModel, getSessionModel, clearSessionModel } from './lib/sessionModelStorage'
+import { rememberSessionPrompt, getSessionPrompt, clearSessionPrompt } from './lib/sessionPromptStorage'
 import { useVoiceToGemini } from './useVoiceToGemini'
 import { trackAnonymousEvent } from './lib/anonymousAnalyticsService'
 import { getDailyMessageCount, FREE_DAILY_MESSAGE_LIMIT } from './lib/usageLimitService'
@@ -26,6 +28,7 @@ import SettingsPopup from './SettingsPopup'
 import EditProfilePopup from './EditProfilePopup'
 // ModelSelector hidden - using Gemini 3 Flash as default
 // import ModelSelector from './ModelSelector'
+import PromptSelector from './PromptSelector'
 import StreakModal from './StreakModal'
 import VoiceModeOverlay from './VoiceModeOverlay'
 import './ChatPage.css'
@@ -88,6 +91,12 @@ function ChatPage() {
     canEdit,
     setModel: setPreferredModel,
   } = useModelPreference()
+  const {
+    currentPrompt,
+    availablePrompts,
+    canEdit: canEditPrompt,
+    setPrompt: setPreferredPrompt,
+  } = usePromptPreference()
   useAppOpenReward()
   const [currentMessage, setCurrentMessage] = useState(() => t('chat.initialGreeting'))
   const [inputValue, setInputValue] = useState('')
@@ -109,6 +118,8 @@ function ChatPage() {
   const [showExpirationBanner, setShowExpirationBanner] = useState(false)
   const [activeModel, setActiveModel] = useState(currentModel)
   const [isModelLocked, setIsModelLocked] = useState(false)
+  const [activePrompt, setActivePrompt] = useState(currentPrompt)
+  const [isPromptLocked, setIsPromptLocked] = useState(false)
   const [currentStreak, setCurrentStreak] = useState(0)
   const [isTypingMode, setIsTypingMode] = useState(false)
   const [isStreakModalVisible, setIsStreakModalVisible] = useState(false)
@@ -154,6 +165,26 @@ function ChatPage() {
     }
   }, [currentModel])
 
+  const unlockPromptSelection = useCallback(() => {
+    setIsPromptLocked(false)
+    setActivePrompt(currentPrompt)
+  }, [currentPrompt])
+
+  const lockSessionPrompt = useCallback((sessionIdentifier) => {
+    if (!sessionIdentifier) {
+      return
+    }
+
+    const storedPrompt = getSessionPrompt(sessionIdentifier)
+    const promptToApply = storedPrompt || currentPrompt
+    setActivePrompt(promptToApply)
+    setIsPromptLocked(true)
+
+    if (!storedPrompt) {
+      rememberSessionPrompt(sessionIdentifier, promptToApply)
+    }
+  }, [currentPrompt])
+
   useEffect(() => {
     // Check if premium expired recently (e.g. within last 7 days)
     if (!isPremium && premiumEndsAt) {
@@ -174,6 +205,12 @@ function ChatPage() {
       setActiveModel(currentModel)
     }
   }, [currentModel, isModelLocked])
+
+  useEffect(() => {
+    if (!isPromptLocked) {
+      setActivePrompt(currentPrompt)
+    }
+  }, [currentPrompt, isPromptLocked])
 
   useEffect(() => {
     hasStartedChatRef.current = hasStartedChat
@@ -282,6 +319,7 @@ function ChatPage() {
     clearLastChat()
     if (sessionIdRef.current) {
       clearSessionModel(sessionIdRef.current)
+      clearSessionPrompt(sessionIdRef.current)
     }
     setCurrentSessionId(null)
     sessionIdRef.current = null
@@ -292,8 +330,9 @@ function ChatPage() {
     setCurrentMessage(t('chat.initialGreeting'))
     lastInteractionRef.current = nowMs
     unlockModelSelection()
+    unlockPromptSelection()
     return true
-  }, [clearLastChat, t, unlockModelSelection])
+  }, [clearLastChat, t, unlockModelSelection, unlockPromptSelection])
 
   const handleVoiceConversationUpdate = useCallback((message) => {
     if (!message || typeof message.content !== 'string') {
@@ -479,6 +518,7 @@ function ChatPage() {
           setHasStartedChat(formattedHistory.length > 0)
           setIsFirstMessage(formattedHistory.length === 0)
           lockSessionModel(session.id)
+          lockSessionPrompt(session.id)
 
           const lastMessageRecord = messages[messages.length - 1]
           const fallbackTimestamp = lastMessageRecord?.created_at || session.ended_at || session.updated_at || session.created_at || null
@@ -511,11 +551,12 @@ function ChatPage() {
         setIsFirstMessage(true)
         lastInteractionRef.current = null
         unlockModelSelection()
+        unlockPromptSelection()
       }
     }
 
     loadSession()
-  }, [sessionId, user, navigate, lastChat, clearLastChat, lockSessionModel, unlockModelSelection])
+  }, [sessionId, user, navigate, lastChat, clearLastChat, lockSessionModel, unlockModelSelection, lockSessionPrompt, unlockPromptSelection])
 
   // Load test audio files in development mode
   useEffect(() => {
@@ -563,10 +604,16 @@ function ChatPage() {
     try {
       let sessionIdToUse = sessionIdRef.current
       const modelForMessage = isModelLocked ? (activeModel || currentModel) : currentModel
+      const promptForMessage = isPromptLocked ? (activePrompt || currentPrompt) : currentPrompt
 
       if (!isModelLocked) {
         setActiveModel(modelForMessage)
         setIsModelLocked(true)
+      }
+
+      if (!isPromptLocked) {
+        setActivePrompt(promptForMessage)
+        setIsPromptLocked(true)
       }
 
       // Create new session if this is the first message and user is logged in
@@ -579,6 +626,7 @@ function ChatPage() {
           setCurrentSessionId(session.id)
           sessionIdRef.current = session.id
           rememberSessionModel(session.id, modelForMessage)
+          rememberSessionPrompt(session.id, promptForMessage)
           // Update URL to include session ID
           isNavigatingToNewSessionRef.current = true
           navigate(`/chat/${session.id}`, { replace: true })
@@ -612,6 +660,7 @@ function ChatPage() {
         modelId: modelForMessage,
         history: historyForPrompt,
         userMessage,
+        promptId: promptForMessage,
       })
       const responseText = responseResult?.text?.trim()
 
@@ -701,6 +750,7 @@ function ChatPage() {
   const handleStartNewChat = () => {
     if (sessionIdRef.current) {
       clearSessionModel(sessionIdRef.current)
+      clearSessionPrompt(sessionIdRef.current)
     }
     // Don't clear last chat here, so we can offer to resume it
     skipRestoreRef.current = true
@@ -715,6 +765,7 @@ function ChatPage() {
     setInputValue('')
     lastInteractionRef.current = null
     unlockModelSelection()
+    unlockPromptSelection()
     navigate('/', { replace: true, state: { skipLastChatRestore: true } })
   }
 
@@ -1027,6 +1078,17 @@ function ChatPage() {
             )}
           </div>
         </div>
+
+        {canEditPrompt && (
+          <div className="super-admin-prompt-picker">
+            <PromptSelector
+              value={activePrompt}
+              availablePrompts={availablePrompts}
+              onChange={setPreferredPrompt}
+              isLocked={isPromptLocked}
+            />
+          </div>
+        )}
 
         <div className="chat-title-section">
           {isLoadingSession ? (

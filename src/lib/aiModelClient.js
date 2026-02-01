@@ -1,5 +1,6 @@
 import { getSerinPrompt } from '../utils/serinPrompt'
 import { getModelById, getDefaultTextModelId } from './aiModelRegistry'
+import { getPromptSystemInstruction, getDefaultPromptId } from './promptRegistry'
 
 const extractTextFromOpenAIResponse = (response) => {
   if (response?.choices && response.choices.length > 0) {
@@ -9,7 +10,7 @@ const extractTextFromOpenAIResponse = (response) => {
   return ''
 }
 
-export const generateTextResponse = async ({ modelId, history = [], userMessage }) => {
+export const generateTextResponse = async ({ modelId, history = [], userMessage, promptId = null }) => {
   const fallbackModelId = getDefaultTextModelId()
   const selectedModel = getModelById(modelId) ?? getModelById(fallbackModelId)
 
@@ -17,7 +18,11 @@ export const generateTextResponse = async ({ modelId, history = [], userMessage 
     throw new Error('No text model is configured.')
   }
 
-  const systemInstruction = getSerinPrompt(history, userMessage).split('Previous Conversation:')[0].trim();
+  // Use custom prompt if provided, otherwise fall back to default Serin prompt
+  const effectivePromptId = promptId || getDefaultPromptId()
+  const systemInstruction = effectivePromptId === getDefaultPromptId()
+    ? getSerinPrompt(history, userMessage).split('Previous Conversation:')[0].trim()
+    : getPromptSystemInstruction(effectivePromptId, history)
 
   // Prepare messages for the API
   const messages = [

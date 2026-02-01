@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { LastChatProvider } from './contexts/LastChatContext'
 import { ModelPreferenceProvider } from './contexts/ModelPreferenceContext'
+import { PromptPreferenceProvider } from './contexts/PromptPreferenceContext'
 import ChatPage from './ChatPage'
 import AdminDashboard from './admin/AdminDashboard'
 import RequireAdmin from './admin/RequireAdmin'
@@ -12,7 +13,8 @@ function App() {
   return (
     <AuthProvider>
       <ModelPreferenceProvider>
-        <LastChatProvider>
+        <PromptPreferenceProvider>
+          <LastChatProvider>
           <Router>
             <Routes>
               <Route path="/" element={<ChatPage />} />
@@ -29,7 +31,8 @@ function App() {
               <Route path="/reset-password" element={<ResetPassword />} />
             </Routes>
           </Router>
-        </LastChatProvider>
+          </LastChatProvider>
+        </PromptPreferenceProvider>
       </ModelPreferenceProvider>
     </AuthProvider>
   )
